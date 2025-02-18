@@ -1,4 +1,4 @@
-CLASS z2ui5_dbl_cl_app_06 DEFINITION PUBLIC.
+CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
 
   PUBLIC SECTION.
 
@@ -24,8 +24,8 @@ CLASS z2ui5_dbl_cl_app_06 DEFINITION PUBLIC.
         check_download_pressed   TYPE abap_bool,
         t_tab                    TYPE REF TO data,
         max_rows                 TYPE i VALUE 10,
-        t_fcat                   TYPE z2ui5add_cl_abap2xlsx_api=>ty_t_xlsx,
-        t_config                 TYPE STANDARD TABLE OF z2ui5add_cl_abap2xlsx_api=>ty_s_xlsx_settings WITH EMPTY KEY,
+        t_fcat                   TYPE z2ui5_cl_tcl_xlsx_api=>ty_t_xlsx,
+        t_config                 TYPE STANDARD TABLE OF z2ui5_cl_tcl_xlsx_api=>ty_s_xlsx_settings WITH EMPTY KEY,
         t_config_head            TYPE STANDARD TABLE OF ty_s_config_head WITH EMPTY KEY,
         check_download_active    TYPE abap_bool,
         check_file_row_limit     TYPE abap_bool VALUE abap_true,
@@ -63,7 +63,7 @@ ENDCLASS.
 
 
 
-CLASS Z2UI5_DBL_CL_APP_06 IMPLEMENTATION.
+CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD create_file.

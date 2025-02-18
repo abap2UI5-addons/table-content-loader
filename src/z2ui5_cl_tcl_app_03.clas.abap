@@ -1,4 +1,4 @@
-CLASS z2ui5_dbl_cl_app_03 DEFINITION
+CLASS z2ui5_cl_tcl_app_03 DEFINITION
   PUBLIC
   CREATE PUBLIC .
 
@@ -10,7 +10,7 @@ CLASS z2ui5_dbl_cl_app_03 DEFINITION
       IMPORTING
         itab            TYPE data
       RETURNING
-        VALUE(result) TYPE REF TO z2ui5_dbl_cl_app_03.
+        VALUE(result) TYPE REF TO z2ui5_cl_tcl_app_03.
 
     DATA:
       BEGIN OF ms_app,
@@ -42,7 +42,7 @@ ENDCLASS.
 
 
 
-CLASS z2ui5_dbl_cl_app_03 IMPLEMENTATION.
+CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
   METHOD factory_popup_by_itab.
 

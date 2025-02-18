@@ -1,4 +1,4 @@
-CLASS z2ui5_dbl_cl_app_00 DEFINITION
+CLASS z2ui5_cl_tcl_app_00 DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC .
@@ -13,14 +13,9 @@ ENDCLASS.
 
 
 
-CLASS Z2UI5_DBL_CL_APP_00 IMPLEMENTATION.
+CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method Z2UI5_DBL_CL_APP_00->Z2UI5_IF_APP~MAIN
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] CLIENT                         TYPE REF TO Z2UI5_IF_CLIENT
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD z2ui5_if_app~main.
 
     IF client->get( )-check_on_navigated = abap_true.

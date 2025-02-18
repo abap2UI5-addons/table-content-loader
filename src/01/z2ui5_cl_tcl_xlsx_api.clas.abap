@@ -1,4 +1,4 @@
-CLASS z2ui5_dbl_cl_xlsx_wrapper DEFINITION
+CLASS z2ui5_cl_tcl_xlsx_api DEFINITION
   PUBLIC
   FINAL
   CREATE PUBLIC .
@@ -26,7 +26,7 @@ ENDCLASS.
 
 
 
-CLASS z2ui5_dbl_cl_xlsx_wrapper IMPLEMENTATION.
+CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
 
   METHOD get_xlsx_by_table.

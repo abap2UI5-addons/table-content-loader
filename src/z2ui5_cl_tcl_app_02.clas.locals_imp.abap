@@ -4,9 +4,9 @@ CLASS lcl_db DEFINITION.
   PUBLIC SECTION.
 
 
-    TYPES ty_t_table TYPE z2ui5_dbl_cl_app_02=>ty_t_table.
+    TYPES ty_t_table TYPE z2ui5_cl_tcl_app_02=>ty_t_table.
 
-    CLASS-DATA app TYPE REF TO z2ui5_dbl_cl_app_02.
+    CLASS-DATA app TYPE REF TO z2ui5_cl_tcl_app_02.
     "CLASS-DATA st_table TYPE ty_t_table.
 
     CLASS-METHODS generate_test_data.
@@ -126,7 +126,7 @@ CLASS lcl_db IMPLEMENTATION.
 
     LOOP AT lt_cols INTO DATA(lv_field).
 
-      DATA(ls_row) = VALUE z2ui5_dbl_cl_app_02=>ty_s_spfli( ).
+      DATA(ls_row) = VALUE z2ui5_cl_tcl_app_02=>ty_s_spfli( ).
       DATA(lv_index) = 1.
       DO.
         ASSIGN COMPONENT lv_index OF STRUCTURE ls_row TO FIELD-SYMBOL(<field>).
