@@ -17,11 +17,6 @@
       "url": "https://github.com/abap2xlsx/abap2xlsx",
       "folder": "/abap2xlsx",
       "files": "/src/**/*.*"
-    },
-    {
-      "url": "https://github.com/abap2UI5-addons/abap2xlsx-ui",
-      "folder": "/abap2xlsx_ui",
-      "files": "/src/**/*.*"
     }
   ],
   "syntax": {
