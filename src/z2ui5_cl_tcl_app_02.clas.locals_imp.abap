@@ -89,56 +89,28 @@ CLASS lcl_db IMPLEMENTATION.
 
   METHOD get_table_by_json.
 
-    DATA lt_tab TYPE ty_t_table.
-
-    /ui2/cl_json=>deserialize(
-      EXPORTING
-        json             = val
-*        jsonx            =
-*        pretty_name      =
-*        assoc_arrays     =
-*        assoc_arrays_opt =
-*        name_mappings    =
-*        conversion_exits =
-*        hex_as_base64    =
-      CHANGING
-        data             = lt_tab
-    ).
-
-    result = lt_tab.
+    z2ui5_cl_util=>json_parse( EXPORTING val  = val
+                               CHANGING  data = result ).
 
   ENDMETHOD.
 
 
   METHOD get_table_by_xml.
 
-    DATA lt_tab TYPE ty_t_table.
-
-    CALL TRANSFORMATION id SOURCE xml = val RESULT data = lt_tab.
-
-    result = lt_tab.
+    z2ui5_cl_util=>xml_parse( EXPORTING xml = val
+                              IMPORTING any = result ).
 
   ENDMETHOD.
 
   METHOD get_table_by_csv.
 
-    SPLIT val AT ';' INTO TABLE DATA(lt_cols).
+    FIELD-SYMBOLS <tab> TYPE STANDARD TABLE.
 
-    LOOP AT lt_cols INTO DATA(lv_field).
+    DATA(lr_tab) = z2ui5_cl_util=>itab_get_itab_by_csv( val ).
+    ASSIGN lr_tab->* TO <tab>.
 
-      DATA(ls_row) = VALUE z2ui5_cl_tcl_app_02=>ty_s_spfli( ).
-      DATA(lv_index) = 1.
-      DO.
-        ASSIGN COMPONENT lv_index OF STRUCTURE ls_row TO FIELD-SYMBOL(<field>).
-        IF sy-subrc <> 0.
-          EXIT.
-        ENDIF.
-        <field> = lv_field.
-        lv_index = lv_index + 1.
-      ENDDO.
-      INSERT ls_row INTO TABLE result.
-
-    ENDLOOP.
+    z2ui5_cl_util=>itab_corresponding( EXPORTING val = <tab>
+                                       CHANGING  tab = result ).
 
   ENDMETHOD.
 
@@ -163,60 +135,26 @@ CLASS lcl_db IMPLEMENTATION.
 
   METHOD get_csv_by_table.
 
-    LOOP AT val INTO DATA(ls_row).
-
-      DATA(lv_index) = 1.
-      DO.
-        ASSIGN COMPONENT lv_index OF STRUCTURE ls_row TO FIELD-SYMBOL(<field>).
-        IF sy-subrc <> 0.
-          EXIT.
-        ENDIF.
-        lv_index = lv_index + 1.
-        result = result && <field> && ';'.
-      ENDDO.
-      result = result && cl_abap_char_utilities=>cr_lf.
-    ENDLOOP.
-
+    result = z2ui5_cl_util=>itab_get_csv_by_itab( val ).
 
   ENDMETHOD.
 
   METHOD get_json_by_table.
 
-    result = /ui2/cl_json=>serialize(
-               val
-*               compress         =
-*               name             =
-*               pretty_name      =
-*               type_descr       =
-*               assoc_arrays     =
-*               ts_as_iso8601    =
-*               expand_includes  =
-*               assoc_arrays_opt =
-*               numc_as_string   =
-*               name_mappings    =
-*               conversion_exits =
-           "   format_output    = abap_true
-*               hex_as_base64    =
-             ).
-
+    result = z2ui5_cl_util=>json_stringify( val ).
 
   ENDMETHOD.
 
   METHOD get_xml_by_table.
 
-    CALL TRANSFORMATION id SOURCE values = val RESULT XML result.
+    result = z2ui5_cl_util=>xml_stringify( val ).
 
   ENDMETHOD.
 
   METHOD get_fieldlist_by_table.
 
-    DATA(lo_tab) = CAST cl_abap_tabledescr( cl_abap_datadescr=>describe_by_data( it_table ) ).
-    DATA(lo_struc) = CAST cl_abap_structdescr( lo_tab->get_table_line_type( ) ).
-
-    DATA(lt_comp) = lo_struc->get_components( ).
-
-    LOOP AT lt_comp INTO DATA(ls_comp).
-      INSERT ls_comp-name INTO TABLE result.
+    LOOP AT z2ui5_cl_util=>rtti_get_t_attri_by_any( it_table ) REFERENCE INTO DATA(lr_attri).
+      INSERT CONV #( lr_attri->name ) INTO TABLE result.
     ENDLOOP.
 
   ENDMETHOD.
