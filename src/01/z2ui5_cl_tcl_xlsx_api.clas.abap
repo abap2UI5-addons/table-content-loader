@@ -17,6 +17,9 @@ CLASS z2ui5_cl_tcl_xlsx_api DEFINITION
     CLASS-METHODS get_xlsx_by_table
       IMPORTING
         val           TYPE any
+        title         TYPE clike DEFAULT `Internal table`
+        settings      TYPE ty_s_xlsx_settings OPTIONAL
+        fieldcatalog  TYPE ty_t_xlsx OPTIONAL
       RETURNING
         VALUE(result) TYPE xstring.
 
@@ -44,11 +47,17 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
     " Get active sheet
     lo_worksheet = lo_excel->get_active_worksheet( ).
-    lo_worksheet->set_title( 'Internal table' ).
+    lo_worksheet->set_title( CONV #( title ) ).
 
-    lt_field_catalog = zcl_excel_common=>get_fieldcatalog( ip_table = val ).
+    lt_field_catalog = fieldcatalog.
+    IF lt_field_catalog IS INITIAL.
+      lt_field_catalog = zcl_excel_common=>get_fieldcatalog( ip_table = val ).
+    ENDIF.
 
-    ls_table_settings-table_style  = zcl_excel_table=>builtinstyle_medium5.
+    ls_table_settings = settings.
+    IF ls_table_settings IS INITIAL.
+      ls_table_settings-table_style = zcl_excel_table=>builtinstyle_medium5.
+    ENDIF.
 
     lo_worksheet->bind_table( ip_table          = val
                               is_table_settings = ls_table_settings

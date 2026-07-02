@@ -41,10 +41,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
 
           WHEN 'UPLOAD'.
 
-            SPLIT mv_value AT `;` INTO DATA(lv_dummy) DATA(lv_data).
-            SPLIT lv_data AT `,` INTO lv_dummy lv_data.
-
-            DATA(lv_xdata) = z2ui5_cl_util=>conv_decode_x_base64( lv_data ).
+            DATA(lv_xdata) = z2ui5_cl_util=>conv_get_xstring_by_data_uri( mv_value ).
             mr_table = z2ui5_cl_tcl_xlsx_api=>get_table_by_xlsx( lv_xdata ).
             client->message_box_display( `XLSX loaded to table` ).
 
