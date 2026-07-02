@@ -100,7 +100,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
         FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
 
-        CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table).
+        mt_tab = z2ui5_cl_util=>rtti_create_tab_by_name( ms_app-db_table ).
         ASSIGN mt_tab->* TO <tab2>.
 
         SELECT *
@@ -118,7 +118,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
       WHEN `PREVIEW`.
 
-        CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table).
+        mt_tab = z2ui5_cl_util=>rtti_create_tab_by_name( ms_app-db_table ).
         ASSIGN mt_tab->* TO <tab2>.
 
         SELECT *

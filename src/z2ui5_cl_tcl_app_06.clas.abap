@@ -70,8 +70,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     TRY.
 
-        DATA lr_tab TYPE REF TO data.
-        CREATE DATA lr_tab TYPE STANDARD TABLE OF (ms_draft-table_name).
+        DATA(lr_tab) = z2ui5_cl_util=>rtti_create_tab_by_name( ms_draft-table_name ).
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
 
@@ -90,25 +89,10 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
         ENDIF.
 
-        DATA: lo_excel     TYPE REF TO zcl_excel,
-              lo_writer    TYPE REF TO zif_excel_writer,
-              lo_worksheet TYPE REF TO zcl_excel_worksheet.
-
-        " Creates active sheet
-        CREATE OBJECT lo_excel.
-
-        " Get active sheet
-        lo_worksheet = lo_excel->get_active_worksheet( ).
-        lo_worksheet->set_title( CONV #( ms_draft-t_config_head[ 1 ]-title ) ).
-
-        lo_worksheet->bind_table( ip_table          = <tab>
-                                  is_table_settings = ms_draft-t_config[ 1 ]
-                                  it_field_catalog  = ms_draft-t_fcat ).
-
-        lo_worksheet->freeze_panes( ip_num_rows = 1 ).
-
-        CREATE OBJECT lo_writer TYPE zcl_excel_writer_2007.
-        DATA(lv_result) = lo_writer->write_file( lo_excel ).
+        DATA(lv_result) = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( val          = <tab>
+                                                                    title        = ms_draft-t_config_head[ 1 ]-title
+                                                                    settings     = ms_draft-t_config[ 1 ]
+                                                                    fieldcatalog = ms_draft-t_fcat ).
         mv_file = z2ui5_cl_util=>conv_encode_x_base64( lv_result ).
 
         ms_draft-file_rows = lines( <tab> ).
@@ -142,7 +126,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         ms_draft-table_name = CAST z2ui5_cl_pop_input_val( lo_prev )->result( )-value.
         ms_draft-check_load_pressed = abap_true.
 
-        CREATE DATA ms_draft-t_tab TYPE STANDARD TABLE OF (ms_draft-table_name).
+        ms_draft-t_tab = z2ui5_cl_util=>rtti_create_tab_by_name( ms_draft-table_name ).
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN  ms_draft-t_tab->* TO <tab>.
 
