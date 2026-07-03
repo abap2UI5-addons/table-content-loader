@@ -14,7 +14,6 @@ CLASS z2ui5_cl_tcl_app_05 DEFINITION PUBLIC.
   PROTECTED SECTION.
 
     DATA client TYPE REF TO z2ui5_if_client.
-    DATA check_initialized TYPE abap_bool.
 
     METHODS ui5_on_event.
     METHODS ui5_view_main_display.
@@ -76,9 +75,6 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
             )->input( value = client->_bind_edit( mv_tab_name ) width = `20%`
             )->button( text = 'edit'
             )->toolbar_spacer(
-*            )->button( text = 'File Upload'
-*            )->button( text = 'View/Change/Download'
-*            )->button( text = 'JSON/XML Editor'
             ).
 
     IF mv_check_download = abap_true.
@@ -95,7 +91,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
       ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->table(
-              items = COND #( WHEN mv_check_edit = abap_true THEN client->_bind_edit( <tab> ) ELSE client->_bind_edit( <tab> ) )
+              items = client->_bind_edit( <tab> )
           )->header_toolbar(
               )->overflow_toolbar(
                   )->title( 'XLSX Content'

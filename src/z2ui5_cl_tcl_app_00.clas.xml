@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>Z2UI5_CL_TCL_APP_00</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>db_loader - start page</DESCRIPT>
+    <DESCRIPT>table content loader - start page</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

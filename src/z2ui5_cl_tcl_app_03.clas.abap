@@ -37,7 +37,6 @@ CLASS z2ui5_cl_tcl_app_03 DEFINITION
     METHODS z2ui5_view_display.
 
   PRIVATE SECTION.
-    DATA mv_db_save_callback TYPE string.
 ENDCLASS.
 
 
@@ -87,13 +86,9 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
             FROM (ms_app-db_table)
             INTO ms_app-db_table_entries.
 
-*            IF to_upper( ms_app-db_table(1) ) <>  `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
-*              client->message_box_display( `Only Tables in namespace Z or Y allowed` ).
-*            ENDIF.
-
             client->view_model_update( ).
           CATCH cx_root.
-            client->message_box_display( `DB Table no found, check input: ` && ms_app-db_table ).
+            client->message_box_display( `DB Table not found, check input: ` && ms_app-db_table ).
         ENDTRY.
 
       WHEN `PROCESS`.
@@ -152,15 +147,13 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
   METHOD z2ui5_view_display.
 
-
-
     IF ms_app-check_popup = abap_true.
-     DATA(view) = z2ui5_cl_xml_view=>factory_popup( ).
+      DATA(view) = z2ui5_cl_xml_view=>factory_popup( ).
       DATA(page) = view->dialog( ).
     ELSE.
-     view = z2ui5_cl_xml_view=>factory( ).
+      view = z2ui5_cl_xml_view=>factory( ).
       page = view->shell( appwidthlimited = client->_bind_edit( ms_app-check_appwidthlimited ) )->page(
-                  title          = 'a2UI5 App - JSON File Download'
+                  title          = 'abap2UI5 - JSON File Download'
                   navbuttonpress = client->_event( 'BACK' )
                   shownavbutton = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
             )->header_content(
@@ -181,8 +174,6 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
     )->input( width = `30%` description = `DB Entries` value = client->_bind_edit( ms_app-db_table_entries ) enabled = abap_false
     )->label( `(2) DB -> JSON`
    )->button( text = `Go` width = `10%` press = client->_event( `PROCESS` )
-*    )->label(
-*    )->input( width = `30%` description = `Number of Entries` value = client->_bind_edit( ms_app-file_entries )  enabled = abap_false
     )->label( `(3) Preview JSON`
      )->button( text = `Go` width = `10%` press = client->_event( `PREVIEW` )
    )->label( `(4) Export`

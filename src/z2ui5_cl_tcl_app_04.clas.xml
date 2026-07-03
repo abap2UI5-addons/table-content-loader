@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>Z2UI5_CL_TCL_APP_04</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>dbt - editor</DESCRIPT>
+    <DESCRIPT>table content loader - csv upload/download</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

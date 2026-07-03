@@ -159,18 +159,15 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
   METHOD z2ui5_on_render_view_edit.
 
-    DATA(page) = Z2UI5_CL_XML_VIEW=>factory( )->shell(
+    DATA(page) = z2ui5_cl_xml_view=>factory( )->shell(
        )->page(
-               title          = 'abap2ui5 - Table Maintenance'
+               title          = 'abap2UI5 - Table Maintenance'
                navbuttonpress = client->_event( 'BACK' )
                shownavbutton  = abap_true
            )->header_content(
                )->link(
                    text = 'Demo' target = '_blank'
                    href = `https://twitter.com/abap2UI5/status/1634206964291911682`
-*               )->link(
-*                   text = 'Source_Code' target = '_blank'
-*                   href = Z2UI5_CL_XML_VIEW=>hlp_get_source_code_url( app = me )
            )->get_parent(
            )->sub_header(
                )->overflow_toolbar(
@@ -195,7 +192,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
     grid = page->grid( 'L12 M12 S12' )->content( 'layout' ).
 
-    DATA(cont) = grid->simple_form(  )->content( 'form' ).
+    DATA(cont) = grid->simple_form( )->content( 'form' ).
 
     cont->overflow_toolbar(
                   )->button(
@@ -216,7 +213,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
     DATA(tab) = scroll->table(
                   width = '100rem'
-                  items = client->_bind( ms_edit-t_table )
+                  items = client->_bind_edit( ms_edit-t_table )
                   mode  = 'MultiSelect' ).
 
     DATA(lt_fields) = lcl_db=>get_fieldlist_by_table( ms_edit-t_table ).
@@ -247,18 +244,15 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
   METHOD z2ui5_on_render_view_export.
 
-    DATA(page) = Z2UI5_CL_XML_VIEW=>factory(  )->shell(
+    DATA(page) = z2ui5_cl_xml_view=>factory( )->shell(
     )->page(
-            title          = 'abap2ui5 - Table Maintenance'
+            title          = 'abap2UI5 - Table Maintenance'
             navbuttonpress = client->_event( 'BACK' )
             shownavbutton  = abap_true
         )->header_content(
             )->link(
                 text = 'Demo'
                 href = `https://twitter.com/abap2UI5/status/1634206964291911682`
-*            )->link(
-*                text = 'Source_Code'
-*                href = Z2UI5_CL_XML_VIEW=>hlp_get_source_code_url( app = me )
         )->get_parent(
         )->sub_header(
             )->overflow_toolbar(
@@ -281,7 +275,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
             )->label( 'Table'
             )->input( 'SPFLI'
             )->label( 'Format'
-            )->segmented_button( client->_bind( ms_export-segment_key )
+            )->segmented_button( client->_bind_edit( ms_export-segment_key )
                 )->items(
                     )->segmented_button_item( key = 'json' text = 'json'
                     )->segmented_button_item( key = 'csv'  text = 'csv'
@@ -289,11 +283,10 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
     grid = page->grid( 'L12 M12 S12' )->content( 'layout' ).
 
-*    grid->scroll_container( '75%'
-       page->code_editor(
-             type     = COND #( WHEN ms_export-segment_key = 'csv' THEN |plain_text| ELSE ms_import-segment_key )
-             value    = client->_bind( ms_export-editor )
-             editable = abap_false ).
+    page->code_editor(
+        type     = COND #( WHEN ms_export-segment_key = 'csv' THEN |plain_text| ELSE ms_export-segment_key )
+        value    = client->_bind( ms_export-editor )
+        editable = abap_false ).
 
     page->footer(
         )->overflow_toolbar(
@@ -304,25 +297,22 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                 type  = 'Emphasized'
                 icon  = 'sap-icon://download-from-cloud' ).
 
-    client->view_display(  page->get_root( )->xml_get( ) ).
+    client->view_display( page->get_root( )->xml_get( ) ).
 
   ENDMETHOD.
 
 
   METHOD z2ui5_on_render_view_import.
 
-    DATA(page) = Z2UI5_CL_XML_VIEW=>factory( )->shell(
+    DATA(page) = z2ui5_cl_xml_view=>factory( )->shell(
     )->page(
             title          = 'abap2UI5 - Table Maintenance'
             navbuttonpress = client->_event( 'BACK' )
-              shownavbutton  = abap_true
+            shownavbutton  = abap_true
         )->header_content(
             )->link(
                 text = 'Demo'
                 href = `https://twitter.com/abap2UI5/status/1634206964291911682`
-*            )->link(
-*                text = 'Source_Code'
-*                href = Z2UI5_CL_XML_VIEW=>hlp_get_source_code_url( app = me )
         )->get_parent(
         )->sub_header(
             )->overflow_toolbar(
@@ -345,7 +335,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
             )->label( 'Table'
             )->input( 'SPFLI'
             )->label( 'Format'
-            )->segmented_button( client->_bind( ms_import-segment_key ) )->get(
+            )->segmented_button( client->_bind_edit( ms_import-segment_key ) )->get(
                 )->items( )->get(
                     )->segmented_button_item( key = 'json' text = 'json'
                     )->segmented_button_item( key = 'csv'  text = 'csv'
@@ -353,11 +343,10 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
     grid = page->grid( 'L12 M12 S12' )->content( 'layout' ).
 
-*    grid->scroll_container( '75%'
-        page->code_editor(
-            type     = COND #( WHEN ms_import-segment_key = 'csv' THEN |plain_text| ELSE ms_import-segment_key )
-            value    = client->_bind( ms_import-editor )
-            editable = abap_true ).
+    page->code_editor(
+        type     = COND #( WHEN ms_import-segment_key = 'csv' THEN |plain_text| ELSE ms_import-segment_key )
+        value    = client->_bind_edit( ms_import-editor )
+        editable = abap_true ).
 
     page->footer( )->overflow_toolbar(
         )->button(

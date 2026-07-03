@@ -7,9 +7,6 @@ CLASS lcl_db DEFINITION.
     TYPES ty_t_table TYPE z2ui5_cl_tcl_app_02=>ty_t_table.
 
     CLASS-DATA app TYPE REF TO z2ui5_cl_tcl_app_02.
-    "CLASS-DATA st_table TYPE ty_t_table.
-
-    CLASS-METHODS generate_test_data.
 
     CLASS-METHODS get_table_by_json
       IMPORTING
@@ -70,22 +67,6 @@ CLASS lcl_db DEFINITION.
 ENDCLASS.
 
 CLASS lcl_db IMPLEMENTATION.
-
-  METHOD generate_test_data.
-
-    app->st_db = VALUE #(
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-        ( carrid = 'DL' connid = '0106' countryfr = 'US' cityfrom = 'NEW YORK' airpfrom = 'JFK' countryto = 'DE' cityto = 'FRANKFURT' airpto = 'FR' )
-    ).
-
-  ENDMETHOD.
-
 
   METHOD get_table_by_json.
 
