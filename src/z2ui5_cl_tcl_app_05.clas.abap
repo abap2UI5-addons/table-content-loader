@@ -95,7 +95,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
       ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->table(
-              items = COND #( WHEN mv_check_edit = abap_true THEN client->_bind_edit( <tab> ) ELSE client->_bind_edit( <tab> ) )
+              items = client->_bind_edit( <tab> )
           )->header_toolbar(
               )->overflow_toolbar(
                   )->title( 'XLSX Content'

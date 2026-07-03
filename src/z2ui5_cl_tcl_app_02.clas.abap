@@ -195,7 +195,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
     grid = page->grid( 'L12 M12 S12' )->content( 'layout' ).
 
-    DATA(cont) = grid->simple_form(  )->content( 'form' ).
+    DATA(cont) = grid->simple_form( )->content( 'form' ).
 
     cont->overflow_toolbar(
                   )->button(
@@ -247,7 +247,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
   METHOD z2ui5_on_render_view_export.
 
-    DATA(page) = Z2UI5_CL_XML_VIEW=>factory(  )->shell(
+    DATA(page) = Z2UI5_CL_XML_VIEW=>factory( )->shell(
     )->page(
             title          = 'abap2ui5 - Table Maintenance'
             navbuttonpress = client->_event( 'BACK' )
@@ -291,7 +291,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
 *    grid->scroll_container( '75%'
        page->code_editor(
-             type     = COND #( WHEN ms_export-segment_key = 'csv' THEN |plain_text| ELSE ms_import-segment_key )
+             type     = COND #( WHEN ms_export-segment_key = 'csv' THEN |plain_text| ELSE ms_export-segment_key )
              value    = client->_bind( ms_export-editor )
              editable = abap_false ).
 

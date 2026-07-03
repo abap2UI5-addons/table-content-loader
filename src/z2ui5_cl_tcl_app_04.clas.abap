@@ -76,39 +76,39 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
 
   METHOD ui5_view_init_display.
 
-  ui5_view_main_display( ).
+    ui5_view_main_display( ).
 
   ENDMETHOD.
 
 
   METHOD ui5_view_main_display.
 
-    DATA(view) = z2ui5_cl_xml_view=>factory(  ).
+    DATA(view) = z2ui5_cl_xml_view=>factory( ).
     DATA(page) = view->shell( )->page(
             title          = 'abap2UI5 - CSV to ABAP internal Table'
             navbuttonpress = client->_event( 'BACK' )
             shownavbutton  = abap_true
         )->header_content(
             )->toolbar_spacer(
-*            )->link( text = 'Source_Code' target = '_blank' href = view->hlp_get_source_code_url(  )
+*            )->link( text = 'Source_Code' target = '_blank' href = view->hlp_get_source_code_url( )
         )->get_parent( ).
 
     IF mv_check_download = abap_true.
 
-    FIELD-SYMBOLS <tab> type table.
-  assign mr_table->* to <tab>.
+      FIELD-SYMBOLS <tab> TYPE table.
+      ASSIGN mr_table->* TO <tab>.
       mv_check_download = abap_false.
       DATA(lv_csv) = z2ui5_cl_util=>itab_get_csv_by_itab( <tab> ).
       DATA(lv_xcsv) = z2ui5_cl_util=>conv_get_xstring_by_string( lv_csv ).
-      DATA(LV_base) = z2ui5_cl_util=>conv_encode_x_base64( lv_xcsv ).
-      view->_cc_plain_xml( '<html:iframe src="data:text/csv;base64,' && LV_base && '" height="0%" width="0%"/>' ).
+      DATA(lv_base) = z2ui5_cl_util=>conv_encode_x_base64( lv_xcsv ).
+      view->_cc_plain_xml( '<html:iframe src="data:text/csv;base64,' && lv_base && '" height="0%" width="0%"/>' ).
     ENDIF.
 
     IF mr_table IS NOT INITIAL.
-  assign mr_table->* to <tab>.
+      ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->table(
-              items = COND #( WHEN mv_check_edit = abap_true THEN client->_bind_edit( <tab> ) ELSE client->_bind_edit( <tab> ) )
+              items = client->_bind_edit( <tab> )
           )->header_toolbar(
               )->overflow_toolbar(
                   )->title( 'CSV Content'
@@ -121,7 +121,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
           )->get_parent( )->get_parent( ).
 
 
-      DATA(lr_fields) = value string_table( for row in z2ui5_cl_util=>rtti_get_t_attri_by_any( <tab> ) ( row-name ) ).
+      DATA(lr_fields) = VALUE string_table( FOR row IN z2ui5_cl_util=>rtti_get_t_attri_by_any( <tab> ) ( row-name ) ).
       DATA(lo_cols) = tab->columns( ).
       LOOP AT lr_fields REFERENCE INTO DATA(lr_col).
         lo_cols->column( )->text( lr_col->* ).

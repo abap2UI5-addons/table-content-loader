@@ -122,7 +122,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
   METHOD on_callback.
 
     TRY.
-        DATA(lo_prev) = client->get_app( client->get(  )-s_draft-id_prev_app ).
+        DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
         ms_draft-table_name = CAST z2ui5_cl_pop_input_val( lo_prev )->result( )-value.
         ms_draft-check_load_pressed = abap_true.
 
@@ -140,7 +140,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         INSERT ls_config_head INTO TABLE ms_draft-t_config_head.
 
         load_table( ).
-        set_view(  ).
+        set_view( ).
 
       CATCH cx_root.
     ENDTRY.
@@ -174,7 +174,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
       WHEN `VIEW_CONFIG`.
         ms_draft-check_load_pressed = abap_false.
         ms_draft-check_config_pressed = abap_true.
-        ms_draft-check_download_pressed = abap_false.
+        ms_draft-check_config_pos_pressed = abap_false.
         ms_draft-check_preview_pressed = abap_false.
         ms_draft-check_download_pressed = abap_false.
         set_view( ).
@@ -205,7 +205,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
       WHEN `LOAD`.
         load_table( ).
-        set_view(  ).
+        set_view( ).
 
       WHEN 'DOWNLOAD'.
         IF ms_draft-t_tab IS NOT BOUND.
@@ -229,7 +229,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD on_init.
 
-    set_view(  ).
+    set_view( ).
 
   ENDMETHOD.
 
@@ -239,15 +239,15 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     DATA(view) = z2ui5_cl_xml_view=>factory( ).
 
     DATA(page) = view->page(
-                title          = 'a2UI5 App - XLSX Download'
+                title          = 'abap2UI5 - XLSX Download'
                 navbuttonpress = client->_event( 'BACK' )
                 shownavbutton = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
           )->header_content(
                 )->link(
                     text = 'Project on GitHub'
                     target = '_blank'
-                    href = `https://github.com/oblomov-dev/a2UI5-xlsx_loader`
-                )->get_parent(  ).
+                    href = `https://github.com/abap2UI5-addons/table-content-loader`
+                )->get_parent( ).
 
     CASE abap_true.
       WHEN ms_draft-check_load_pressed.
@@ -304,7 +304,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD set_view_config.
-    .
+
     DATA(cont) = page->scroll_container(
          height     = `30%`
          width      = `100%`
@@ -402,9 +402,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     IF mv_check_download_file = abap_true.
       mv_check_download_file = abap_false.
 
-**        view->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:application/xlsx;base64,` && lv_base ) ( n = `hidden` v = `hidden` ) ) ).
       page->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:text/csv;base64,` && mv_file ) ( n = `hidden` v = `hidden` ) ) ).
-**        view->_generic( ns = `html` name = `a` t_prop = VALUE #( ( n = `href` v = `data:text/csv;base64,` && lv_base ) ( n = `download` v = `filename.csv` ) ) ).
 
     ENDIF.
 

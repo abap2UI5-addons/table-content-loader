@@ -29,7 +29,6 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
     METHODS z2ui5_view_display.
 
   PRIVATE SECTION.
-    DATA mv_db_save_callback TYPE string.
 ENDCLASS.
 
 
@@ -52,7 +51,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           DATA(lo_popup_file) = CAST z2ui5_cl_pop_file_ul( client->get_app( client->get( )-s_draft-id_prev_app ) ).
           IF lo_popup_file->result( )-check_confirmed = abap_true.
             ms_app-file = lo_popup_file->result( )-value.
-            client->message_toast_display( `File uploaded sucessfully` ).
+            client->message_toast_display( `File uploaded successfully` ).
             ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
             client->view_model_update( ).
           ENDIF.
@@ -101,7 +100,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
             client->view_model_update( ).
           CATCH cx_root.
-            client->message_box_display( `DB Table no found, check input: ` && ms_app-db_table ).
+            client->message_box_display( `DB Table not found, check input: ` && ms_app-db_table ).
         ENDTRY.
 
       WHEN `PROCESS`.
@@ -126,11 +125,9 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         ENDTRY.
 
       WHEN `PREVIEW`.
-        ASSIGN mt_tab->* TO <tab2>.
 
         DATA lr_tab TYPE REF TO data.
         DATA lr_dummy TYPE REF TO data.
-        CREATE DATA lr_tab TYPE STANDARD TABLE OF (ms_app-db_table).
 
         lr_tab = z2ui5_cl_util=>conv_copy_ref_data( mt_tab ).
 
@@ -144,7 +141,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         client->nav_app_call( z2ui5_cl_pop_table=>factory( <tab2> ) ).
 
       WHEN 'DB_SAVE'.
-        mv_db_save_callback = client->nav_app_call( z2ui5_cl_pop_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?`) ).
+        client->nav_app_call( z2ui5_cl_pop_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?` ) ).
 
       WHEN 'UPLOAD'.
         client->nav_app_call( z2ui5_cl_pop_file_ul=>factory( ) ).
@@ -172,7 +169,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
     DATA(view) = z2ui5_cl_xml_view=>factory( ).
 
     DATA(page) = view->shell( appwidthlimited = client->_bind_edit( ms_app-check_appwidthlimited ) )->page(
-                title          = 'a2UI5 App - JSON File Upload'
+                title          = 'abap2UI5 - JSON File Upload'
                 navbuttonpress = client->_event( 'BACK' )
                 shownavbutton = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
           )->header_content(
@@ -183,8 +180,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                 )->link(
                     text = 'Project on GitHub'
                     target = '_blank'
-                    href = `https://github.com/oblomov-dev/a2UI5-db_table_loader`
-                )->get_parent(  )->get_parent( ).
+                    href = `https://github.com/abap2UI5-addons/table-content-loader`
+                )->get_parent( )->get_parent( ).
 
     DATA(content) = page->simple_form( editable = `true` ).
 
