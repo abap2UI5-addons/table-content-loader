@@ -14,7 +14,6 @@ CLASS z2ui5_cl_tcl_app_05 DEFINITION PUBLIC.
   PROTECTED SECTION.
 
     DATA client TYPE REF TO z2ui5_if_client.
-    DATA check_initialized TYPE abap_bool.
 
     METHODS ui5_on_event.
     METHODS ui5_view_main_display.

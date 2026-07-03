@@ -13,7 +13,6 @@ CLASS z2ui5_cl_tcl_app_04 DEFINITION PUBLIC.
   PROTECTED SECTION.
 
     DATA client TYPE REF TO z2ui5_if_client.
-    DATA check_initialized TYPE abap_bool.
 
     METHODS ui5_on_init.
     METHODS ui5_on_event.
@@ -159,8 +158,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
 
     me->client = client.
 
-    IF check_initialized = abap_false.
-      check_initialized = abap_true.
+    IF client->check_on_init( ).
       ui5_on_init( ).
       RETURN.
     ENDIF.

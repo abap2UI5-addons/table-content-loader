@@ -207,6 +207,25 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         load_table( ).
         set_view( ).
 
+      WHEN `RESET_CONFIG`.
+        CLEAR ms_draft-t_config.
+        DATA ls_table_settings TYPE zexcel_s_table_settings.
+        ls_table_settings-table_style = zcl_excel_table=>builtinstyle_medium5.
+        INSERT ls_table_settings INTO TABLE ms_draft-t_config.
+        CLEAR ms_draft-t_config_head.
+        DATA ls_config_head TYPE ty_s_config_head.
+        ls_config_head-title = `tabtitle`.
+        INSERT ls_config_head INTO TABLE ms_draft-t_config_head.
+        set_view( ).
+
+      WHEN `RESET_FCAT`.
+        IF ms_draft-t_tab IS BOUND.
+          FIELD-SYMBOLS <tab_fcat> TYPE table.
+          ASSIGN ms_draft-t_tab->* TO <tab_fcat>.
+          ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( ip_table = <tab_fcat> ).
+        ENDIF.
+        set_view( ).
+
       WHEN 'DOWNLOAD'.
         IF ms_draft-t_tab IS NOT BOUND.
           client->message_box_display( `Table is empty, no export possible` ).
@@ -346,7 +365,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
            )->overflow_toolbar(
                )->title( `Parameter`
                )->toolbar_spacer(
-               )->button( text = `Reset` press = client->_event( `RESET_FCAT` ) icon = `sap-icon://refresh` type = `Emphasized`
+               )->button( text = `Reset` press = client->_event( `RESET_CONFIG` ) icon = `sap-icon://refresh` type = `Emphasized`
       )->get_parent( )->get_parent( ).
 
     lt_fields = z2ui5_cl_util=>rtti_get_t_attri_by_any( ms_draft-t_config_head ).
