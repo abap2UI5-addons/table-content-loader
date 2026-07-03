@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>Z2UI5_CL_TCL_APP_03</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>dbt - download json</DESCRIPT>
+    <DESCRIPT>table content loader - json download</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

@@ -264,7 +264,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     DATA(footer) = page->footer( )->overflow_toolbar( ).
     footer->button( icon = 'sap-icon://create'  text = `New` press = client->_event( 'NEW' )
-        )->button( text  = 'Load' press = client->_event( 'CONFIG' ) icon  = `sap-icon://download-from-cloud`
+        )->button( text  = 'Load' press = client->_event( 'LOAD' ) icon  = `sap-icon://download-from-cloud`
         )->button(  text  = 'Save Draft' press = client->_event( 'DOWNLOAD' ) icon = `sap-icon://upload-to-cloud`
         )->input( description = `Table` value = client->_bind_edit( ms_draft-table_name ) width = `15%` enabled = abap_false
         )->toolbar_spacer( ).

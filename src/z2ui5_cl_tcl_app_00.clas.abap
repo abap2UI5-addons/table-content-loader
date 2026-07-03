@@ -49,7 +49,7 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
          )->get( )->tile_content(
            )->image_content( src = 'sap-icon://download' ).
 
-page = page->get_parent( )->hbox( ).
+      page = page->get_parent( )->hbox( ).
 
       page->generic_tile(
          class     = 'sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout'

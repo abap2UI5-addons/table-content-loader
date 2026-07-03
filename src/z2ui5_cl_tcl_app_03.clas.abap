@@ -86,10 +86,6 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
             FROM (ms_app-db_table)
             INTO ms_app-db_table_entries.
 
-*            IF to_upper( ms_app-db_table(1) ) <>  `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
-*              client->message_box_display( `Only Tables in namespace Z or Y allowed` ).
-*            ENDIF.
-
             client->view_model_update( ).
           CATCH cx_root.
             client->message_box_display( `DB Table not found, check input: ` && ms_app-db_table ).
@@ -178,8 +174,6 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
     )->input( width = `30%` description = `DB Entries` value = client->_bind_edit( ms_app-db_table_entries ) enabled = abap_false
     )->label( `(2) DB -> JSON`
    )->button( text = `Go` width = `10%` press = client->_event( `PROCESS` )
-*    )->label(
-*    )->input( width = `30%` description = `Number of Entries` value = client->_bind_edit( ms_app-file_entries )  enabled = abap_false
     )->label( `(3) Preview JSON`
      )->button( text = `Go` width = `10%` press = client->_event( `PREVIEW` )
    )->label( `(4) Export`

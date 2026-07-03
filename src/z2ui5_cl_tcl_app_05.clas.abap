@@ -76,9 +76,6 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
             )->input( value = client->_bind_edit( mv_tab_name ) width = `20%`
             )->button( text = 'edit'
             )->toolbar_spacer(
-*            )->button( text = 'File Upload'
-*            )->button( text = 'View/Change/Download'
-*            )->button( text = 'JSON/XML Editor'
             ).
 
     IF mv_check_download = abap_true.

@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>Z2UI5_CL_TCL_APP_05</CLSNAME>
     <LANGU>E</LANGU>
-    <DESCRIPT>dbl - xlsx upload</DESCRIPT>
+    <DESCRIPT>table content loader - xlsx upload</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>
