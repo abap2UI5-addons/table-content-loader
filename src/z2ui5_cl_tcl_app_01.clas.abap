@@ -48,7 +48,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
     IF client->get( )-check_on_navigated = abap_true.
       TRY.
-          DATA(lo_popup_file) = CAST z2ui5_cl_pop_file_ul( client->get_app( client->get( )-s_draft-id_prev_app ) ).
+          DATA(lo_popup_file) = CAST z2ui5_cl_popup_file_ul( client->get_app( client->get( )-s_draft-id_prev_app ) ).
           IF lo_popup_file->result( )-check_confirmed = abap_true.
             ms_app-file = lo_popup_file->result( )-value.
             client->message_toast_display( `File uploaded successfully` ).
@@ -59,7 +59,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         CATCH cx_root.
       ENDTRY.
       TRY.
-          DATA(lo_popup_confirm) = CAST z2ui5_cl_pop_to_confirm( client->get_app( client->get( )-s_draft-id_prev_app ) ).
+          DATA(lo_popup_confirm) = CAST z2ui5_cl_popup_to_confirm( client->get_app( client->get( )-s_draft-id_prev_app ) ).
           IF lo_popup_confirm->result( ) = abap_true.
 
             FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
@@ -138,13 +138,13 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           ENDIF.
         ENDLOOP.
 
-        client->nav_app_call( z2ui5_cl_pop_table=>factory( <tab2> ) ).
+        client->nav_app_call( z2ui5_cl_popup_table=>factory( <tab2> ) ).
 
       WHEN 'DB_SAVE'.
-        client->nav_app_call( z2ui5_cl_pop_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?` ) ).
+        client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?` ) ).
 
       WHEN 'UPLOAD'.
-        client->nav_app_call( z2ui5_cl_pop_file_ul=>factory( ) ).
+        client->nav_app_call( z2ui5_cl_popup_file_ul=>factory( ) ).
 
       WHEN 'BUTTON_CANCEL'.
         client->message_toast_display( |cancel| ).
