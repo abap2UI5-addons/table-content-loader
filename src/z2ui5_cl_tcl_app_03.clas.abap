@@ -122,10 +122,10 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         UP TO 10 ROWS.
 
         DATA(lv_prev_json) = z2ui5_cl_util=>json_stringify( <tab2> ).
-        client->nav_app_call( z2ui5_cl_pop_textedit=>factory( lv_prev_json ) ).
+        client->nav_app_call( z2ui5_cl_popup_textedit=>factory( lv_prev_json ) ).
 
       WHEN 'DOWNLOAD'.
-        client->nav_app_call( z2ui5_cl_pop_file_dl=>factory( ms_app-file ) ).
+        client->nav_app_call( z2ui5_cl_popup_file_dl=>factory( ms_app-file ) ).
 
       WHEN 'BUTTON_CANCEL'.
         client->message_toast_display( |cancel| ).

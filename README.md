@@ -14,6 +14,7 @@ _Supported Formats: JSON, CSV, XLSX..._
 
 #### Dependencies
 * [abap2UI5](https://github.com/abap2UI5/abap2UI5)
+* [popups](https://github.com/abap2UI5-addons/popups)
 * [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx)
 
 #### Limitations & Todo

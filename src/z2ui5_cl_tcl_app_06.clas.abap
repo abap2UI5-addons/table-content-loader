@@ -123,7 +123,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     TRY.
         DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
-        ms_draft-table_name = CAST z2ui5_cl_pop_input_val( lo_prev )->result( )-value.
+        ms_draft-table_name = CAST z2ui5_cl_popup_input_val( lo_prev )->result( )-value.
         ms_draft-check_load_pressed = abap_true.
 
         ms_draft-t_tab = z2ui5_cl_util=>rtti_create_tab_by_name( ms_draft-table_name ).
@@ -235,7 +235,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         set_view( ).
 
       WHEN `NEW`.
-        DATA(lo_app) = z2ui5_cl_pop_input_val=>factory(
+        DATA(lo_app) = z2ui5_cl_popup_input_val=>factory(
             title   = `Create a New XLSX Draft`
             text    = `Database Table:`
             val     = ms_draft-table_name ).
