@@ -127,16 +127,11 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
       WHEN `PREVIEW`.
 
         DATA lr_tab TYPE REF TO data.
-        DATA lr_dummy TYPE REF TO data.
 
         lr_tab = z2ui5_cl_util=>conv_copy_ref_data( mt_tab ).
 
         ASSIGN lr_tab->* TO <tab2>.
-        LOOP AT <tab2> REFERENCE INTO lr_dummy.
-          IF sy-tabix > 5.
-            DELETE <tab2>.
-          ENDIF.
-        ENDLOOP.
+        DELETE <tab2> FROM 6.
 
         client->nav_app_call( z2ui5_cl_popup_table=>factory( <tab2> ) ).
 
