@@ -421,7 +421,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     IF mv_check_download_file = abap_true.
       mv_check_download_file = abap_false.
 
-      page->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:text/csv;base64,` && mv_file ) ( n = `hidden` v = `hidden` ) ) ).
+      page->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && mv_file ) ( n = `hidden` v = `hidden` ) ) ).
 
     ENDIF.
 

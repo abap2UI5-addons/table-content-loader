@@ -84,7 +84,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
       mv_check_download = abap_false.
       DATA(lv_xlsx) = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( <tab> ).
       DATA(lv_base) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xlsx ).
-      view->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:text/csv;base64,` && lv_base ) ( n = `hidden` v = `hidden` ) ) ).
+      view->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && lv_base ) ( n = `hidden` v = `hidden` ) ) ).
     ENDIF.
 
     IF mr_table IS NOT INITIAL.

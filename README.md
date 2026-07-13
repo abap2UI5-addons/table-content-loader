@@ -17,7 +17,7 @@ _Supported Formats: JSON, CSV, XLSX..._
 * Data Preview
 
 #### Compatibility
-* S/4 Public Cloud ABAP and BTP ABAP Environment (ABAP for Cloud)
+* S/4 Public Cloud and BTP ABAP Environment (ABAP for Cloud)
 * S/4 Private Cloud or On-Premise (ABAP for Cloud, Standard ABAP)
 * SAP NetWeaver AS ABAP 7.50 or higher (Standard ABAP)
 
@@ -38,4 +38,4 @@ This is a developer tool. It reads from and writes to any table the user names, 
 <img width="700" alt="Table Content Loader start page with tiles for JSON, CSV and XLSX upload and download" src="https://github.com/abap2UI5-addons/table-content-loader/assets/102328295/73e044dc-137d-49fe-b6ac-0247fb542a0f">
 
 #### Contribution & Support
-Pull Requests are welcome! Whether you're fixing a bug, adding new functionality, or improving the documentation, your contributions are always appreciated. If you run into problems, feel free to open an issue.
+Pull requests are welcome! Whether you're fixing bugs, adding new functionality, or improving documentation, your contributions are highly appreciated. If you encounter any issues, feel free to open an issue.

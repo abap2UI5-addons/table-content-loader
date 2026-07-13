@@ -17,5 +17,8 @@
   "homepage": "https://github.com/abap2UI5-addons/table-content-loader#readme",
   "devDependencies": {
     "@abaplint/cli": "^2.119.14"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

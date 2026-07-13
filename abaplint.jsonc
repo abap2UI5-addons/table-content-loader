@@ -43,6 +43,7 @@
     "unknown_types": true,
     "xml_consistency": true,
     "exporting": true,
-    "omit_parameter_name": true
+    "omit_parameter_name": true,
+    "prefix_is_current_class": true
   }
 }
