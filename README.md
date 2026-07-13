@@ -12,6 +12,9 @@ _Supported Formats: JSON, CSV, XLSX..._
 * S/4 Private Cloud or On-Premise (ABAP for Cloud, Standard ABAP)
 * SAP NetWeaver AS ABAP 7.50 or higher (Standard ABAP)
 
+#### Security
+This is a developer tool. It reads from and writes to any table the user names, without an authorization check of its own (the Z/Y namespace hint on write is only a warning, not an enforced restriction). Before using it beyond a development system, add your own authorization checks (e.g. `AUTHORITY-CHECK` on `S_TABU_DIS`/`S_TABU_NAM`) and restrict who may run the app.
+
 #### Dependencies
 * [abap2UI5](https://github.com/abap2UI5/abap2UI5)
 * [popups](https://github.com/abap2UI5-addons/popups)
