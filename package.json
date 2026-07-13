@@ -1,0 +1,26 @@
+{
+  "name": "abap2ui5-table-content-loader",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Upload, edit and download table content (JSON, CSV, XLSX), built with abap2UI5.",
+  "scripts": {
+    "rename": "abaplint .github/abaplint/rename.json --rename"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abap2UI5-addons/table-content-loader.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/abap2UI5-addons/table-content-loader/issues"
+  },
+  "homepage": "https://github.com/abap2UI5-addons/table-content-loader#readme",
+  "devDependencies": {
+    "@abaplint/cli": "^2.119.14",
+    "@abaplint/database-sqlite": "^2.11.78",
+    "@abaplint/runtime": "^2.13.22",
+    "@abaplint/transpiler-cli": "^2.13.22",
+    "@types/node": "^22.10.5",
+    "npm-check-updates": "^17.1.18"
+  }
+}
