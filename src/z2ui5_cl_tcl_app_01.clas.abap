@@ -110,7 +110,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table).
             ASSIGN mt_tab->* TO <tab2>.
 
-            z2ui5_cl_util=>json_parse(
+            z2ui5_cl_tcl_context=>json_parse(
               EXPORTING
                 val  = ms_app-file
               CHANGING
@@ -128,7 +128,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
         DATA lr_tab TYPE REF TO data.
 
-        lr_tab = z2ui5_cl_util=>conv_copy_ref_data( mt_tab ).
+        lr_tab = z2ui5_cl_tcl_context=>conv_copy_ref_data( mt_tab ).
 
         ASSIGN lr_tab->* TO <tab2>.
         DELETE <tab2> FROM 6.

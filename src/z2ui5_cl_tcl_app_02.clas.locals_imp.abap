@@ -70,7 +70,7 @@ CLASS lcl_db IMPLEMENTATION.
 
   METHOD get_table_by_json.
 
-    z2ui5_cl_util=>json_parse( EXPORTING val  = val
+    z2ui5_cl_tcl_context=>json_parse( EXPORTING val  = val
                                CHANGING  data = result ).
 
   ENDMETHOD.
@@ -78,7 +78,7 @@ CLASS lcl_db IMPLEMENTATION.
 
   METHOD get_table_by_xml.
 
-    z2ui5_cl_util=>xml_parse( EXPORTING xml = val
+    z2ui5_cl_tcl_context=>xml_parse( EXPORTING xml = val
                               IMPORTING any = result ).
 
   ENDMETHOD.
@@ -87,10 +87,10 @@ CLASS lcl_db IMPLEMENTATION.
 
     FIELD-SYMBOLS <tab> TYPE STANDARD TABLE.
 
-    DATA(lr_tab) = z2ui5_cl_util=>itab_get_itab_by_csv( val ).
+    DATA(lr_tab) = z2ui5_cl_tcl_context=>itab_get_itab_by_csv( val ).
     ASSIGN lr_tab->* TO <tab>.
 
-    z2ui5_cl_util=>itab_corresponding( EXPORTING val = <tab>
+    z2ui5_cl_tcl_context=>itab_corresponding( EXPORTING val = <tab>
                                        CHANGING  tab = result ).
 
   ENDMETHOD.
@@ -116,25 +116,25 @@ CLASS lcl_db IMPLEMENTATION.
 
   METHOD get_csv_by_table.
 
-    result = z2ui5_cl_util=>itab_get_csv_by_itab( val ).
+    result = z2ui5_cl_tcl_context=>itab_get_csv_by_itab( val ).
 
   ENDMETHOD.
 
   METHOD get_json_by_table.
 
-    result = z2ui5_cl_util=>json_stringify( val ).
+    result = z2ui5_cl_tcl_context=>json_stringify( val ).
 
   ENDMETHOD.
 
   METHOD get_xml_by_table.
 
-    result = z2ui5_cl_util=>xml_stringify( val ).
+    result = z2ui5_cl_tcl_context=>xml_stringify( val ).
 
   ENDMETHOD.
 
   METHOD get_fieldlist_by_table.
 
-    LOOP AT z2ui5_cl_util=>rtti_get_t_attri_by_any( it_table ) REFERENCE INTO DATA(lr_attri).
+    LOOP AT z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( it_table ) REFERENCE INTO DATA(lr_attri).
       INSERT CONV #( lr_attri->name ) INTO TABLE result.
     ENDLOOP.
 

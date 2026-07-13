@@ -70,7 +70,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     TRY.
 
-        DATA(lr_tab) = z2ui5_cl_util=>rtti_create_tab_by_name( ms_draft-table_name ).
+        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_draft-table_name ).
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
 
@@ -93,7 +93,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                                                                     title        = ms_draft-t_config_head[ 1 ]-title
                                                                     settings     = ms_draft-t_config[ 1 ]
                                                                     fieldcatalog = ms_draft-t_fcat ).
-        mv_file = z2ui5_cl_util=>conv_encode_x_base64( lv_result ).
+        mv_file = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_result ).
 
         ms_draft-file_rows = lines( <tab> ).
         ms_draft-file_size = xstrlen( lv_result ) / 1000.
@@ -126,7 +126,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         ms_draft-table_name = CAST z2ui5_cl_popup_input_val( lo_prev )->result( )-value.
         ms_draft-check_load_pressed = abap_true.
 
-        ms_draft-t_tab = z2ui5_cl_util=>rtti_create_tab_by_name( ms_draft-table_name ).
+        ms_draft-t_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_draft-table_name ).
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN  ms_draft-t_tab->* TO <tab>.
 
@@ -340,7 +340,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                )->button( text = `Reset` press = client->_event( `RESET_CONFIG` ) icon = `sap-icon://refresh` type = `Emphasized`
       )->get_parent( )->get_parent( ).
 
-    DATA(lt_fields) = z2ui5_cl_util=>rtti_get_t_attri_by_any( ms_draft-t_config ).
+    DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_config ).
 
     DATA(lo_columns) = tab->columns( ).
     LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
@@ -368,7 +368,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                )->button( text = `Reset` press = client->_event( `RESET_CONFIG` ) icon = `sap-icon://refresh` type = `Emphasized`
       )->get_parent( )->get_parent( ).
 
-    lt_fields = z2ui5_cl_util=>rtti_get_t_attri_by_any( ms_draft-t_config_head ).
+    lt_fields = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_config_head ).
 
     lo_columns = tab->columns( ).
     LOOP AT lt_fields INTO lv_field FROM 1.
@@ -401,7 +401,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                )->button( text = `Reset` press = client->_event( `RESET_FCAT` ) icon = `sap-icon://refresh` type = `Emphasized`
       )->get_parent( )->get_parent( ).
 
-    DATA(lt_fields) = z2ui5_cl_util=>rtti_get_t_attri_by_any( ms_draft-t_fcat ).
+    DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_fcat ).
 
     DATA(lo_columns) = tab->columns( ).
     LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
@@ -469,7 +469,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                  )->button( text = `Reset` press = client->_event( `LOAD` ) icon = `sap-icon://refresh` type = `Emphasized`
         )->get_parent( )->get_parent( ).
 
-      DATA(lt_fields) = z2ui5_cl_util=>rtti_get_t_attri_by_any( <tab> ).
+      DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
 
       DATA(lo_columns) = tab->columns( ).
       LOOP AT lt_fields INTO DATA(lv_field) FROM 1.

@@ -17,11 +17,11 @@ CLASS ltcl_unit_test IMPLEMENTATION.
     DATA(lv_csv_base64) =
 `VXNlcm5hbWUsIElkZW50aWZpZXIsRmlyc3QgbmFtZSxMYXN0IG5hbWUNCmJvb2tlcjEyLDkwMTIsUmFjaGVsLEJvb2tlcg0KZ3JleTA3LDIwNzAsTGF1cmEsR3JleQ0Kam9obnNvbjgxLDQwODEsQ3JhaWcsSm9obnNvbg0KamVua2luczQ2LDkzNDYsTWFyeSxKZW5raW5zDQpzbWl0aDc5LDUwNzksSmFtaWUsU21pdGg=`.
 
-    DATA(lv_data) = z2ui5_cl_util=>conv_decode_x_base64( lv_csv_base64 ).
-    DATA(lv_ready) = z2ui5_cl_util=>conv_get_string_by_xstring( lv_data ).
+    DATA(lv_data) = z2ui5_cl_tcl_context=>conv_decode_x_base64( lv_csv_base64 ).
+    DATA(lv_ready) = z2ui5_cl_tcl_context=>conv_get_string_by_xstring( lv_data ).
 
-    DATA(lv_readyx) = z2ui5_cl_util=>conv_get_xstring_by_string( lv_ready ).
-    DATA(lv_data2) = z2ui5_cl_util=>conv_encode_x_base64( lv_readyx ).
+    DATA(lv_readyx) = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_ready ).
+    DATA(lv_data2) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_readyx ).
 
     IF lv_data2 <> lv_csv_base64.
       ASSERT 1 = 0.
