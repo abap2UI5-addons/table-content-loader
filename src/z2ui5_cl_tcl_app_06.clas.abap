@@ -130,7 +130,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN  ms_draft-t_tab->* TO <tab>.
 
-        ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( ip_table = <tab> ).
+        ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( <tab> ).
         DATA ls_table_settings TYPE zexcel_s_table_settings.
         ls_table_settings-table_style  = zcl_excel_table=>builtinstyle_medium5.
         INSERT ls_table_settings INTO TABLE ms_draft-t_config.
@@ -222,7 +222,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         IF ms_draft-t_tab IS BOUND.
           FIELD-SYMBOLS <tab_fcat> TYPE table.
           ASSIGN ms_draft-t_tab->* TO <tab_fcat>.
-          ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( ip_table = <tab_fcat> ).
+          ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( <tab_fcat> ).
         ENDIF.
         set_view( ).
 
@@ -332,7 +332,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
      ).
 
     DATA(tab) = cont->table(
-            items = client->_bind_edit( ms_draft-t_config )
+            client->_bind_edit( ms_draft-t_config )
        )->header_toolbar(
            )->overflow_toolbar(
                )->title( `Excel Configuration`
@@ -360,7 +360,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
      ).
 
     tab = cont->table(
-            items = client->_bind_edit( ms_draft-t_config_head )
+            client->_bind_edit( ms_draft-t_config_head )
        )->header_toolbar(
            )->overflow_toolbar(
                )->title( `Parameter`
@@ -393,7 +393,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
      ).
 
     DATA(tab) = cont->table(
-            items = client->_bind_edit( ms_draft-t_fcat )
+            client->_bind_edit( ms_draft-t_fcat )
        )->header_toolbar(
            )->overflow_toolbar(
                )->title( `Excel Fieldcatalog`
@@ -430,7 +430,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                                        editable = `true` ).
 
     content->label( `Activate Row Limitation`
-         )->checkbox( selected = client->_bind_edit( ms_draft-check_file_row_limit )
+         )->checkbox( client->_bind_edit( ms_draft-check_file_row_limit )
         )->label( `Rows`
         )->input( value = client->_bind_edit( ms_draft-file_max_rows ) enabled = client->_bind_edit( ms_draft-check_file_row_limit ) width = `10%`
         )->label( `Prepare File with abap2xlsx`
@@ -460,7 +460,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
        ).
 
       DATA(tab) = cont->table(
-              items = client->_bind( <tab> )
+              client->_bind( <tab> )
          )->header_toolbar(
              )->overflow_toolbar(
                  )->title( `(1) Data Preview - ` && ms_draft-table_name

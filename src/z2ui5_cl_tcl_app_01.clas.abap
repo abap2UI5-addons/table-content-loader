@@ -100,7 +100,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
             client->view_model_update( ).
           CATCH cx_root.
-            client->message_box_display( `DB Table not found, check input: ` && ms_app-db_table ).
+            client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
         ENDTRY.
 
       WHEN `PROCESS`.
@@ -142,7 +142,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         client->nav_app_call( z2ui5_cl_popup_file_ul=>factory( ) ).
 
       WHEN 'BUTTON_CANCEL'.
-        client->message_toast_display( |cancel| ).
+        client->message_toast_display( `Cancelled` ).
 
       WHEN 'BACK'.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).

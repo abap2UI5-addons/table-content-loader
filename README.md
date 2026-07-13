@@ -1,3 +1,8 @@
+[![ABAP_STANDARD](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ABAP_STANDARD.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ABAP_STANDARD.yaml)
+[![ABAP_CLOUD](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ABAP_CLOUD.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ABAP_CLOUD.yaml)
+<br>
+[![rename_test](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/rename_test.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/rename_test.yaml)
+
 # Table Content Loader
 Upload, Edit & Download Table Content <br><br>
 _Supported Formats: JSON, CSV, XLSX..._

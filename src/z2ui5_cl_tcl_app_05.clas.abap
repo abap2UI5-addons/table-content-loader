@@ -91,7 +91,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
       ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->table(
-              items = client->_bind_edit( <tab> )
+              client->_bind_edit( <tab> )
           )->header_toolbar(
               )->overflow_toolbar(
                   )->title( 'XLSX Content'
@@ -123,7 +123,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
     footer->_z2ui5( )->file_uploader(
       value       = client->_bind_edit( mv_value )
       path        = client->_bind_edit( mv_path )
-      placeholder = 'filepath here...'
+      placeholder = `File path here...`
       upload      = client->_event( 'UPLOAD' ) ).
 
     footer->toolbar_spacer(
