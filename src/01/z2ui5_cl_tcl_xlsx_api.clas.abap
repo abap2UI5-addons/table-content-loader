@@ -51,7 +51,7 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
     lt_field_catalog = fieldcatalog.
     IF lt_field_catalog IS INITIAL.
-      lt_field_catalog = zcl_excel_common=>get_fieldcatalog( ip_table = val ).
+      lt_field_catalog = zcl_excel_common=>get_fieldcatalog( val ).
     ENDIF.
 
     ls_table_settings = settings.

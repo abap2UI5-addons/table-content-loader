@@ -335,8 +335,8 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
             )->label( 'Table'
             )->input( 'SPFLI'
             )->label( 'Format'
-            )->segmented_button( client->_bind_edit( ms_import-segment_key ) )->get(
-                )->items( )->get(
+            )->segmented_button( client->_bind_edit( ms_import-segment_key )
+                )->items(
                     )->segmented_button_item( key = 'json' text = 'json'
                     )->segmented_button_item( key = 'csv'  text = 'csv'
                     )->segmented_button_item( key = 'xml'  text = 'xml' ).

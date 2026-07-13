@@ -43,10 +43,10 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
 
           WHEN 'UPLOAD'.
 
-            DATA(lv_data) = z2ui5_cl_util=>conv_get_xstring_by_data_uri( mv_value ).
-            DATA(lv_ready) = z2ui5_cl_util=>conv_get_string_by_xstring( lv_data ).
+            DATA(lv_data) = z2ui5_cl_tcl_context=>conv_get_xstring_by_data_uri( mv_value ).
+            DATA(lv_ready) = z2ui5_cl_tcl_context=>conv_get_string_by_xstring( lv_data ).
 
-            mr_table = z2ui5_cl_util=>itab_get_itab_by_csv( lv_ready ).
+            mr_table = z2ui5_cl_tcl_context=>itab_get_itab_by_csv( lv_ready ).
             client->message_box_display( `CSV loaded to table` ).
 
             ui5_view_main_display( ).
@@ -96,9 +96,9 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
       FIELD-SYMBOLS <tab> TYPE table.
       ASSIGN mr_table->* TO <tab>.
       mv_check_download = abap_false.
-      DATA(lv_csv) = z2ui5_cl_util=>itab_get_csv_by_itab( <tab> ).
-      DATA(lv_xcsv) = z2ui5_cl_util=>conv_get_xstring_by_string( lv_csv ).
-      DATA(lv_base) = z2ui5_cl_util=>conv_encode_x_base64( lv_xcsv ).
+      DATA(lv_csv) = z2ui5_cl_tcl_context=>itab_get_csv_by_itab( <tab> ).
+      DATA(lv_xcsv) = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_csv ).
+      DATA(lv_base) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xcsv ).
       view->_cc_plain_xml( '<html:iframe src="data:text/csv;base64,' && lv_base && '" height="0%" width="0%"/>' ).
     ENDIF.
 
@@ -106,7 +106,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
       ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->table(
-              items = client->_bind_edit( <tab> )
+              client->_bind_edit( <tab> )
           )->header_toolbar(
               )->overflow_toolbar(
                   )->title( 'CSV Content'
@@ -119,7 +119,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
           )->get_parent( )->get_parent( ).
 
 
-      DATA(lr_fields) = VALUE string_table( FOR row IN z2ui5_cl_util=>rtti_get_t_attri_by_any( <tab> ) ( row-name ) ).
+      DATA(lr_fields) = VALUE string_table( FOR row IN z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ) ( row-name ) ).
       DATA(lo_cols) = tab->columns( ).
       LOOP AT lr_fields REFERENCE INTO DATA(lr_col).
         lo_cols->column( )->text( lr_col->* ).
@@ -139,7 +139,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
     footer->_z2ui5( )->file_uploader(
       value       = client->_bind_edit( mv_value )
       path        = client->_bind_edit( mv_path )
-      placeholder = 'filepath here...'
+      placeholder = `File path here...`
       upload      = client->_event( 'UPLOAD' ) ).
 
     footer->toolbar_spacer(

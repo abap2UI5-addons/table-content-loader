@@ -1,6 +1,6 @@
 {
   "global": {
-    "files": "/src/**/*.*"
+    "files": "/../../src/**/*.*"
   },
   "dependencies": [
     {
@@ -24,26 +24,40 @@
       "files": "/src/**/*.*"
     }
   ],
+  "rename": {
+    "output": "output",
+    "patterns": [
+      {
+        "type": "CLAS|INTF|TABL",
+        "oldName": "z2ui5_(.*)",
+        "newName": "zabap2ui5_$1"
+      }
+    ]
+  },
   "syntax": {
     "version": "v750",
     "errorNamespace": "."
   },
   "rules": {
-    "downport": true,
+    "allowed_object_types": {
+      "allowed": [
+        "CLAS",
+        "DEVC",
+        "INTF",
+        "TABL"
+      ]
+    },
+    "allowed_object_naming": true,
     "begin_end_names": true,
     "check_ddic": true,
     "check_include": true,
     "check_syntax": true,
     "global_class": true,
-    "definitions_top": false,
     "implement_methods": true,
     "method_implemented_twice": true,
     "parser_error": true,
     "superclass_final": true,
     "unknown_types": true,
-    "xml_consistency": true,
-    "exporting": true,
-    "omit_parameter_name": true,
-    "prefix_is_current_class": true
+    "xml_consistency": true
   }
 }

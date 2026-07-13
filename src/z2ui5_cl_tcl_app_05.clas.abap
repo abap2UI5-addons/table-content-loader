@@ -40,7 +40,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
 
           WHEN 'UPLOAD'.
 
-            DATA(lv_xdata) = z2ui5_cl_util=>conv_get_xstring_by_data_uri( mv_value ).
+            DATA(lv_xdata) = z2ui5_cl_tcl_context=>conv_get_xstring_by_data_uri( mv_value ).
             mr_table = z2ui5_cl_tcl_xlsx_api=>get_table_by_xlsx( lv_xdata ).
             client->message_box_display( `XLSX loaded to table` ).
 
@@ -83,15 +83,15 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
       ASSIGN mr_table->* TO <tab>.
       mv_check_download = abap_false.
       DATA(lv_xlsx) = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( <tab> ).
-      DATA(lv_base) = z2ui5_cl_util=>conv_encode_x_base64( lv_xlsx ).
-      view->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:text/csv;base64,` && lv_base ) ( n = `hidden` v = `hidden` ) ) ).
+      DATA(lv_base) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xlsx ).
+      view->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && lv_base ) ( n = `hidden` v = `hidden` ) ) ).
     ENDIF.
 
     IF mr_table IS NOT INITIAL.
       ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->table(
-              items = client->_bind_edit( <tab> )
+              client->_bind_edit( <tab> )
           )->header_toolbar(
               )->overflow_toolbar(
                   )->title( 'XLSX Content'
@@ -103,7 +103,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
                         customtextoff = 'View'
           )->get_parent( )->get_parent( ).
 
-      DATA(lr_fields) = z2ui5_cl_util=>rtti_get_t_attri_by_any( <tab> ).
+      DATA(lr_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
       DATA(lo_cols) = tab->columns( ).
       LOOP AT lr_fields REFERENCE INTO DATA(lr_col).
         lo_cols->column( )->text( lr_col->name ).
@@ -123,7 +123,7 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
     footer->_z2ui5( )->file_uploader(
       value       = client->_bind_edit( mv_value )
       path        = client->_bind_edit( mv_path )
-      placeholder = 'filepath here...'
+      placeholder = `File path here...`
       upload      = client->_event( 'UPLOAD' ) ).
 
     footer->toolbar_spacer(

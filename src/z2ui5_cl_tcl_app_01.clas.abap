@@ -9,7 +9,6 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
     DATA:
       BEGIN OF ms_app,
         check_initialized     TYPE abap_bool,
-        max_rows              TYPE string,
         file                  TYPE string,
         file_size             TYPE string,
         file_entries          TYPE string,
@@ -85,7 +84,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
     CASE client->get( )-event.
 
-      WHEN 'DB_CHECK'.
+      WHEN `DB_CHECK`.
 
         TRY.
             ms_app-db_table = to_upper( ms_app-db_table ).
@@ -94,13 +93,13 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             FROM (ms_app-db_table)
             INTO ms_app-db_table_entries.
 
-            IF to_upper( ms_app-db_table(1) ) <>  `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
+            IF to_upper( ms_app-db_table(1) ) <> `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
               client->message_box_display( `Only Tables in namespace Z or Y allowed` ).
             ENDIF.
 
             client->view_model_update( ).
           CATCH cx_root.
-            client->message_box_display( `DB Table not found, check input: ` && ms_app-db_table ).
+            client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
         ENDTRY.
 
       WHEN `PROCESS`.
@@ -110,7 +109,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table).
             ASSIGN mt_tab->* TO <tab2>.
 
-            z2ui5_cl_util=>json_parse(
+            z2ui5_cl_tcl_context=>json_parse(
               EXPORTING
                 val  = ms_app-file
               CHANGING
@@ -127,29 +126,24 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
       WHEN `PREVIEW`.
 
         DATA lr_tab TYPE REF TO data.
-        DATA lr_dummy TYPE REF TO data.
 
-        lr_tab = z2ui5_cl_util=>conv_copy_ref_data( mt_tab ).
+        lr_tab = z2ui5_cl_tcl_context=>conv_copy_ref_data( mt_tab ).
 
         ASSIGN lr_tab->* TO <tab2>.
-        LOOP AT <tab2> REFERENCE INTO lr_dummy.
-          IF sy-tabix > 5.
-            DELETE <tab2>.
-          ENDIF.
-        ENDLOOP.
+        DELETE <tab2> FROM 6.
 
         client->nav_app_call( z2ui5_cl_popup_table=>factory( <tab2> ) ).
 
-      WHEN 'DB_SAVE'.
+      WHEN `DB_SAVE`.
         client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?` ) ).
 
-      WHEN 'UPLOAD'.
+      WHEN `UPLOAD`.
         client->nav_app_call( z2ui5_cl_popup_file_ul=>factory( ) ).
 
-      WHEN 'BUTTON_CANCEL'.
-        client->message_toast_display( |cancel| ).
+      WHEN `BUTTON_CANCEL`.
+        client->message_toast_display( `Cancelled` ).
 
-      WHEN 'BACK'.
+      WHEN `BACK`.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
 
     ENDCASE.
@@ -170,7 +164,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
     DATA(page) = view->shell( appwidthlimited = client->_bind_edit( ms_app-check_appwidthlimited ) )->page(
                 title          = 'abap2UI5 - JSON File Upload'
-                navbuttonpress = client->_event( 'BACK' )
+                navbuttonpress = client->_event( `BACK` )
                 shownavbutton = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
           )->header_content(
                )->overflow_toolbar(
@@ -202,7 +196,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         )->label( `(4) Preview Rows`
          )->button( text = `Go` width = `10%` press = client->_event( `PREVIEW` )
        )->label( `(5) Save Database`
-       )->text( `Attention - Database Content will be deleted!!!`
+       )->text( `Attention - Database Content will be deleted!`
        )->label(
        )->button( text = `Run` width = `10%` press = client->_event( `DB_SAVE` )
        ).

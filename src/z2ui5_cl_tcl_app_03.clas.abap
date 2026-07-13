@@ -17,10 +17,7 @@ CLASS z2ui5_cl_tcl_app_03 DEFINITION
         check_initialized     TYPE abap_bool,
         check_popup           TYPE abap_bool,
         itab                  TYPE REF TO data,
-        max_rows              TYPE string,
         file                  TYPE string,
-        file_size             TYPE string,
-        file_entries          TYPE string,
         check_appwidthlimited TYPE abap_bool VALUE abap_true,
         db_table              TYPE string VALUE 'SPFLI',
         db_table_entries      TYPE string,
@@ -46,7 +43,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
   METHOD factory_popup_by_itab.
 
     result = NEW #( ).
-    result->ms_app-itab = z2ui5_cl_util=>conv_copy_ref_data( itab ).
+    result->ms_app-itab = z2ui5_cl_tcl_context=>conv_copy_ref_data( itab ).
     result->ms_app-check_popup = abap_true.
 
   ENDMETHOD.
@@ -88,14 +85,14 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             client->view_model_update( ).
           CATCH cx_root.
-            client->message_box_display( `DB Table not found, check input: ` && ms_app-db_table ).
+            client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
         ENDTRY.
 
       WHEN `PROCESS`.
 
         FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
 
-        mt_tab = z2ui5_cl_util=>rtti_create_tab_by_name( ms_app-db_table ).
+        mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
         ASSIGN mt_tab->* TO <tab2>.
 
         SELECT *
@@ -104,7 +101,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
         TRY.
 
-            ms_app-file = z2ui5_cl_util=>json_stringify( <tab2> ).
+            ms_app-file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
             client->message_toast_display( |JSON created| ).
 
           CATCH cx_root INTO DATA(x).
@@ -113,7 +110,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
       WHEN `PREVIEW`.
 
-        mt_tab = z2ui5_cl_util=>rtti_create_tab_by_name( ms_app-db_table ).
+        mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
         ASSIGN mt_tab->* TO <tab2>.
 
         SELECT *
@@ -121,14 +118,14 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         INTO CORRESPONDING FIELDS OF TABLE <tab2>
         UP TO 10 ROWS.
 
-        DATA(lv_prev_json) = z2ui5_cl_util=>json_stringify( <tab2> ).
+        DATA(lv_prev_json) = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
         client->nav_app_call( z2ui5_cl_popup_textedit=>factory( lv_prev_json ) ).
 
       WHEN 'DOWNLOAD'.
         client->nav_app_call( z2ui5_cl_popup_file_dl=>factory( ms_app-file ) ).
 
       WHEN 'BUTTON_CANCEL'.
-        client->message_toast_display( |cancel| ).
+        client->message_toast_display( `Cancelled` ).
 
       WHEN 'BACK'.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
