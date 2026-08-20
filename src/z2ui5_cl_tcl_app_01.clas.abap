@@ -160,46 +160,94 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
   METHOD z2ui5_view_display.
 
-    DATA(view) = z2ui5_cl_xml_view=>factory( ).
+    DATA(view) = z2ui5_cl_ui5_view_builder=>factory( 
+                     )->ele( n = `View` ns = `mvc` 
+                     )->a( n = `xmlns` v = `sap.m` 
+                     )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc` 
+                     )->a( n = `xmlns:core` v = `sap.ui.core` 
+                     )->a( n = `xmlns:form` v = `sap.ui.layout.form` 
+                     )->a( n = `displayBlock` v = `true` 
+                     )->a( n = `height` v = `100%` ).
 
-    DATA(page) = view->shell( appwidthlimited = client->_bind_edit( ms_app-check_appwidthlimited ) )->page(
-                title          = 'abap2UI5 - JSON File Upload'
-                navbuttonpress = client->_event( `BACK` )
-                shownavbutton = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
-          )->header_content(
-               )->overflow_toolbar(
-               )->toolbar_spacer(
-                )->label( `Shell`
-                )->switch( state = client->_bind_edit( ms_app-check_appwidthlimited )
-                )->link(
-                    text = 'Project on GitHub'
-                    target = '_blank'
-                    href = `https://github.com/abap2UI5-addons/table-content-loader`
-                )->get_parent( )->get_parent( ).
+    DATA(page) = view->ele( `Shell` 
+                     )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited ) 
+                     )->ele( `Page` 
+                     )->a( n = `title` v = 'abap2UI5 - JSON File Upload' 
+                     )->a( n = `navButtonPress` v = client->_event( `BACK` ) 
+                     )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ) 
+                     )->ele( `headerContent` 
+                     )->ele( `OverflowToolbar` 
+                     )->tag( `ToolbarSpacer` 
+                     )->tag( `Label` 
+                     )->a( n = `text` v = `Shell` 
+                     )->tag( `Switch` 
+                     )->a( n = `state` v = client->_bind_edit( ms_app-check_appwidthlimited ) 
+                     )->tag( `Link` 
+                     )->a( n = `text` v = 'Project on GitHub' 
+                     )->a( n = `target` v = '_blank' 
+                     )->a( n = `href` v = `https://github.com/abap2UI5-addons/table-content-loader` 
+                     )->end( 
+                     )->end( ).
 
-    DATA(content) = page->simple_form( editable = `true` ).
+    DATA(content) = page->ele( n = `SimpleForm` ns = `form` 
+                        )->a( n = `editable` v = `true` ).
 
-    content->label( `(1) JSON File Upload`
-        )->button( text = `Go` width = `10%` press = client->_event( `UPLOAD` )
-          )->label(
-         )->input( width = `30%` description = `Size (kB)` value = client->_bind( ms_app-file_size ) enabled = abap_false
-        )->label( `(2) Check DB Table`
-        )->input( width = `30%` description =  `DB Table` value = client->_bind_edit( ms_app-db_table )
-         )->label(
-        )->button( text = `Go` width = `10%` press = client->_event( `DB_CHECK` )
-        )->label(
-        )->input( width = `30%` description = `DB Entries` value = client->_bind_edit( ms_app-db_table_entries ) enabled = abap_false
-        )->label( `(3) JSON -> ITAB`
-       )->button( text = `Go` width = `10%` press = client->_event( `PROCESS` )
-        )->label(
-        )->input( width = `30%` description = `Number of Entries` value = client->_bind_edit( ms_app-file_entries )  enabled = abap_false
-        )->label( `(4) Preview Rows`
-         )->button( text = `Go` width = `10%` press = client->_event( `PREVIEW` )
-       )->label( `(5) Save Database`
-       )->text( `Attention - Database Content will be deleted!`
-       )->label(
-       )->button( text = `Run` width = `10%` press = client->_event( `DB_SAVE` )
-       ).
+    content->tag( `Label` 
+        )->a( n = `text` v = `(1) JSON File Upload` 
+        )->tag( `Button` 
+        )->a( n = `text` v = `Go` 
+        )->a( n = `width` v = `10%` 
+        )->a( n = `press` v = client->_event( `UPLOAD` ) 
+        )->tag( `Label` 
+        )->tag( `Input` 
+        )->a( n = `width` v = `30%` 
+        )->a( n = `description` v = `Size (kB)` 
+        )->a( n = `value` v = client->_bind( ms_app-file_size ) 
+        )->a( n = `enabled` b = abap_false 
+        )->tag( `Label` 
+        )->a( n = `text` v = `(2) Check DB Table` 
+        )->tag( `Input` 
+        )->a( n = `width` v = `30%` 
+        )->a( n = `description` v = `DB Table` 
+        )->a( n = `value` v = client->_bind_edit( ms_app-db_table ) 
+        )->tag( `Label` 
+        )->tag( `Button` 
+        )->a( n = `text` v = `Go` 
+        )->a( n = `width` v = `10%` 
+        )->a( n = `press` v = client->_event( `DB_CHECK` ) 
+        )->tag( `Label` 
+        )->tag( `Input` 
+        )->a( n = `width` v = `30%` 
+        )->a( n = `description` v = `DB Entries` 
+        )->a( n = `value` v = client->_bind_edit( ms_app-db_table_entries ) 
+        )->a( n = `enabled` b = abap_false 
+        )->tag( `Label` 
+        )->a( n = `text` v = `(3) JSON -> ITAB` 
+        )->tag( `Button` 
+        )->a( n = `text` v = `Go` 
+        )->a( n = `width` v = `10%` 
+        )->a( n = `press` v = client->_event( `PROCESS` ) 
+        )->tag( `Label` 
+        )->tag( `Input` 
+        )->a( n = `width` v = `30%` 
+        )->a( n = `description` v = `Number of Entries` 
+        )->a( n = `value` v = client->_bind_edit( ms_app-file_entries ) 
+        )->a( n = `enabled` b = abap_false 
+        )->tag( `Label` 
+        )->a( n = `text` v = `(4) Preview Rows` 
+        )->tag( `Button` 
+        )->a( n = `text` v = `Go` 
+        )->a( n = `width` v = `10%` 
+        )->a( n = `press` v = client->_event( `PREVIEW` ) 
+        )->tag( `Label` 
+        )->a( n = `text` v = `(5) Save Database` 
+        )->tag( `Text` 
+        )->a( n = `text` v = `Attention - Database Content will be deleted!` 
+        )->tag( `Label` 
+        )->tag( `Button` 
+        )->a( n = `text` v = `Run` 
+        )->a( n = `width` v = `10%` 
+        )->a( n = `press` v = client->_event( `DB_SAVE` ) ).
 
     client->view_display( view->stringify( ) ).
 
