@@ -42,19 +42,19 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
     METHODS on_init.
     METHODS set_view_load
       IMPORTING
-        page TYPE REF TO z2ui5_cl_xml_view.
+        page TYPE REF TO z2ui5_cl_ui5_view_builder.
     METHODS set_view_config
       IMPORTING
-        page TYPE REF TO z2ui5_cl_xml_view.
+        page TYPE REF TO z2ui5_cl_ui5_view_builder.
     METHODS set_view_preview
       IMPORTING
-        page TYPE REF TO z2ui5_cl_xml_view.
+        page TYPE REF TO z2ui5_cl_ui5_view_builder.
     METHODS set_view_config_pos
       IMPORTING
-        page TYPE REF TO z2ui5_cl_xml_view.
+        page TYPE REF TO z2ui5_cl_ui5_view_builder.
     METHODS set_view_download
       IMPORTING
-        page TYPE REF TO z2ui5_cl_xml_view.
+        page TYPE REF TO z2ui5_cl_ui5_view_builder.
     METHODS create_file.
 
   PROTECTED SECTION.
@@ -255,18 +255,26 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view.
 
-    DATA(view) = z2ui5_cl_xml_view=>factory( ).
+    DATA(view) = z2ui5_cl_ui5_view_builder=>factory( 
+                     )->ele( n = `View` ns = `mvc` 
+                     )->a( n = `xmlns` v = `sap.m` 
+                     )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc` 
+                     )->a( n = `xmlns:core` v = `sap.ui.core` 
+                     )->a( n = `xmlns:form` v = `sap.ui.layout.form` 
+                     )->a( n = `xmlns:html` v = `http://www.w3.org/1999/xhtml` 
+                     )->a( n = `displayBlock` v = `true` 
+                     )->a( n = `height` v = `100%` ).
 
-    DATA(page) = view->page(
-                title          = 'abap2UI5 - XLSX Download'
-                navbuttonpress = client->_event( 'BACK' )
-                shownavbutton = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
-          )->header_content(
-                )->link(
-                    text = 'Project on GitHub'
-                    target = '_blank'
-                    href = `https://github.com/abap2UI5-addons/table-content-loader`
-                )->get_parent( ).
+    DATA(page) = view->ele( `Page` 
+                     )->a( n = `title` v = 'abap2UI5 - XLSX Download' 
+                     )->a( n = `navButtonPress` v = client->_event( 'BACK' ) 
+                     )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ) 
+                     )->ele( `headerContent` 
+                     )->tag( `Link` 
+                     )->a( n = `text` v = 'Project on GitHub' 
+                     )->a( n = `target` v = '_blank' 
+                     )->a( n = `href` v = `https://github.com/abap2UI5-addons/table-content-loader` 
+                     )->end( ).
 
     CASE abap_true.
       WHEN ms_draft-check_load_pressed.
@@ -281,40 +289,53 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         set_view_download( page ).
     ENDCASE.
 
-    DATA(footer) = page->footer( )->overflow_toolbar( ).
-    footer->button( icon = 'sap-icon://create'  text = `New` press = client->_event( 'NEW' )
-        )->button( text  = 'Load' press = client->_event( 'LOAD' ) icon  = `sap-icon://download-from-cloud`
-        )->button(  text  = 'Save Draft' press = client->_event( 'DOWNLOAD' ) icon = `sap-icon://upload-to-cloud`
-        )->input( description = `Table` value = client->_bind_edit( ms_draft-table_name ) width = `15%` enabled = abap_false
-        )->toolbar_spacer( ).
+    DATA(footer) = page->ele( `footer` 
+                       )->ele( `OverflowToolbar` ).
+    footer->tag( `Button` 
+        )->a( n = `icon` v = 'sap-icon://create' 
+        )->a( n = `text` v = `New` 
+        )->a( n = `press` v = client->_event( 'NEW' ) 
+        )->tag( `Button` 
+        )->a( n = `text` v = 'Load' 
+        )->a( n = `press` v = client->_event( 'LOAD' ) 
+        )->a( n = `icon` v = `sap-icon://download-from-cloud` 
+        )->tag( `Button` 
+        )->a( n = `text` v = 'Save Draft' 
+        )->a( n = `press` v = client->_event( 'DOWNLOAD' ) 
+        )->a( n = `icon` v = `sap-icon://upload-to-cloud` 
+        )->tag( `Input` 
+        )->a( n = `description` v = `Table` 
+        )->a( n = `value` v = client->_bind_edit( ms_draft-table_name ) 
+        )->a( n = `width` v = `15%` 
+        )->a( n = `enabled` b = abap_false 
+        )->tag( `ToolbarSpacer` ).
 
     IF ms_draft-table_name IS NOT INITIAL.
-      footer->button(
-          text = '(1) Data Preview'
-          type = `Emphasized`
-          press = client->_event( 'VIEW_LOAD' )
-          enabled = xsdbool( ms_draft-check_load_pressed = abap_false )
-      )->button(
-          text = '(2) Config Head'
-          type = `Emphasized`
-          press = client->_event( 'VIEW_CONFIG' )
-          enabled = xsdbool( ms_draft-check_config_pressed = abap_false )
-       )->button(
-          text = '(3) Config Pos'
-          type = `Emphasized`
-          press = client->_event( 'VIEW_CONFIG_POS' )
-          enabled = xsdbool( ms_draft-check_config_pos_pressed = abap_false )
-      )->button(
-          text = '(4) XLSX Preview'
-          type = `Emphasized`
-          press = client->_event( 'VIEW_PREVIEW' )
-          enabled = xsdbool( ms_draft-check_preview_pressed = abap_false )
-         )->button(
-          text = '(5) Download'
-          type = `Emphasized`
-          press = client->_event( 'VIEW_DOWNLOAD' )
-          enabled = xsdbool( ms_draft-check_download_pressed = abap_false )
-      ).
+      footer->tag( `Button` 
+          )->a( n = `text` v = '(1) Data Preview' 
+          )->a( n = `type` v = `Emphasized` 
+          )->a( n = `press` v = client->_event( 'VIEW_LOAD' ) 
+          )->a( n = `enabled` b = xsdbool( ms_draft-check_load_pressed = abap_false ) 
+          )->tag( `Button` 
+          )->a( n = `text` v = '(2) Config Head' 
+          )->a( n = `type` v = `Emphasized` 
+          )->a( n = `press` v = client->_event( 'VIEW_CONFIG' ) 
+          )->a( n = `enabled` b = xsdbool( ms_draft-check_config_pressed = abap_false ) 
+          )->tag( `Button` 
+          )->a( n = `text` v = '(3) Config Pos' 
+          )->a( n = `type` v = `Emphasized` 
+          )->a( n = `press` v = client->_event( 'VIEW_CONFIG_POS' ) 
+          )->a( n = `enabled` b = xsdbool( ms_draft-check_config_pos_pressed = abap_false ) 
+          )->tag( `Button` 
+          )->a( n = `text` v = '(4) XLSX Preview' 
+          )->a( n = `type` v = `Emphasized` 
+          )->a( n = `press` v = client->_event( 'VIEW_PREVIEW' ) 
+          )->a( n = `enabled` b = xsdbool( ms_draft-check_preview_pressed = abap_false ) 
+          )->tag( `Button` 
+          )->a( n = `text` v = '(5) Download' 
+          )->a( n = `type` v = `Emphasized` 
+          )->a( n = `press` v = client->_event( 'VIEW_DOWNLOAD' ) 
+          )->a( n = `enabled` b = xsdbool( ms_draft-check_download_pressed = abap_false ) ).
     ENDIF.
 
     client->view_display( view->stringify( ) ).
@@ -324,60 +345,80 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view_config.
 
-    DATA(cont) = page->scroll_container(
-         height     = `30%`
-         width      = `100%`
-         vertical   = abap_true
-         horizontal = abap_true
-     ).
+    DATA(cont) = page->ele( `ScrollContainer` 
+                     )->a( n = `height` v = `30%` 
+                     )->a( n = `width` v = `100%` 
+                     )->a( n = `vertical` b = abap_true 
+                     )->a( n = `horizontal` b = abap_true ).
 
-    DATA(tab) = cont->table(
-            client->_bind_edit( ms_draft-t_config )
-       )->header_toolbar(
-           )->overflow_toolbar(
-               )->title( `Excel Configuration`
-               )->toolbar_spacer(
-               )->button( text = `Reset` press = client->_event( `RESET_CONFIG` ) icon = `sap-icon://refresh` type = `Emphasized`
-      )->get_parent( )->get_parent( ).
+    DATA(tab) = cont->ele( `Table` 
+                    )->a( n = `items` v = client->_bind_edit( ms_draft-t_config ) 
+                    )->ele( `headerToolbar` 
+                    )->ele( `OverflowToolbar` 
+                    )->tag( `Title` 
+                    )->a( n = `text` v = `Excel Configuration` 
+                    )->tag( `ToolbarSpacer` 
+                    )->tag( `Button` 
+                    )->a( n = `text` v = `Reset` 
+                    )->a( n = `press` v = client->_event( `RESET_CONFIG` ) 
+                    )->a( n = `icon` v = `sap-icon://refresh` 
+                    )->a( n = `type` v = `Emphasized` 
+                    )->end( 
+                    )->end( ).
 
     DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_config ).
 
-    DATA(lo_columns) = tab->columns( ).
+    DATA(lo_columns) = tab->ele( `columns` ).
     LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
-      lo_columns->column( )->text( lv_field-name ).
+      lo_columns->ele( `Column` 
+          )->tag( `Text` 
+          )->a( n = `text` v = lv_field-name ).
     ENDLOOP.
 
-    DATA(lo_cells) = tab->items( )->column_list_item( )->cells( ).
+    DATA(lo_cells) = tab->ele( `items` 
+                         )->ele( `ColumnListItem` 
+                         )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
-      lo_cells->input( `{` && lv_field-name && `}` ).
+      lo_cells->tag( `Input` 
+          )->a( n = `value` v = `{` && lv_field-name && `}` ).
     ENDLOOP.
 
-    cont = page->scroll_container(
-         height     = `30%`
-         width      = `100%`
-         vertical   = abap_true
-         horizontal = abap_true
-     ).
+    cont = page->ele( `ScrollContainer` 
+               )->a( n = `height` v = `30%` 
+               )->a( n = `width` v = `100%` 
+               )->a( n = `vertical` b = abap_true 
+               )->a( n = `horizontal` b = abap_true ).
 
-    tab = cont->table(
-            client->_bind_edit( ms_draft-t_config_head )
-       )->header_toolbar(
-           )->overflow_toolbar(
-               )->title( `Parameter`
-               )->toolbar_spacer(
-               )->button( text = `Reset` press = client->_event( `RESET_CONFIG` ) icon = `sap-icon://refresh` type = `Emphasized`
-      )->get_parent( )->get_parent( ).
+    tab = cont->ele( `Table` 
+              )->a( n = `items` v = client->_bind_edit( ms_draft-t_config_head ) 
+              )->ele( `headerToolbar` 
+              )->ele( `OverflowToolbar` 
+              )->tag( `Title` 
+              )->a( n = `text` v = `Parameter` 
+              )->tag( `ToolbarSpacer` 
+              )->tag( `Button` 
+              )->a( n = `text` v = `Reset` 
+              )->a( n = `press` v = client->_event( `RESET_CONFIG` ) 
+              )->a( n = `icon` v = `sap-icon://refresh` 
+              )->a( n = `type` v = `Emphasized` 
+              )->end( 
+              )->end( ).
 
     lt_fields = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_config_head ).
 
-    lo_columns = tab->columns( ).
+    lo_columns = tab->ele( `columns` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
-      lo_columns->column( )->text( lv_field-name ).
+      lo_columns->ele( `Column` 
+          )->tag( `Text` 
+          )->a( n = `text` v = lv_field-name ).
     ENDLOOP.
 
-    lo_cells = tab->items( )->column_list_item( )->cells( ).
+    lo_cells = tab->ele( `items` 
+                   )->ele( `ColumnListItem` 
+                   )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
-      lo_cells->input( `{` && lv_field-name && `}` ).
+      lo_cells->tag( `Input` 
+          )->a( n = `value` v = `{` && lv_field-name && `}` ).
     ENDLOOP.
 
   ENDMETHOD.
@@ -385,32 +426,42 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view_config_pos.
 
-    DATA(cont) = page->scroll_container(
-         height     = `100%`
-         width      = `100%`
-         vertical   = abap_true
-         horizontal = abap_true
-     ).
+    DATA(cont) = page->ele( `ScrollContainer` 
+                     )->a( n = `height` v = `100%` 
+                     )->a( n = `width` v = `100%` 
+                     )->a( n = `vertical` b = abap_true 
+                     )->a( n = `horizontal` b = abap_true ).
 
-    DATA(tab) = cont->table(
-            client->_bind_edit( ms_draft-t_fcat )
-       )->header_toolbar(
-           )->overflow_toolbar(
-               )->title( `Excel Fieldcatalog`
-               )->toolbar_spacer(
-               )->button( text = `Reset` press = client->_event( `RESET_FCAT` ) icon = `sap-icon://refresh` type = `Emphasized`
-      )->get_parent( )->get_parent( ).
+    DATA(tab) = cont->ele( `Table` 
+                    )->a( n = `items` v = client->_bind_edit( ms_draft-t_fcat ) 
+                    )->ele( `headerToolbar` 
+                    )->ele( `OverflowToolbar` 
+                    )->tag( `Title` 
+                    )->a( n = `text` v = `Excel Fieldcatalog` 
+                    )->tag( `ToolbarSpacer` 
+                    )->tag( `Button` 
+                    )->a( n = `text` v = `Reset` 
+                    )->a( n = `press` v = client->_event( `RESET_FCAT` ) 
+                    )->a( n = `icon` v = `sap-icon://refresh` 
+                    )->a( n = `type` v = `Emphasized` 
+                    )->end( 
+                    )->end( ).
 
     DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_fcat ).
 
-    DATA(lo_columns) = tab->columns( ).
+    DATA(lo_columns) = tab->ele( `columns` ).
     LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
-      lo_columns->column( )->text( lv_field-name ).
+      lo_columns->ele( `Column` 
+          )->tag( `Text` 
+          )->a( n = `text` v = lv_field-name ).
     ENDLOOP.
 
-    DATA(lo_cells) = tab->items( )->column_list_item( )->cells( ).
+    DATA(lo_cells) = tab->ele( `items` 
+                         )->ele( `ColumnListItem` 
+                         )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
-      lo_cells->input( `{` && lv_field-name && `}` ).
+      lo_cells->tag( `Input` 
+          )->a( n = `value` v = `{` && lv_field-name && `}` ).
     ENDLOOP.
 
   ENDMETHOD.
@@ -421,26 +472,53 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     IF mv_check_download_file = abap_true.
       mv_check_download_file = abap_false.
 
-      page->_generic( ns = `html` name = `iframe` t_prop = VALUE #( ( n = `src` v = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && mv_file ) ( n = `hidden` v = `hidden` ) ) ).
+      page->ele( n = `iframe` ns = `html` 
+          )->a( n = `src` v = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && mv_file 
+          )->a( n = `hidden` v = `hidden` ).
 
     ENDIF.
 
-    DATA(content) = page->simple_form( title    = `Create File .xlsx`
-                                       layout   = `ResponsiveGridLayout`
-                                       editable = `true` ).
+    DATA(content) = page->ele( n = `SimpleForm` ns = `form` 
+                        )->a( n = `title` v = `Create File .xlsx` 
+                        )->a( n = `layout` v = `ResponsiveGridLayout` 
+                        )->a( n = `editable` v = `true` ).
 
-    content->label( `Activate Row Limitation`
-         )->checkbox( client->_bind_edit( ms_draft-check_file_row_limit )
-        )->label( `Rows`
-        )->input( value = client->_bind_edit( ms_draft-file_max_rows ) enabled = client->_bind_edit( ms_draft-check_file_row_limit ) width = `10%`
-        )->label( `Prepare File with abap2xlsx`
-        )->button( text = `Create` width = `7%` press = client->_event( `CREATE_FILE` )
-        )->label( `Number of Entries`
-        )->input( value = client->_bind( ms_draft-file_rows ) width = `10%` enabled = abap_false
-        )->label( `File Size`
-        )->input( value = client->_bind( ms_draft-file_size ) width = `10%` description = `kB` enabled = abap_false
-        )->label( `File`
-        )->button( text = `Download` width = `7%` enabled = COND #( WHEN mv_file IS NOT INITIAL THEN abap_true ELSE abap_false ) press = client->_event( `DOWNLOAD_FILE` ) ).
+    content->tag( `Label` 
+        )->a( n = `text` v = `Activate Row Limitation` 
+        )->tag( `CheckBox` 
+        )->a( n = `selected` v = client->_bind_edit( ms_draft-check_file_row_limit ) 
+        )->tag( `Label` 
+        )->a( n = `text` v = `Rows` 
+        )->tag( `Input` 
+        )->a( n = `value` v = client->_bind_edit( ms_draft-file_max_rows ) 
+        )->a( n = `enabled` v = client->_bind_edit( ms_draft-check_file_row_limit ) 
+        )->a( n = `width` v = `10%` 
+        )->tag( `Label` 
+        )->a( n = `text` v = `Prepare File with abap2xlsx` 
+        )->tag( `Button` 
+        )->a( n = `text` v = `Create` 
+        )->a( n = `width` v = `7%` 
+        )->a( n = `press` v = client->_event( `CREATE_FILE` ) 
+        )->tag( `Label` 
+        )->a( n = `text` v = `Number of Entries` 
+        )->tag( `Input` 
+        )->a( n = `value` v = client->_bind( ms_draft-file_rows ) 
+        )->a( n = `width` v = `10%` 
+        )->a( n = `enabled` b = abap_false 
+        )->tag( `Label` 
+        )->a( n = `text` v = `File Size` 
+        )->tag( `Input` 
+        )->a( n = `value` v = client->_bind( ms_draft-file_size ) 
+        )->a( n = `width` v = `10%` 
+        )->a( n = `description` v = `kB` 
+        )->a( n = `enabled` b = abap_false 
+        )->tag( `Label` 
+        )->a( n = `text` v = `File` 
+        )->tag( `Button` 
+        )->a( n = `text` v = `Download` 
+        )->a( n = `width` v = `7%` 
+        )->a( n = `enabled` v = COND #( WHEN mv_file IS NOT INITIAL THEN abap_true ELSE abap_false ) 
+        )->a( n = `press` v = client->_event( `DOWNLOAD_FILE` ) ).
 
   ENDMETHOD.
 
@@ -452,33 +530,46 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
       FIELD-SYMBOLS <tab> TYPE table.
       ASSIGN  ms_draft-t_tab->* TO <tab>.
 
-      DATA(cont) = page->scroll_container(
-           height     = `100%`
-           width      = `100%`
-           vertical   = abap_true
-           horizontal = abap_true
-       ).
+      DATA(cont) = page->ele( `ScrollContainer` 
+                       )->a( n = `height` v = `100%` 
+                       )->a( n = `width` v = `100%` 
+                       )->a( n = `vertical` b = abap_true 
+                       )->a( n = `horizontal` b = abap_true ).
 
-      DATA(tab) = cont->table(
-              client->_bind( <tab> )
-         )->header_toolbar(
-             )->overflow_toolbar(
-                 )->title( `(1) Data Preview - ` && ms_draft-table_name
-                 )->toolbar_spacer(
-                 )->input( description = `rows` value = client->_bind_edit( ms_draft-max_rows ) width = `10%`
-                 )->button( text = `Reset` press = client->_event( `LOAD` ) icon = `sap-icon://refresh` type = `Emphasized`
-        )->get_parent( )->get_parent( ).
+      DATA(tab) = cont->ele( `Table` 
+                      )->a( n = `items` v = client->_bind( <tab> ) 
+                      )->ele( `headerToolbar` 
+                      )->ele( `OverflowToolbar` 
+                      )->tag( `Title` 
+                      )->a( n = `text` v = `(1) Data Preview - ` && ms_draft-table_name 
+                      )->tag( `ToolbarSpacer` 
+                      )->tag( `Input` 
+                      )->a( n = `description` v = `rows` 
+                      )->a( n = `value` v = client->_bind_edit( ms_draft-max_rows ) 
+                      )->a( n = `width` v = `10%` 
+                      )->tag( `Button` 
+                      )->a( n = `text` v = `Reset` 
+                      )->a( n = `press` v = client->_event( `LOAD` ) 
+                      )->a( n = `icon` v = `sap-icon://refresh` 
+                      )->a( n = `type` v = `Emphasized` 
+                      )->end( 
+                      )->end( ).
 
       DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
 
-      DATA(lo_columns) = tab->columns( ).
+      DATA(lo_columns) = tab->ele( `columns` ).
       LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
-        lo_columns->column( )->text( lv_field-name ).
+        lo_columns->ele( `Column` 
+            )->tag( `Text` 
+            )->a( n = `text` v = lv_field-name ).
       ENDLOOP.
 
-      DATA(lo_cells) = tab->items( )->column_list_item( )->cells( ).
+      DATA(lo_cells) = tab->ele( `items` 
+                           )->ele( `ColumnListItem` 
+                           )->ele( `cells` ).
       LOOP AT lt_fields INTO lv_field FROM 1.
-        lo_cells->text( `{` && lv_field-name && `}` ).
+        lo_cells->tag( `Text` 
+            )->a( n = `text` v = `{` && lv_field-name && `}` ).
       ENDLOOP.
 
     ENDIF.
