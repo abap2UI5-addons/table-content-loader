@@ -1,17 +1,15 @@
-[![ABAP](https://img.shields.io/badge/ABAP-Standard%20%E2%86%92%20Cloud-blue)](#install)
+![ABAP](https://img.shields.io/badge/ABAP-Standard%20%E2%86%92%20Cloud-blue)
 [![namespace](https://img.shields.io/badge/namespace-z2ui5__cl__tcl-blue)](abaplint.jsonc)
 [![dependency](https://img.shields.io/badge/dependency-abap2UI5-blue)](https://github.com/abap2UI5/abap2UI5)
-<br>
+[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fmain%2F.github%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml)
+<br><br>
 [![abap-standard](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/abap-standard.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/abap-standard.yaml)
 [![abap-cloud](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/abap-cloud.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/abap-cloud.yaml)
 <br>
-[![check-abap2ui5](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml)
+[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fmain%2F.github%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml)
 [![check-rename](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-rename.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-rename.yaml)
 <br>
 [![build-rename](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/build-rename.yaml/badge.svg)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/build-rename.yaml)
-<br>
-[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fmain%2F.github%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml)
-[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fmain%2F.github%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml)
 
 # Table Content Loader
 Upload, Edit & Download Table Content <br><br>
