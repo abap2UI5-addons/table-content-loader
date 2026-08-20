@@ -1,0 +1,19 @@
+{
+  "note": "abap2ui5-linter baseline: findings that existed when the linter was adopted. Suppressed on every run; NEW findings still fail, a STALE entry fails too. Regenerate with --update-baseline.",
+  "findings": {
+    "src/z2ui5_cl_tcl_app_00.clas.abap|member-too-new|sap.m.GenericTile|enableNavigationButton|": 1,
+    "src/z2ui5_cl_tcl_app_01.clas.abap|obsolete-binder||_bind_edit|": 1,
+    "src/z2ui5_cl_tcl_app_01.clas.abap|obsolete-model-update||view_model_update|": 1,
+    "src/z2ui5_cl_tcl_app_02.clas.abap|obsolete-binder||_bind_edit|": 1,
+    "src/z2ui5_cl_tcl_app_02.clas.abap|unused-public-attribute||st_db|": 1,
+    "src/z2ui5_cl_tcl_app_03.clas.abap|display-root-mismatch||popup_display|mvc:View": 1,
+    "src/z2ui5_cl_tcl_app_03.clas.abap|obsolete-binder||_bind_edit|": 1,
+    "src/z2ui5_cl_tcl_app_03.clas.abap|obsolete-model-update||view_model_update|": 1,
+    "src/z2ui5_cl_tcl_app_04.clas.abap|chain-indentation||leaf|8": 1,
+    "src/z2ui5_cl_tcl_app_04.clas.abap|obsolete-binder||_bind_edit|": 1,
+    "src/z2ui5_cl_tcl_app_04.clas.abap|toolbar-control-in-bar|sap.m.ToolbarSpacer|sap.m.Page headerContent, which is forwarded into the internal sap.m.Bar|": 1,
+    "src/z2ui5_cl_tcl_app_05.clas.abap|obsolete-binder||_bind_edit|": 1,
+    "src/z2ui5_cl_tcl_app_06.clas.abap|obsolete-binder||_bind_edit|": 1,
+    "src/z2ui5_cl_tcl_app_06.clas.abap|unknown-binding-path|sap.m.Table|items|/MS_DRAFT/T_CONFIG": 1
+  }
+}
