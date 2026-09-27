@@ -9,7 +9,6 @@
     "src/z2ui5_cl_tcl_app_03.clas.abap|display-root-mismatch||popup_display|mvc:View": 1,
     "src/z2ui5_cl_tcl_app_03.clas.abap|obsolete-binder||_bind_edit|": 1,
     "src/z2ui5_cl_tcl_app_03.clas.abap|obsolete-model-update||view_model_update|": 1,
-    "src/z2ui5_cl_tcl_app_04.clas.abap|chain-indentation||leaf|8": 1,
     "src/z2ui5_cl_tcl_app_04.clas.abap|obsolete-binder||_bind_edit|": 1,
     "src/z2ui5_cl_tcl_app_04.clas.abap|toolbar-control-in-bar|sap.m.ToolbarSpacer|sap.m.Page headerContent, which is forwarded into the internal sap.m.Bar|": 1,
     "src/z2ui5_cl_tcl_app_05.clas.abap|obsolete-binder||_bind_edit|": 1,
