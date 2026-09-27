@@ -184,7 +184,6 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                      )->a( n = `press` v = client->_event( 'BTN_IMPORT' )
                      )->tag( `Button`
                      )->a( n = `text` v = '(2) Edit Data'
-                     )->a( n = `press` v = client->_event( 'BTN_EDIT' )
                      )->a( n = `enabled` b = abap_false
                      )->tag( `Button`
                      )->a( n = `text` v = '(3) Export Data'
@@ -300,7 +299,6 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                      )->a( n = `press` v = client->_event( 'BTN_EDIT' )
                      )->tag( `Button`
                      )->a( n = `text` v = '(3) Export Data'
-                     )->a( n = `press` v = client->_event( 'BTN_EXPORT' )
                      )->a( n = `enabled` b = abap_false
                      )->end(
                      )->end( ).
@@ -381,7 +379,6 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                      )->ele( `OverflowToolbar`
                      )->tag( `Button`
                      )->a( n = `text` v = '(1) Import Data'
-                     )->a( n = `press` v = client->_event( 'BTN_IMPORT' )
                      )->a( n = `enabled` b = abap_false
                      )->tag( `Button`
                      )->a( n = `text` v = '(2) Edit Data'
