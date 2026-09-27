@@ -6,6 +6,8 @@ CLASS z2ui5_cl_tcl_app_03 DEFINITION
 
     INTERFACES z2ui5_if_app.
 
+    DATA mt_tab TYPE REF TO data.
+
     CLASS-METHODS factory_popup_by_itab
       IMPORTING
         itab            TYPE data
@@ -22,8 +24,6 @@ CLASS z2ui5_cl_tcl_app_03 DEFINITION
         db_table              TYPE string VALUE 'SPFLI',
         db_table_entries      TYPE string,
       END OF ms_app.
-
-    DATA mt_tab TYPE REF TO data.
 
   PROTECTED SECTION.
 
@@ -124,9 +124,6 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
       WHEN 'DOWNLOAD'.
         client->nav_app_call( z2ui5_cl_popup_file_dl=>factory( ms_app-file ) ).
 
-      WHEN 'BUTTON_CANCEL'.
-        client->message_toast_display( `Cancelled` ).
-
       WHEN 'BACK'.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
 
@@ -145,75 +142,74 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
   METHOD z2ui5_view_display.
 
     IF ms_app-check_popup = abap_true.
-      DATA(view) = z2ui5_cl_ui5_view_builder=>factory( 
-                       )->ele( n = `FragmentDefinition` ns = `core` 
-                       )->a( n = `xmlns` v = `sap.m` 
-                       )->a( n = `xmlns:core` v = `sap.ui.core` 
+      DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+                       )->ele( n = `FragmentDefinition` ns = `core`
+                       )->a( n = `xmlns` v = `sap.m`
+                       )->a( n = `xmlns:core` v = `sap.ui.core`
                        )->a( n = `xmlns:form` v = `sap.ui.layout.form` ).
       DATA(page) = view->ele( `Dialog` ).
     ELSE.
-      view = z2ui5_cl_ui5_view_builder=>factory( 
-                 )->ele( n = `View` ns = `mvc` 
-                 )->a( n = `xmlns` v = `sap.m` 
-                 )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc` 
-                 )->a( n = `xmlns:core` v = `sap.ui.core` 
-                 )->a( n = `xmlns:form` v = `sap.ui.layout.form` 
-                 )->a( n = `displayBlock` v = `true` 
+      view = z2ui5_cl_ui5_view_builder=>factory(
+                 )->ele( n = `View` ns = `mvc`
+                 )->a( n = `xmlns` v = `sap.m`
+                 )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
+                 )->a( n = `xmlns:form` v = `sap.ui.layout.form`
+                 )->a( n = `displayBlock` v = `true`
                  )->a( n = `height` v = `100%` ).
-      page = view->ele( `Shell` 
-                 )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited ) 
-                 )->ele( `Page` 
-                 )->a( n = `title` v = 'abap2UI5 - JSON File Download' 
-                 )->a( n = `navButtonPress` v = client->_event( 'BACK' ) 
-                 )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ) 
-                 )->ele( `headerContent` 
-                 )->ele( `OverflowToolbar` 
-                 )->tag( `ToolbarSpacer` 
-                 )->tag( `Label` 
-                 )->a( n = `text` v = `Shell` 
-                 )->tag( `Switch` 
-                 )->a( n = `state` v = client->_bind_edit( ms_app-check_appwidthlimited ) 
-                 )->end( 
+      page = view->ele( `Shell`
+                 )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                 )->ele( `Page`
+                 )->a( n = `title` v = 'abap2UI5 - JSON File Download'
+                 )->a( n = `navButtonPress` v = client->_event( 'BACK' )
+                 )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
+                 )->ele( `headerContent`
+                 )->ele( `OverflowToolbar`
+                 )->tag( `ToolbarSpacer`
+                 )->tag( `Label`
+                 )->a( n = `text` v = `Shell`
+                 )->tag( `Switch`
+                 )->a( n = `state` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                 )->end(
                  )->end( ).
     ENDIF.
 
-    DATA(content) = page->ele( n = `SimpleForm` ns = `form` 
+    DATA(content) = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `editable` v = `true` ).
 
-    content->tag( `Label` 
-        )->a( n = `text` v = `(1) Set DB Table` 
-        )->tag( `Input` 
-        )->a( n = `width` v = `30%` 
-        )->a( n = `description` v = `DB Table` 
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table ) 
-        )->tag( `Label` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Go` 
-        )->a( n = `width` v = `10%` 
-        )->a( n = `press` v = client->_event( `DB_CHECK` ) 
-        )->tag( `Label` 
-        )->tag( `Input` 
-        )->a( n = `width` v = `30%` 
-        )->a( n = `description` v = `DB Entries` 
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table_entries ) 
-        )->a( n = `enabled` b = abap_false 
-        )->tag( `Label` 
-        )->a( n = `text` v = `(2) DB -> JSON` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Go` 
-        )->a( n = `width` v = `10%` 
-        )->a( n = `press` v = client->_event( `PROCESS` ) 
-        )->tag( `Label` 
-        )->a( n = `text` v = `(3) Preview JSON` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Go` 
-        )->a( n = `width` v = `10%` 
-        )->a( n = `press` v = client->_event( `PREVIEW` ) 
-        )->tag( `Label` 
-        )->a( n = `text` v = `(4) Export` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Run` 
-        )->a( n = `width` v = `10%` 
+    content->tag( `Label`
+        )->a( n = `text` v = `(1) Set DB Table`
+        )->tag( `Input`
+        )->a( n = `width` v = `30%`
+        )->a( n = `description` v = `DB Table`
+        )->a( n = `value` v = client->_bind_edit( ms_app-db_table )
+        )->tag( `Label`
+        )->tag( `Button`
+        )->a( n = `text` v = `Go`
+        )->a( n = `width` v = `10%`
+        )->a( n = `press` v = client->_event( `DB_CHECK` )
+        )->tag( `Label`
+        )->tag( `Input`
+        )->a( n = `width` v = `30%`
+        )->a( n = `description` v = `DB Entries`
+        )->a( n = `value` v = client->_bind_edit( ms_app-db_table_entries )
+        )->a( n = `enabled` b = abap_false
+        )->tag( `Label`
+        )->a( n = `text` v = `(2) DB -> JSON`
+        )->tag( `Button`
+        )->a( n = `text` v = `Go`
+        )->a( n = `width` v = `10%`
+        )->a( n = `press` v = client->_event( `PROCESS` )
+        )->tag( `Label`
+        )->a( n = `text` v = `(3) Preview JSON`
+        )->tag( `Button`
+        )->a( n = `text` v = `Go`
+        )->a( n = `width` v = `10%`
+        )->a( n = `press` v = client->_event( `PREVIEW` )
+        )->tag( `Label`
+        )->a( n = `text` v = `(4) Export`
+        )->tag( `Button`
+        )->a( n = `text` v = `Run`
+        )->a( n = `width` v = `10%`
         )->a( n = `press` v = client->_event( `DOWNLOAD` ) ).
 
     IF ms_app-check_popup = abap_true.

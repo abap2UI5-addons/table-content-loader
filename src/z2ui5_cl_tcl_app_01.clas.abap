@@ -6,6 +6,8 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
 
     INTERFACES z2ui5_if_app.
 
+    DATA mt_tab TYPE REF TO data.
+
     DATA:
       BEGIN OF ms_app,
         check_initialized     TYPE abap_bool,
@@ -16,8 +18,6 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
         db_table              TYPE string VALUE 'z2ui5_dbl_t_01',
         db_table_entries      TYPE string,
       END OF ms_app.
-
-    DATA mt_tab TYPE REF TO data.
 
   PROTECTED SECTION.
 
@@ -55,7 +55,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             client->view_model_update( ).
           ENDIF.
           RETURN.
-        CATCH cx_root.
+        CATCH cx_root ##NO_HANDLER.
       ENDTRY.
       TRY.
           DATA(lo_popup_confirm) = CAST z2ui5_cl_popup_to_confirm( client->get_app( client->get( )-s_draft-id_prev_app ) ).
@@ -68,7 +68,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             client->message_box_display( `DB updated` ).
           ENDIF.
           RETURN.
-        CATCH cx_root.
+        CATCH cx_root ##NO_HANDLER.
       ENDTRY.
     ENDIF.
 
@@ -106,7 +106,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         TRY.
             FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
 
-            CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table).
+            CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table) WITH EMPTY KEY.
             ASSIGN mt_tab->* TO <tab2>.
 
             z2ui5_cl_tcl_context=>json_parse(
@@ -140,9 +140,6 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
       WHEN `UPLOAD`.
         client->nav_app_call( z2ui5_cl_popup_file_ul=>factory( ) ).
 
-      WHEN `BUTTON_CANCEL`.
-        client->message_toast_display( `Cancelled` ).
-
       WHEN `BACK`.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
 
@@ -160,93 +157,92 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
   METHOD z2ui5_view_display.
 
-    DATA(view) = z2ui5_cl_ui5_view_builder=>factory( 
-                     )->ele( n = `View` ns = `mvc` 
-                     )->a( n = `xmlns` v = `sap.m` 
-                     )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc` 
-                     )->a( n = `xmlns:core` v = `sap.ui.core` 
-                     )->a( n = `xmlns:form` v = `sap.ui.layout.form` 
-                     )->a( n = `displayBlock` v = `true` 
+    DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+                     )->ele( n = `View` ns = `mvc`
+                     )->a( n = `xmlns` v = `sap.m`
+                     )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
+                     )->a( n = `xmlns:form` v = `sap.ui.layout.form`
+                     )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
 
-    DATA(page) = view->ele( `Shell` 
-                     )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited ) 
-                     )->ele( `Page` 
-                     )->a( n = `title` v = 'abap2UI5 - JSON File Upload' 
-                     )->a( n = `navButtonPress` v = client->_event( `BACK` ) 
-                     )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ) 
-                     )->ele( `headerContent` 
-                     )->ele( `OverflowToolbar` 
-                     )->tag( `ToolbarSpacer` 
-                     )->tag( `Label` 
-                     )->a( n = `text` v = `Shell` 
-                     )->tag( `Switch` 
-                     )->a( n = `state` v = client->_bind_edit( ms_app-check_appwidthlimited ) 
-                     )->tag( `Link` 
-                     )->a( n = `text` v = 'Project on GitHub' 
-                     )->a( n = `target` v = '_blank' 
-                     )->a( n = `href` v = `https://github.com/abap2UI5-addons/table-content-loader` 
-                     )->end( 
+    DATA(page) = view->ele( `Shell`
+                     )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                     )->ele( `Page`
+                     )->a( n = `title` v = 'abap2UI5 - JSON File Upload'
+                     )->a( n = `navButtonPress` v = client->_event( `BACK` )
+                     )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
+                     )->ele( `headerContent`
+                     )->ele( `OverflowToolbar`
+                     )->tag( `ToolbarSpacer`
+                     )->tag( `Label`
+                     )->a( n = `text` v = `Shell`
+                     )->tag( `Switch`
+                     )->a( n = `state` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                     )->tag( `Link`
+                     )->a( n = `text` v = 'Project on GitHub'
+                     )->a( n = `target` v = '_blank'
+                     )->a( n = `href` v = `https://github.com/abap2UI5-addons/table-content-loader`
+                     )->end(
                      )->end( ).
 
-    DATA(content) = page->ele( n = `SimpleForm` ns = `form` 
+    DATA(content) = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `editable` v = `true` ).
 
-    content->tag( `Label` 
-        )->a( n = `text` v = `(1) JSON File Upload` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Go` 
-        )->a( n = `width` v = `10%` 
-        )->a( n = `press` v = client->_event( `UPLOAD` ) 
-        )->tag( `Label` 
-        )->tag( `Input` 
-        )->a( n = `width` v = `30%` 
-        )->a( n = `description` v = `Size (kB)` 
-        )->a( n = `value` v = client->_bind( ms_app-file_size ) 
-        )->a( n = `enabled` b = abap_false 
-        )->tag( `Label` 
-        )->a( n = `text` v = `(2) Check DB Table` 
-        )->tag( `Input` 
-        )->a( n = `width` v = `30%` 
-        )->a( n = `description` v = `DB Table` 
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table ) 
-        )->tag( `Label` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Go` 
-        )->a( n = `width` v = `10%` 
-        )->a( n = `press` v = client->_event( `DB_CHECK` ) 
-        )->tag( `Label` 
-        )->tag( `Input` 
-        )->a( n = `width` v = `30%` 
-        )->a( n = `description` v = `DB Entries` 
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table_entries ) 
-        )->a( n = `enabled` b = abap_false 
-        )->tag( `Label` 
-        )->a( n = `text` v = `(3) JSON -> ITAB` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Go` 
-        )->a( n = `width` v = `10%` 
-        )->a( n = `press` v = client->_event( `PROCESS` ) 
-        )->tag( `Label` 
-        )->tag( `Input` 
-        )->a( n = `width` v = `30%` 
-        )->a( n = `description` v = `Number of Entries` 
-        )->a( n = `value` v = client->_bind_edit( ms_app-file_entries ) 
-        )->a( n = `enabled` b = abap_false 
-        )->tag( `Label` 
-        )->a( n = `text` v = `(4) Preview Rows` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Go` 
-        )->a( n = `width` v = `10%` 
-        )->a( n = `press` v = client->_event( `PREVIEW` ) 
-        )->tag( `Label` 
-        )->a( n = `text` v = `(5) Save Database` 
-        )->tag( `Text` 
-        )->a( n = `text` v = `Attention - Database Content will be deleted!` 
-        )->tag( `Label` 
-        )->tag( `Button` 
-        )->a( n = `text` v = `Run` 
-        )->a( n = `width` v = `10%` 
+    content->tag( `Label`
+        )->a( n = `text` v = `(1) JSON File Upload`
+        )->tag( `Button`
+        )->a( n = `text` v = `Go`
+        )->a( n = `width` v = `10%`
+        )->a( n = `press` v = client->_event( `UPLOAD` )
+        )->tag( `Label`
+        )->tag( `Input`
+        )->a( n = `width` v = `30%`
+        )->a( n = `description` v = `Size (kB)`
+        )->a( n = `value` v = client->_bind( ms_app-file_size )
+        )->a( n = `enabled` b = abap_false
+        )->tag( `Label`
+        )->a( n = `text` v = `(2) Check DB Table`
+        )->tag( `Input`
+        )->a( n = `width` v = `30%`
+        )->a( n = `description` v = `DB Table`
+        )->a( n = `value` v = client->_bind_edit( ms_app-db_table )
+        )->tag( `Label`
+        )->tag( `Button`
+        )->a( n = `text` v = `Go`
+        )->a( n = `width` v = `10%`
+        )->a( n = `press` v = client->_event( `DB_CHECK` )
+        )->tag( `Label`
+        )->tag( `Input`
+        )->a( n = `width` v = `30%`
+        )->a( n = `description` v = `DB Entries`
+        )->a( n = `value` v = client->_bind_edit( ms_app-db_table_entries )
+        )->a( n = `enabled` b = abap_false
+        )->tag( `Label`
+        )->a( n = `text` v = `(3) JSON -> ITAB`
+        )->tag( `Button`
+        )->a( n = `text` v = `Go`
+        )->a( n = `width` v = `10%`
+        )->a( n = `press` v = client->_event( `PROCESS` )
+        )->tag( `Label`
+        )->tag( `Input`
+        )->a( n = `width` v = `30%`
+        )->a( n = `description` v = `Number of Entries`
+        )->a( n = `value` v = client->_bind_edit( ms_app-file_entries )
+        )->a( n = `enabled` b = abap_false
+        )->tag( `Label`
+        )->a( n = `text` v = `(4) Preview Rows`
+        )->tag( `Button`
+        )->a( n = `text` v = `Go`
+        )->a( n = `width` v = `10%`
+        )->a( n = `press` v = client->_event( `PREVIEW` )
+        )->tag( `Label`
+        )->a( n = `text` v = `(5) Save Database`
+        )->tag( `Text`
+        )->a( n = `text` v = `Attention - Database Content will be deleted!`
+        )->tag( `Label`
+        )->tag( `Button`
+        )->a( n = `text` v = `Run`
+        )->a( n = `width` v = `10%`
         )->a( n = `press` v = client->_event( `DB_SAVE` ) ).
 
     client->view_display( view->stringify( ) ).
