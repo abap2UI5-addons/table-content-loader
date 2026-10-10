@@ -137,22 +137,23 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     ENDIF.
 
     TRY.
-        " the table first - a name that does not exist keeps the draft there is
+        " the table and its field catalogue first - a name that does not
+        " exist or a catalogue that cannot be built keeps the draft there is
         DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ls_input-value ).
+        FIELD-SYMBOLS <tab> TYPE table.
+        ASSIGN lr_tab->* TO <tab>.
+        DATA(lt_fcat) = zcl_excel_common=>get_fieldcatalog( <tab> ).
+
         ms_draft-table_name = ls_input-value.
         ms_draft-check_load_pressed = abap_true.
-
         ms_draft-t_tab = lr_tab.
+        ms_draft-t_fcat = lt_fcat.
         " a new draft starts from scratch: the file built for the previous
         " table must not be offered for download, and the sheet settings
         " start again from their defaults instead of piling up behind the
         " old ones (create_file reads the first entry of each)
         CLEAR: mv_file, ms_draft-file_rows, ms_draft-file_size,
                ms_draft-t_config, ms_draft-t_config_head.
-        FIELD-SYMBOLS <tab> TYPE table.
-        ASSIGN  ms_draft-t_tab->* TO <tab>.
-
-        ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( <tab> ).
         DATA ls_table_settings TYPE zexcel_s_table_settings.
         ls_table_settings-table_style  = zcl_excel_table=>builtinstyle_medium5.
         INSERT ls_table_settings INTO TABLE ms_draft-t_config.
