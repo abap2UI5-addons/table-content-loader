@@ -46,30 +46,41 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
     ENDIF.
 
     IF client->get( )-check_on_navigated = abap_true.
-      TRY.
-          DATA(lo_popup_file) = CAST z2ui5_cl_popup_file_ul( client->get_app( client->get( )-s_draft-id_prev_app ) ).
-          IF lo_popup_file->result( )-check_confirmed = abap_true.
-            ms_app-file = lo_popup_file->result( )-value.
-            client->message_toast_display( `File uploaded successfully` ).
-            ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
-            client->view_model_update( ).
-          ENDIF.
-          RETURN.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
-      TRY.
-          DATA(lo_popup_confirm) = CAST z2ui5_cl_popup_to_confirm( client->get_app( client->get( )-s_draft-id_prev_app ) ).
-          IF lo_popup_confirm->result( ) = abap_true.
-
-            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
-            ASSIGN mt_tab->* TO <tab2>.
-            MODIFY (ms_app-db_table) FROM TABLE <tab2>.
-            COMMIT WORK AND WAIT.
-            client->message_box_display( `DB updated` ).
-          ENDIF.
-          RETURN.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
+      " which popup handed control back decides what to do - asked with IS
+      " INSTANCE OF, so an error of the branch that runs is not swallowed by
+      " the CATCH of a failed CAST
+      DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
+      IF lo_prev IS INSTANCE OF z2ui5_cl_popup_file_ul.
+        DATA(lo_popup_file) = CAST z2ui5_cl_popup_file_ul( lo_prev ).
+        IF lo_popup_file->result( )-check_confirmed = abap_true.
+          ms_app-file = lo_popup_file->result( )-value.
+          client->message_toast_display( `File uploaded successfully` ).
+          ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
+          client->view_model_update( ).
+        ENDIF.
+        RETURN.
+      ELSEIF lo_prev IS INSTANCE OF z2ui5_cl_popup_to_confirm.
+        IF CAST z2ui5_cl_popup_to_confirm( lo_prev )->result( ) = abap_true.
+          TRY.
+              FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+              ASSIGN mt_tab->* TO <tab2>.
+              MODIFY (ms_app-db_table) FROM TABLE <tab2>.
+              IF sy-subrc <> 0.
+                ROLLBACK WORK.
+                client->message_box_display( text = |Not every row could be written to { ms_app-db_table } - nothing was saved|
+                                             type = `error` ).
+                RETURN.
+              ENDIF.
+              COMMIT WORK AND WAIT.
+              client->message_box_display( `DB updated` ).
+            CATCH cx_root INTO DATA(lx_save).
+              ROLLBACK WORK.
+              client->message_box_display( text = lx_save->get_text( )
+                                           type = `error` ).
+          ENDTRY.
+        ENDIF.
+        RETURN.
+      ENDIF.
     ENDIF.
 
     IF client->get( )-event IS NOT INITIAL.
@@ -125,6 +136,12 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
       WHEN `PREVIEW`.
 
+        " steps (4) and (5) work on the rows of step (3)
+        IF mt_tab IS NOT BOUND.
+          client->message_toast_display( `Convert the JSON first - step (3)` ).
+          RETURN.
+        ENDIF.
+
         DATA lr_tab TYPE REF TO data.
 
         lr_tab = z2ui5_cl_tcl_context=>conv_copy_ref_data( mt_tab ).
@@ -135,6 +152,10 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         client->nav_app_call( z2ui5_cl_popup_table=>factory( <tab2> ) ).
 
       WHEN `DB_SAVE`.
+        IF mt_tab IS NOT BOUND.
+          client->message_toast_display( `Convert the JSON first - step (3)` ).
+          RETURN.
+        ENDIF.
         client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?` ) ).
 
       WHEN `UPLOAD`.
