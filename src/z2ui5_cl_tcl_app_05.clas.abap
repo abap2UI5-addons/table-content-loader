@@ -11,8 +11,6 @@ CLASS z2ui5_cl_tcl_app_05 DEFINITION PUBLIC.
     DATA mv_check_edit TYPE abap_bool.
 
   PROTECTED SECTION.
-    DATA mv_check_download TYPE abap_bool.
-
     DATA client TYPE REF TO z2ui5_if_client.
 
     METHODS ui5_on_event.
@@ -41,8 +39,17 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
               client->message_toast_display( `Upload an XLSX file first` ).
               RETURN.
             ENDIF.
-            mv_check_download = abap_true.
-            ui5_view_main_display( ).
+            " the browser saves the file - the frontend action the core has
+            " for it, as in the CSV app; the hidden html:iframe with a data:
+            " URI this used to write downloads nothing any more
+            FIELD-SYMBOLS <tab_dl> TYPE table.
+            ASSIGN mr_table->* TO <tab_dl>.
+            DATA(lv_xlsx) = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( <tab_dl> ).
+            DATA(lv_base) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xlsx ).
+            client->follow_up_action(
+                val   = client->cs_event-download_b64_file
+                t_arg = VALUE #( ( |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ lv_base }| )
+                                 ( `table.xlsx` ) ) ).
 
           WHEN 'UPLOAD'.
 
@@ -72,7 +79,6 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
-                     )->a( n = `xmlns:html` v = `http://www.w3.org/1999/xhtml`
                      )->a( n = `xmlns:z2ui5` v = `z2ui5.cc`
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
@@ -93,19 +99,8 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
         )->a( n = `text` v = 'edit'
         )->tag( `ToolbarSpacer` ).
 
-    IF mv_check_download = abap_true.
-
-      FIELD-SYMBOLS <tab> TYPE table.
-      ASSIGN mr_table->* TO <tab>.
-      mv_check_download = abap_false.
-      DATA(lv_xlsx) = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( <tab> ).
-      DATA(lv_base) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xlsx ).
-      view->ele( n = `iframe` ns = `html`
-          )->a( n = `src` t = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && lv_base
-          )->a( n = `hidden` v = `hidden` ).
-    ENDIF.
-
     IF mr_table IS NOT INITIAL.
+      FIELD-SYMBOLS <tab> TYPE table.
       ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->ele( `Table`

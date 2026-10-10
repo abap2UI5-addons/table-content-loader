@@ -57,7 +57,6 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
   PROTECTED SECTION.
     DATA check_initialized TYPE abap_bool.
     DATA mv_file TYPE string.
-    DATA mv_check_download_file TYPE abap_bool.
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -175,8 +174,13 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
 
       WHEN `DOWNLOAD_FILE`.
-        mv_check_download_file = abap_true.
-        set_view( ).
+        " the browser saves the file - the frontend action the core has for
+        " it, as in the CSV app; the hidden html:iframe with a data: URI this
+        " used to write downloads nothing any more
+        client->follow_up_action(
+            val   = client->cs_event-download_b64_file
+            t_arg = VALUE #( ( |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ mv_file }| )
+                             ( |{ to_lower( ms_draft-table_name ) }.xlsx| ) ) ).
 
       WHEN 'CREATE_FILE'.
         create_file( ).
@@ -279,7 +283,6 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
                      )->a( n = `xmlns:form` v = `sap.ui.layout.form`
-                     )->a( n = `xmlns:html` v = `http://www.w3.org/1999/xhtml`
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
 
@@ -486,15 +489,6 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD set_view_download.
-
-    IF mv_check_download_file = abap_true.
-      mv_check_download_file = abap_false.
-
-      page->ele( n = `iframe` ns = `html`
-          )->a( n = `src` t = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && mv_file
-          )->a( n = `hidden` v = `hidden` ).
-
-    ENDIF.
 
     DATA(content) = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `title` v = `Create File .xlsx`
