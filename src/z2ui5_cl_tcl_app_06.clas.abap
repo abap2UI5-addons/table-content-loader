@@ -57,7 +57,6 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
   PROTECTED SECTION.
     DATA check_initialized TYPE abap_bool.
     DATA mv_file TYPE string.
-    DATA mv_check_download_file TYPE abap_bool.
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -108,6 +107,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD load_table.
 
+    " Load before a draft exists has no table to fill
+    IF ms_draft-t_tab IS NOT BOUND.
+      client->message_toast_display( `Create a draft with New first` ).
+      RETURN.
+    ENDIF.
+
     FIELD-SYMBOLS <tab> TYPE table.
     ASSIGN ms_draft-t_tab->* TO <tab>.
 
@@ -121,16 +126,34 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD on_callback.
 
+    DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
+    IF lo_prev IS NOT INSTANCE OF z2ui5_cl_popup_input_val.
+      RETURN.
+    ENDIF.
+    " Cancel keeps the draft there is
+    DATA(ls_input) = CAST z2ui5_cl_popup_input_val( lo_prev )->result( ).
+    IF ls_input-check_confirmed = abap_false.
+      RETURN.
+    ENDIF.
+
     TRY.
-        DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
-        ms_draft-table_name = CAST z2ui5_cl_popup_input_val( lo_prev )->result( )-value.
-        ms_draft-check_load_pressed = abap_true.
-
-        ms_draft-t_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_draft-table_name ).
+        " the table and its field catalogue first - a name that does not
+        " exist or a catalogue that cannot be built keeps the draft there is
+        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ls_input-value ).
         FIELD-SYMBOLS <tab> TYPE table.
-        ASSIGN  ms_draft-t_tab->* TO <tab>.
+        ASSIGN lr_tab->* TO <tab>.
+        DATA(lt_fcat) = zcl_excel_common=>get_fieldcatalog( <tab> ).
 
-        ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( <tab> ).
+        ms_draft-table_name = ls_input-value.
+        ms_draft-check_load_pressed = abap_true.
+        ms_draft-t_tab = lr_tab.
+        ms_draft-t_fcat = lt_fcat.
+        " a new draft starts from scratch: the file built for the previous
+        " table must not be offered for download, and the sheet settings
+        " start again from their defaults instead of piling up behind the
+        " old ones (create_file reads the first entry of each)
+        CLEAR: mv_file, ms_draft-file_rows, ms_draft-file_size,
+               ms_draft-t_config, ms_draft-t_config_head.
         DATA ls_table_settings TYPE zexcel_s_table_settings.
         ls_table_settings-table_style  = zcl_excel_table=>builtinstyle_medium5.
         INSERT ls_table_settings INTO TABLE ms_draft-t_config.
@@ -142,7 +165,9 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         load_table( ).
         set_view( ).
 
-      CATCH cx_root ##NO_HANDLER.
+      CATCH cx_root INTO DATA(lx).
+        client->message_box_display( text = lx->get_text( )
+                                     type = 'error' ).
     ENDTRY.
 
   ENDMETHOD.
@@ -156,8 +181,13 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
 
       WHEN `DOWNLOAD_FILE`.
-        mv_check_download_file = abap_true.
-        set_view( ).
+        " the browser saves the file - the frontend action the core has for
+        " it, as in the CSV app; the hidden html:iframe with a data: URI this
+        " used to write downloads nothing any more
+        client->follow_up_action(
+            val   = client->cs_event-download_b64_file
+            t_arg = VALUE #( ( |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ mv_file }| )
+                             ( |{ to_lower( ms_draft-table_name ) }.xlsx| ) ) ).
 
       WHEN 'CREATE_FILE'.
         create_file( ).
@@ -260,7 +290,6 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
                      )->a( n = `xmlns:form` v = `sap.ui.layout.form`
-                     )->a( n = `xmlns:html` v = `http://www.w3.org/1999/xhtml`
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
 
@@ -467,15 +496,6 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD set_view_download.
-
-    IF mv_check_download_file = abap_true.
-      mv_check_download_file = abap_false.
-
-      page->ele( n = `iframe` ns = `html`
-          )->a( n = `src` t = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,` && mv_file
-          )->a( n = `hidden` v = `hidden` ).
-
-    ENDIF.
 
     DATA(content) = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `title` v = `Create File .xlsx`

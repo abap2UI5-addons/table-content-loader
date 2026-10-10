@@ -22,6 +22,8 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
   PROTECTED SECTION.
 
     DATA client TYPE REF TO z2ui5_if_client.
+    " the table the rows in mt_tab were converted for in step (3)
+    DATA mv_tab_db_table TYPE string.
 
     METHODS z2ui5_on_init.
     METHODS z2ui5_on_event.
@@ -46,30 +48,41 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
     ENDIF.
 
     IF client->get( )-check_on_navigated = abap_true.
-      TRY.
-          DATA(lo_popup_file) = CAST z2ui5_cl_popup_file_ul( client->get_app( client->get( )-s_draft-id_prev_app ) ).
-          IF lo_popup_file->result( )-check_confirmed = abap_true.
-            ms_app-file = lo_popup_file->result( )-value.
-            client->message_toast_display( `File uploaded successfully` ).
-            ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
-            client->view_model_update( ).
-          ENDIF.
-          RETURN.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
-      TRY.
-          DATA(lo_popup_confirm) = CAST z2ui5_cl_popup_to_confirm( client->get_app( client->get( )-s_draft-id_prev_app ) ).
-          IF lo_popup_confirm->result( ) = abap_true.
-
-            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
-            ASSIGN mt_tab->* TO <tab2>.
-            MODIFY (ms_app-db_table) FROM TABLE <tab2>.
-            COMMIT WORK AND WAIT.
-            client->message_box_display( `DB updated` ).
-          ENDIF.
-          RETURN.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
+      " which popup handed control back decides what to do - asked with IS
+      " INSTANCE OF, so an error of the branch that runs is not swallowed by
+      " the CATCH of a failed CAST
+      DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
+      IF lo_prev IS INSTANCE OF z2ui5_cl_popup_file_ul.
+        DATA(lo_popup_file) = CAST z2ui5_cl_popup_file_ul( lo_prev ).
+        IF lo_popup_file->result( )-check_confirmed = abap_true.
+          ms_app-file = lo_popup_file->result( )-value.
+          client->message_toast_display( `File uploaded successfully` ).
+          ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
+          client->view_model_update( ).
+        ENDIF.
+        RETURN.
+      ELSEIF lo_prev IS INSTANCE OF z2ui5_cl_popup_to_confirm.
+        IF CAST z2ui5_cl_popup_to_confirm( lo_prev )->result( ) = abap_true.
+          TRY.
+              FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+              ASSIGN mt_tab->* TO <tab2>.
+              MODIFY (mv_tab_db_table) FROM TABLE <tab2>.
+              IF sy-subrc <> 0.
+                ROLLBACK WORK.
+                client->message_box_display( text = |Not every row could be written to { mv_tab_db_table } - nothing was saved|
+                                             type = `error` ).
+                RETURN.
+              ENDIF.
+              COMMIT WORK AND WAIT.
+              client->message_box_display( `DB updated` ).
+            CATCH cx_root INTO DATA(lx_save).
+              ROLLBACK WORK.
+              client->message_box_display( text = lx_save->get_text( )
+                                           type = `error` ).
+          ENDTRY.
+        ENDIF.
+        RETURN.
+      ENDIF.
     ENDIF.
 
     IF client->get( )-event IS NOT INITIAL.
@@ -106,6 +119,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         TRY.
             FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
 
+            ms_app-db_table = to_upper( ms_app-db_table ).
+            CLEAR mv_tab_db_table.
             CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table) WITH EMPTY KEY.
             ASSIGN mt_tab->* TO <tab2>.
 
@@ -116,6 +131,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                 data = <tab2>
             ).
 
+            " only a conversion that went through can be saved
+            mv_tab_db_table = ms_app-db_table.
             ms_app-file_entries = lines( <tab2> ).
             client->view_model_update( ).
 
@@ -124,6 +141,12 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         ENDTRY.
 
       WHEN `PREVIEW`.
+
+        " steps (4) and (5) work on the rows of step (3)
+        IF mt_tab IS NOT BOUND.
+          client->message_toast_display( `Convert the JSON first - step (3)` ).
+          RETURN.
+        ENDIF.
 
         DATA lr_tab TYPE REF TO data.
 
@@ -135,7 +158,23 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         client->nav_app_call( z2ui5_cl_popup_table=>factory( <tab2> ) ).
 
       WHEN `DB_SAVE`.
-        client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?` ) ).
+        IF mt_tab IS NOT BOUND OR mv_tab_db_table IS INITIAL.
+          client->message_toast_display( `Convert the JSON first - step (3)` ).
+          RETURN.
+        ENDIF.
+        " the rows were converted for the table of step (3) - a name changed
+        " since then would write them into a table they were not built for
+        IF to_upper( ms_app-db_table ) <> mv_tab_db_table.
+          client->message_box_display( text = |The rows were converted for { mv_tab_db_table } - convert the JSON again for { to_upper( ms_app-db_table ) } (step 3)|
+                                       type = `error` ).
+          RETURN.
+        ENDIF.
+        IF NOT ( mv_tab_db_table CP `Z*` OR mv_tab_db_table CP `Y*` ).
+          client->message_box_display( text = `Only Tables in namespace Z or Y allowed`
+                                       type = `error` ).
+          RETURN.
+        ENDIF.
+        client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `The file's rows are written to the table - existing keys are overwritten, other rows stay. Continue?` ) ).
 
       WHEN `UPLOAD`.
         client->nav_app_call( z2ui5_cl_popup_file_ul=>factory( ) ).
@@ -238,7 +277,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         )->tag( `Label`
         )->a( n = `text` v = `(5) Save Database`
         )->tag( `Text`
-        )->a( n = `text` v = `Attention - Database Content will be deleted!`
+        )->a( n = `text` v = `Attention - rows with the same key are overwritten!`
         )->tag( `Label`
         )->tag( `Button`
         )->a( n = `text` v = `Run`

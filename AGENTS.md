@@ -41,10 +41,10 @@ Installed alongside via abapGit; declared in the abaplint configs:
 
 ## Security
 
-This is a developer tool. It reads from and writes to any table the user names,
-without an authorization check of its own (the Z/Y namespace hint on write is
-only a warning, not enforced). Before using it beyond a development system, add
-your own `AUTHORITY-CHECK`s and restrict who may run the app.
+This is a developer tool. It reads from any table the user names and writes into
+tables of the Z/Y namespace only (the JSON upload's save refuses any other),
+without an authorization check of its own. Before using it beyond a development
+system, add your own `AUTHORITY-CHECK`s and restrict who may run the app.
 
 ## Coding Style
 
@@ -55,12 +55,16 @@ ABAP with Hungarian prefixes, backtick string literals, string templates
 
 ## Validation
 
-Run `npx abaplint` before considering changes complete (config `abaplint.jsonc`,
-0 issues expected). CI:
+Run `npm run check` before considering changes complete: it runs the same
+abaplint, abap2UI5-linter and rename steps as CI, and all of them must pass.
+CI:
 
-* `ABAP_STANDARD` / `ABAP_CLOUD` — lint against Standard ABAP and ABAP Cloud
-* `renaming` (`rename_test.yaml`) — namespace-rename check
-* `build_rename` — manual workflow that pushes a namespace-renamed branch
+* `abap-standard` / `abap-cloud` — lint against Standard ABAP
+  (`abaplint.jsonc`) and ABAP Cloud (`.github/abaplint/abap_cloud.jsonc`)
+* `check-abap2ui5` — the abap2UI5-linter over the app classes and their
+  views (`abap2ui5lint.jsonc`)
+* `check-rename` — namespace-rename check (`.github/abaplint/rename.json`)
+* `build-rename` — manual workflow that pushes a namespace-renamed branch
   `rename_<name>` for a parallel install
 
 There is no 702 downport: the abap2xlsx dependency has no `702` branch.
