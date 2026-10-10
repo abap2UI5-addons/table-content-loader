@@ -108,6 +108,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD load_table.
 
+    " Load before a draft exists has no table to fill
+    IF ms_draft-t_tab IS NOT BOUND.
+      client->message_toast_display( `Create a draft with New first` ).
+      RETURN.
+    ENDIF.
+
     FIELD-SYMBOLS <tab> TYPE table.
     ASSIGN ms_draft-t_tab->* TO <tab>.
 
@@ -121,12 +127,23 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD on_callback.
 
+    DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
+    IF lo_prev IS NOT INSTANCE OF z2ui5_cl_popup_input_val.
+      RETURN.
+    ENDIF.
+    " Cancel keeps the draft there is
+    DATA(ls_input) = CAST z2ui5_cl_popup_input_val( lo_prev )->result( ).
+    IF ls_input-check_confirmed = abap_false.
+      RETURN.
+    ENDIF.
+
     TRY.
-        DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
-        ms_draft-table_name = CAST z2ui5_cl_popup_input_val( lo_prev )->result( )-value.
+        " the table first - a name that does not exist keeps the draft there is
+        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ls_input-value ).
+        ms_draft-table_name = ls_input-value.
         ms_draft-check_load_pressed = abap_true.
 
-        ms_draft-t_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_draft-table_name ).
+        ms_draft-t_tab = lr_tab.
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN  ms_draft-t_tab->* TO <tab>.
 
@@ -142,7 +159,9 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         load_table( ).
         set_view( ).
 
-      CATCH cx_root ##NO_HANDLER.
+      CATCH cx_root INTO DATA(lx).
+        client->message_box_display( text = lx->get_text( )
+                                     type = 'error' ).
     ENDTRY.
 
   ENDMETHOD.
