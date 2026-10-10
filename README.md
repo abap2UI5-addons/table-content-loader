@@ -87,7 +87,7 @@ connections.
 
 ## Security
 
-This is a developer tool. It reads from and writes to any table the user names, without an authorization check of its own (the Z/Y namespace hint on write is only a warning, not an enforced restriction). Before using it beyond a development system, add your own authorization checks (e.g. `AUTHORITY-CHECK` on `S_TABU_DIS`/`S_TABU_NAM`) and restrict who may run the app.
+This is a developer tool. It reads from any table the user names and writes into tables of the Z/Y namespace only, without an authorization check of its own. Before using it beyond a development system, add your own authorization checks (e.g. `AUTHORITY-CHECK` on `S_TABU_DIS`/`S_TABU_NAM`) and restrict who may run the app.
 
 ## Limitations & Todo
 

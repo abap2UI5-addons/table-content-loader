@@ -156,6 +156,12 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           client->message_toast_display( `Convert the JSON first - step (3)` ).
           RETURN.
         ENDIF.
+        ms_app-db_table = to_upper( ms_app-db_table ).
+        IF NOT ( ms_app-db_table CP `Z*` OR ms_app-db_table CP `Y*` ).
+          client->message_box_display( text = `Only Tables in namespace Z or Y allowed`
+                                       type = `error` ).
+          RETURN.
+        ENDIF.
         client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `The file's rows are written to the table - existing keys are overwritten, other rows stay. Continue?` ) ).
 
       WHEN `UPLOAD`.

@@ -41,10 +41,10 @@ Installed alongside via abapGit; declared in the abaplint configs:
 
 ## Security
 
-This is a developer tool. It reads from and writes to any table the user names,
-without an authorization check of its own (the Z/Y namespace hint on write is
-only a warning, not enforced). Before using it beyond a development system, add
-your own `AUTHORITY-CHECK`s and restrict who may run the app.
+This is a developer tool. It reads from any table the user names and writes into
+tables of the Z/Y namespace only (the JSON upload's save refuses any other),
+without an authorization check of its own. Before using it beyond a development
+system, add your own `AUTHORITY-CHECK`s and restrict who may run the app.
 
 ## Coding Style
 
