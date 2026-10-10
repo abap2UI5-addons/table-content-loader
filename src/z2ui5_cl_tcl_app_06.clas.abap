@@ -143,6 +143,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         ms_draft-check_load_pressed = abap_true.
 
         ms_draft-t_tab = lr_tab.
+        " a new draft starts from scratch: the file built for the previous
+        " table must not be offered for download, and the sheet settings
+        " start again from their defaults instead of piling up behind the
+        " old ones (create_file reads the first entry of each)
+        CLEAR: mv_file, ms_draft-file_rows, ms_draft-file_size,
+               ms_draft-t_config, ms_draft-t_config_head.
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN  ms_draft-t_tab->* TO <tab>.
 
