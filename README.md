@@ -69,11 +69,11 @@ started directly with `?app_start=<class>`.
 
 | Tile | Class | What you do |
 |---|---|---|
-| JSON - Upload DB Content | `z2ui5_cl_tcl_app_01` | (1) upload a JSON file, (2) check the target table, (3) convert the JSON into the table's rows, (4) preview the first rows, (5) save - the table content is deleted and replaced by the file's rows, after a confirmation |
+| JSON - Upload DB Content | `z2ui5_cl_tcl_app_01` | (1) upload a JSON file, (2) check the target table, (3) convert the JSON into the table's rows, (4) preview the first rows, (5) save - after a confirmation the file's rows are written to the table: a row whose key exists is overwritten, a new key is inserted, rows that are not in the file stay (`MODIFY`) |
 | JSON - Download DB Content | `z2ui5_cl_tcl_app_03` | (1) set the table, (2) convert its content to JSON, (3) preview the JSON, (4) download it |
 | CSV - Upload / Download DB Content | `z2ui5_cl_tcl_app_04` | upload a CSV file, view or edit its content as a table, download it as CSV (no database write yet) |
 | XLSX - Upload DB Content | `z2ui5_cl_tcl_app_05` | upload an XLSX file, view or edit its content as a table, download it as XLSX (no database write yet) |
-| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; drafts can be saved and loaded again |
+| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored - **Save Draft** does nothing yet, see [Limitations & Todo](#limitations--todo)) |
 
 `z2ui5_cl_tcl_app_02` (view/edit/download) is not on the start page: it
 shows the import - edit - export round trip on a demo table of flight
@@ -94,6 +94,7 @@ This is a developer tool. It reads from and writes to any table the user names, 
 * CSV Upload & Download
 * JSON Download
 * XLSX Upload/Download for ABAP Cloud
+* Saving and reloading an XLSX draft - the **Save Draft** button of the XLSX download stores nothing yet
 
 ## Development
 

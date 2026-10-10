@@ -156,7 +156,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           client->message_toast_display( `Convert the JSON first - step (3)` ).
           RETURN.
         ENDIF.
-        client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `Database will be deleted and new entries filled. Are you sure?` ) ).
+        client->nav_app_call( z2ui5_cl_popup_to_confirm=>factory( `The file's rows are written to the table - existing keys are overwritten, other rows stay. Continue?` ) ).
 
       WHEN `UPLOAD`.
         client->nav_app_call( z2ui5_cl_popup_file_ul=>factory( ) ).
@@ -259,7 +259,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         )->tag( `Label`
         )->a( n = `text` v = `(5) Save Database`
         )->tag( `Text`
-        )->a( n = `text` v = `Attention - Database Content will be deleted!`
+        )->a( n = `text` v = `Attention - rows with the same key are overwritten!`
         )->tag( `Label`
         )->tag( `Button`
         )->a( n = `text` v = `Run`
