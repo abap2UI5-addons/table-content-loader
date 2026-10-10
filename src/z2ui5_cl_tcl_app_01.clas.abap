@@ -122,7 +122,6 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             ms_app-db_table = to_upper( ms_app-db_table ).
             CLEAR mv_tab_db_table.
             CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table) WITH EMPTY KEY.
-            mv_tab_db_table = ms_app-db_table.
             ASSIGN mt_tab->* TO <tab2>.
 
             z2ui5_cl_tcl_context=>json_parse(
@@ -132,6 +131,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                 data = <tab2>
             ).
 
+            " only a conversion that went through can be saved
+            mv_tab_db_table = ms_app-db_table.
             ms_app-file_entries = lines( <tab2> ).
             client->view_model_update( ).
 
