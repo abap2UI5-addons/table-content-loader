@@ -22,6 +22,8 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
   PROTECTED SECTION.
 
     DATA client TYPE REF TO z2ui5_if_client.
+    " the table the rows in mt_tab were converted for in step (3)
+    DATA mv_tab_db_table TYPE string.
 
     METHODS z2ui5_on_init.
     METHODS z2ui5_on_event.
@@ -64,10 +66,10 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           TRY.
               FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
               ASSIGN mt_tab->* TO <tab2>.
-              MODIFY (ms_app-db_table) FROM TABLE <tab2>.
+              MODIFY (mv_tab_db_table) FROM TABLE <tab2>.
               IF sy-subrc <> 0.
                 ROLLBACK WORK.
-                client->message_box_display( text = |Not every row could be written to { ms_app-db_table } - nothing was saved|
+                client->message_box_display( text = |Not every row could be written to { mv_tab_db_table } - nothing was saved|
                                              type = `error` ).
                 RETURN.
               ENDIF.
@@ -117,7 +119,10 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         TRY.
             FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
 
+            ms_app-db_table = to_upper( ms_app-db_table ).
+            CLEAR mv_tab_db_table.
             CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table) WITH EMPTY KEY.
+            mv_tab_db_table = ms_app-db_table.
             ASSIGN mt_tab->* TO <tab2>.
 
             z2ui5_cl_tcl_context=>json_parse(
@@ -152,12 +157,18 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         client->nav_app_call( z2ui5_cl_popup_table=>factory( <tab2> ) ).
 
       WHEN `DB_SAVE`.
-        IF mt_tab IS NOT BOUND.
+        IF mt_tab IS NOT BOUND OR mv_tab_db_table IS INITIAL.
           client->message_toast_display( `Convert the JSON first - step (3)` ).
           RETURN.
         ENDIF.
-        ms_app-db_table = to_upper( ms_app-db_table ).
-        IF NOT ( ms_app-db_table CP `Z*` OR ms_app-db_table CP `Y*` ).
+        " the rows were converted for the table of step (3) - a name changed
+        " since then would write them into a table they were not built for
+        IF to_upper( ms_app-db_table ) <> mv_tab_db_table.
+          client->message_box_display( text = |The rows were converted for { mv_tab_db_table } - convert the JSON again for { to_upper( ms_app-db_table ) } (step 3)|
+                                       type = `error` ).
+          RETURN.
+        ENDIF.
+        IF NOT ( mv_tab_db_table CP `Z*` OR mv_tab_db_table CP `Y*` ).
           client->message_box_display( text = `Only Tables in namespace Z or Y allowed`
                                        type = `error` ).
           RETURN.
