@@ -35,6 +35,12 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
             ui5_view_main_display( ).
 
           WHEN 'DOWNLOAD'.
+            " nothing uploaded yet - the view would build the file from an
+            " unassigned table, a short dump
+            IF mr_table IS INITIAL.
+              client->message_toast_display( `Upload an XLSX file first` ).
+              RETURN.
+            ENDIF.
             mv_check_download = abap_true.
             ui5_view_main_display( ).
 
