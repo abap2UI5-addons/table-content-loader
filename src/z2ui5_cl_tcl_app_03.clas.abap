@@ -92,14 +92,15 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
         FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
 
-        mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
-        ASSIGN mt_tab->* TO <tab2>.
-
-        SELECT *
-        FROM (ms_app-db_table)
-        INTO CORRESPONDING FIELDS OF TABLE <tab2>.
-
+        " a table name that does not exist reaches here too - the table and
+        " the SELECT sit in the TRY, so it ends in a message, not in a dump
         TRY.
+            mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
+            ASSIGN mt_tab->* TO <tab2>.
+
+            SELECT *
+            FROM (ms_app-db_table)
+            INTO CORRESPONDING FIELDS OF TABLE <tab2>.
 
             ms_app-file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
             client->message_toast_display( |JSON created| ).
@@ -110,16 +111,21 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
       WHEN `PREVIEW`.
 
-        mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
-        ASSIGN mt_tab->* TO <tab2>.
+        TRY.
+            mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
+            ASSIGN mt_tab->* TO <tab2>.
 
-        SELECT *
-        FROM (ms_app-db_table)
-        INTO CORRESPONDING FIELDS OF TABLE <tab2>
-        UP TO 10 ROWS.
+            SELECT *
+            FROM (ms_app-db_table)
+            INTO CORRESPONDING FIELDS OF TABLE <tab2>
+            UP TO 10 ROWS.
 
-        DATA(lv_prev_json) = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
-        client->nav_app_call( z2ui5_cl_popup_textedit=>factory( lv_prev_json ) ).
+            DATA(lv_prev_json) = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
+            client->nav_app_call( z2ui5_cl_popup_textedit=>factory( lv_prev_json ) ).
+
+          CATCH cx_root INTO DATA(x_preview).
+            client->message_box_display( x_preview->get_text( ) ).
+        ENDTRY.
 
       WHEN 'DOWNLOAD'.
         client->nav_app_call( z2ui5_cl_popup_file_dl=>factory( ms_app-file ) ).

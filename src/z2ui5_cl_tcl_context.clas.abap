@@ -425,8 +425,20 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
 
   METHOD rtti_create_tab_by_name.
 
-    DATA(struct_desc) = cl_abap_structdescr=>describe_by_name( val ).
-    DATA(data_desc) = CAST cl_abap_datadescr( struct_desc ).
+    " type_not_found is a classic exception: called functionally, an unknown
+    " name ends in a short dump no CATCH stops - here it becomes one the
+    " apps can catch and show
+    DATA lo_type TYPE REF TO cl_abap_typedescr.
+    cl_abap_typedescr=>describe_by_name( EXPORTING  p_name         = val
+                                         RECEIVING  p_descr_ref    = lo_type
+                                         EXCEPTIONS type_not_found = 1
+                                                    OTHERS         = 2 ).
+    IF sy-subrc <> 0 OR lo_type IS NOT INSTANCE OF cl_abap_datadescr.
+      RAISE EXCEPTION TYPE z2ui5_cx_util_error
+        EXPORTING
+          val = |Table { val } not found|.
+    ENDIF.
+    DATA(data_desc) = CAST cl_abap_datadescr( lo_type ).
     DATA(gr_dyntable_typ) = cl_abap_tabledescr=>create( data_desc ).
     CREATE DATA result TYPE HANDLE gr_dyntable_typ.
 
