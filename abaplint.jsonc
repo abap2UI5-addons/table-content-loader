@@ -280,6 +280,7 @@
     "tables_declared_locally": true,
     "try_without_catch": true,
     "type_form_parameters": true,
+    "uncaught_exception": true,
     "unnecessary_chaining": true,
     "unnecessary_loop_guard": true,
     "unnecessary_pragma": true,
