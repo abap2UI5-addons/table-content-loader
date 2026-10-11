@@ -42,31 +42,42 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
           ls_table_settings TYPE zexcel_s_table_settings.
 
 
-    " Creates active sheet
-    lo_excel = NEW #( ).
+    " abap2xlsx reports a failure with ZCX_EXCEL - a static exception the
+    " signature does not declare, so it would leave this method as the text-less
+    " CX_SY_NO_HANDLER; passed on with its own text instead
+    TRY.
 
-    " Get active sheet
-    lo_worksheet = lo_excel->get_active_worksheet( ).
-    lo_worksheet->set_title( CONV #( title ) ).
+        " Creates active sheet
+        lo_excel = NEW #( ).
 
-    lt_field_catalog = fieldcatalog.
-    IF lt_field_catalog IS INITIAL.
-      lt_field_catalog = zcl_excel_common=>get_fieldcatalog( val ).
-    ENDIF.
+        " Get active sheet
+        lo_worksheet = lo_excel->get_active_worksheet( ).
+        lo_worksheet->set_title( CONV #( title ) ).
 
-    ls_table_settings = settings.
-    IF ls_table_settings IS INITIAL.
-      ls_table_settings-table_style = zcl_excel_table=>builtinstyle_medium5.
-    ENDIF.
+        lt_field_catalog = fieldcatalog.
+        IF lt_field_catalog IS INITIAL.
+          lt_field_catalog = zcl_excel_common=>get_fieldcatalog( val ).
+        ENDIF.
 
-    lo_worksheet->bind_table( ip_table          = val
-                              is_table_settings = ls_table_settings
-                              it_field_catalog  = lt_field_catalog ).
+        ls_table_settings = settings.
+        IF ls_table_settings IS INITIAL.
+          ls_table_settings-table_style = zcl_excel_table=>builtinstyle_medium5.
+        ENDIF.
 
-    lo_worksheet->freeze_panes( ip_num_rows = 1 ).
+        lo_worksheet->bind_table( ip_table          = val
+                                  is_table_settings = ls_table_settings
+                                  it_field_catalog  = lt_field_catalog ).
 
-    lo_writer = NEW zcl_excel_writer_2007( ).
-    result = lo_writer->write_file( lo_excel ).
+        lo_worksheet->freeze_panes( ip_num_rows = 1 ).
+
+        lo_writer = NEW zcl_excel_writer_2007( ).
+        result = lo_writer->write_file( lo_excel ).
+
+      CATCH zcx_excel INTO DATA(x).
+        RAISE EXCEPTION TYPE z2ui5_cx_util_error
+          EXPORTING
+            val = x.
+    ENDTRY.
 
 
   ENDMETHOD.
@@ -77,13 +88,20 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
           lo_reader    TYPE REF TO zif_excel_reader,
           lo_worksheet TYPE REF TO zcl_excel_worksheet.
 
-    lo_reader = NEW zcl_excel_reader_2007( ).
-    lo_excel = lo_reader->load( val ).
-    lo_worksheet = lo_excel->get_worksheet_by_index( 1 ).
-    lo_worksheet->convert_to_table(
-      IMPORTING
-        er_data          = result
-    ).
+    " a file abap2xlsx cannot read ends in ZCX_EXCEL - passed on with its text
+    TRY.
+        lo_reader = NEW zcl_excel_reader_2007( ).
+        lo_excel = lo_reader->load( val ).
+        lo_worksheet = lo_excel->get_worksheet_by_index( 1 ).
+        lo_worksheet->convert_to_table(
+          IMPORTING
+            er_data          = result
+        ).
+      CATCH zcx_excel INTO DATA(x).
+        RAISE EXCEPTION TYPE z2ui5_cx_util_error
+          EXPORTING
+            val = x.
+    ENDTRY.
 
   ENDMETHOD.
 
