@@ -81,7 +81,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT SINGLE COUNT( * )
             FROM (ms_app-db_table)
-            INTO ms_app-db_table_entries.
+            INTO @ms_app-db_table_entries.
 
             client->view_model_update( ).
           CATCH cx_root.
@@ -100,7 +100,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT *
             FROM (ms_app-db_table)
-            INTO CORRESPONDING FIELDS OF TABLE <tab2>.
+            INTO CORRESPONDING FIELDS OF TABLE @<tab2>.
 
             ms_app-file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
             client->message_toast_display( |JSON created| ).
@@ -117,7 +117,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT *
             FROM (ms_app-db_table)
-            INTO CORRESPONDING FIELDS OF TABLE <tab2>
+            INTO CORRESPONDING FIELDS OF TABLE @<tab2>
             UP TO 10 ROWS.
 
             DATA(lv_prev_json) = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
