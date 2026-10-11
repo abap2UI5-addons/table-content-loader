@@ -43,7 +43,7 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
 
     " Creates active sheet
-    CREATE OBJECT lo_excel.
+    lo_excel = NEW #( ).
 
     " Get active sheet
     lo_worksheet = lo_excel->get_active_worksheet( ).
@@ -65,7 +65,7 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
     lo_worksheet->freeze_panes( ip_num_rows = 1 ).
 
-    CREATE OBJECT lo_writer TYPE zcl_excel_writer_2007.
+    lo_writer = NEW zcl_excel_writer_2007( ).
     result = lo_writer->write_file( lo_excel ).
 
 
@@ -77,7 +77,7 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
           lo_reader    TYPE REF TO zif_excel_reader,
           lo_worksheet TYPE REF TO zcl_excel_worksheet.
 
-    CREATE OBJECT lo_reader TYPE zcl_excel_reader_2007.
+    lo_reader = NEW zcl_excel_reader_2007( ).
     lo_excel = lo_reader->load( val ).
     lo_worksheet = lo_excel->get_worksheet_by_index( 1 ).
     lo_worksheet->convert_to_table(

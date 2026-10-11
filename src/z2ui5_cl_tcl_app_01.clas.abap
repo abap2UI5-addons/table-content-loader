@@ -66,7 +66,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           TRY.
               FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
               ASSIGN mt_tab->* TO <tab2>.
-              MODIFY (mv_tab_db_table) FROM TABLE <tab2>.
+              MODIFY (mv_tab_db_table) FROM TABLE @<tab2>.
               IF sy-subrc <> 0.
                 ROLLBACK WORK.
                 client->message_box_display( text = |Not every row could be written to { mv_tab_db_table } - nothing was saved|
@@ -104,7 +104,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
             SELECT SINGLE COUNT( * )
             FROM (ms_app-db_table)
-            INTO ms_app-db_table_entries.
+            INTO @ms_app-db_table_entries.
 
             IF to_upper( ms_app-db_table(1) ) <> `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
               client->message_box_display( `Only Tables in namespace Z or Y allowed` ).
