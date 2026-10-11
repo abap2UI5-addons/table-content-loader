@@ -120,12 +120,24 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
       WHEN `BACK`.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
 
-      WHEN OTHERS.
+      " one branch per tile instead of CREATE OBJECT TYPE (event): the event
+      " name comes from the browser, and any class of the system implementing
+      " z2ui5_if_app could be started through it - an unknown name ended in a
+      " short dump. Static references also follow a namespace rename.
+      WHEN `z2ui5_cl_tcl_app_01`.
+        client->nav_app_call( NEW z2ui5_cl_tcl_app_01( ) ).
 
-        DATA li_app TYPE REF TO z2ui5_if_app.
-        DATA(lv_classname) = to_upper( client->get( )-event ).
-        CREATE OBJECT li_app TYPE (lv_classname).
-        client->nav_app_call( li_app ).
+      WHEN `z2ui5_cl_tcl_app_03`.
+        client->nav_app_call( NEW z2ui5_cl_tcl_app_03( ) ).
+
+      WHEN `z2ui5_cl_tcl_app_04`.
+        client->nav_app_call( NEW z2ui5_cl_tcl_app_04( ) ).
+
+      WHEN `z2ui5_cl_tcl_app_05`.
+        client->nav_app_call( NEW z2ui5_cl_tcl_app_05( ) ).
+
+      WHEN `z2ui5_cl_tcl_app_06`.
+        client->nav_app_call( NEW z2ui5_cl_tcl_app_06( ) ).
 
     ENDCASE.
 
