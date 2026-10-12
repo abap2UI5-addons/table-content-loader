@@ -116,10 +116,17 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     FIELD-SYMBOLS <tab> TYPE table.
     ASSIGN ms_draft-t_tab->* TO <tab>.
 
-    SELECT FROM (ms_draft-table_name)
-      FIELDS *
-      INTO CORRESPONDING FIELDS OF TABLE @<tab>
-      UP TO @ms_draft-max_rows ROWS.
+    " the name is bound, so a request can carry one that is no table - that
+    " is a message, not a short dump
+    TRY.
+        SELECT FROM (ms_draft-table_name)
+          FIELDS *
+          INTO CORRESPONDING FIELDS OF TABLE @<tab>
+          UP TO @ms_draft-max_rows ROWS.
+      CATCH cx_root INTO DATA(lx).
+        client->message_box_display( text = lx->get_text( )
+                                     type = 'error' ).
+    ENDTRY.
 
   ENDMETHOD.
 
