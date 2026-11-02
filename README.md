@@ -42,6 +42,8 @@ before you use it beyond a development system.
   On-Premise with ABAP for Cloud) or Standard ABAP on SAP NetWeaver AS ABAP
   7.50 or higher. XLSX upload and download are not ready for ABAP Cloud yet
   (see [Limitations & Todo](#limitations--todo)).
+- NetWeaver 7.02 - 7.40: the branch `702`, downported automatically from
+  `main` on every push - pull abap2UI5 and popups from their `702` branches as well
 - [abap2UI5](https://github.com/abap2UI5/abap2UI5)
 - [abap2UI5-addons/popups](https://github.com/abap2UI5-addons/popups) - file
   upload, input and confirmation popups

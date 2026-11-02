@@ -75,15 +75,13 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
         IF ms_draft-check_file_row_limit = abap_true.
 
-          SELECT FROM (ms_draft-table_name)
-            FIELDS *
+          SELECT * FROM (ms_draft-table_name)
             INTO CORRESPONDING FIELDS OF TABLE @<tab>
             UP TO @ms_draft-file_max_rows ROWS.
 
         ELSE.
 
-          SELECT FROM (ms_draft-table_name)
-            FIELDS *
+          SELECT * FROM (ms_draft-table_name)
             INTO CORRESPONDING FIELDS OF TABLE @<tab>.
 
         ENDIF.
@@ -119,8 +117,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     " the name is bound, so a request can carry one that is no table - that
     " is a message, not a short dump
     TRY.
-        SELECT FROM (ms_draft-table_name)
-          FIELDS *
+        SELECT * FROM (ms_draft-table_name)
           INTO CORRESPONDING FIELDS OF TABLE @<tab>
           UP TO @ms_draft-max_rows ROWS.
       CATCH cx_root INTO DATA(lx).
@@ -133,12 +130,15 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD on_callback.
 
-    DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
-    IF lo_prev IS NOT INSTANCE OF z2ui5_cl_popup_input_val.
-      RETURN.
-    ENDIF.
+    " a cast, not IS INSTANCE OF (no 7.02 downport); the TRY holds only the cast
+    DATA lo_popup TYPE REF TO z2ui5_cl_popup_input_val.
+    TRY.
+        lo_popup ?= client->get_app( client->get( )-s_draft-id_prev_app ).
+      CATCH cx_sy_move_cast_error.
+        RETURN.
+    ENDTRY.
     " Cancel keeps the draft there is
-    DATA(ls_input) = CAST z2ui5_cl_popup_input_val( lo_prev )->result( ).
+    DATA(ls_input) = lo_popup->result( ).
     IF ls_input-check_confirmed = abap_false.
       RETURN.
     ENDIF.
