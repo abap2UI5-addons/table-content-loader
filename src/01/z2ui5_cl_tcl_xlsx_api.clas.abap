@@ -74,7 +74,7 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
         result = lo_writer->write_file( lo_excel ).
 
       CATCH zcx_excel INTO DATA(x).
-        RAISE EXCEPTION TYPE z2ui5_cx_util_error
+        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
           EXPORTING
             val = x.
     ENDTRY.
@@ -98,7 +98,7 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
             er_data          = result
         ).
       CATCH zcx_excel INTO DATA(x).
-        RAISE EXCEPTION TYPE z2ui5_cx_util_error
+        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
           EXPORTING
             val = x.
     ENDTRY.
