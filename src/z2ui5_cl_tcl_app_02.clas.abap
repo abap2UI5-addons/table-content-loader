@@ -35,8 +35,7 @@ CLASS z2ui5_cl_tcl_app_02 DEFINITION PUBLIC.
 
     DATA:
       BEGIN OF ms_edit,
-        t_table      TYPE ty_t_table,
-        check_active TYPE abap_bool,
+        t_table TYPE ty_t_table,
       END OF ms_edit.
 
     "dummy helper - not needed when using db
@@ -135,9 +134,6 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
       WHEN 'EDIT_ROW_DELETE'.
         DELETE ms_edit-t_table WHERE selkz = abap_true.
-
-      WHEN 'EDIT_CHANGE_MODE'.
-        ms_edit-check_active = xsdbool( ms_edit-check_active = abap_false ).
 
       WHEN 'EDIT_ROW_ADD'.
         INSERT VALUE #( ) INTO TABLE ms_edit-t_table.
