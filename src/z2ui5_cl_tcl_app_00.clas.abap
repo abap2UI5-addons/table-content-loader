@@ -1,7 +1,7 @@
 CLASS z2ui5_cl_tcl_app_00 DEFINITION
   PUBLIC
   FINAL
-  CREATE PUBLIC .
+  CREATE PUBLIC.
 
   PUBLIC SECTION.
     INTERFACES z2ui5_if_app.
@@ -29,83 +29,83 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
 
       DATA(page) = view->ele( `Shell`
                        )->ele( `Page`
-                       )->a( n = `title` v = 'abap2UI5 - Table Content Loader'
-                       )->a( n = `navButtonPress` v = client->_event( 'BACK' )
+                       )->a( n = `title` v = `abap2UI5 - Table Content Loader`
+                       )->a( n = `navButtonPress` v = client->_event( `BACK` )
                        )->a( n = `showNavButton` b = abap_true
                        )->ele( `headerContent`
                        )->ele( `OverflowToolbar`
                        )->tag( `Link`
-                       )->a( n = `text` v = 'Project on GitHub'
-                       )->a( n = `target` v = '_blank'
-                       )->a( n = `href` v = 'https://github.com/abap2UI5-addons/table-content-loader'
+                       )->a( n = `text` v = `Project on GitHub`
+                       )->a( n = `target` v = `_blank`
+                       )->a( n = `href` v = `https://github.com/abap2UI5-addons/table-content-loader`
                        )->end(
                        )->end( ).
       page = page->ele( `VBox` ).
       page = page->ele( `HBox` ).
       page->ele( `GenericTile`
-          )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
+          )->a( n = `class` v = `sapUiTinyMarginBegin sapUiTinyMarginTop`
           )->a( n = `header` v = `JSON`
           )->a( n = `subheader` v = `Upload DB Content`
-          )->a( n = `state` v = 'Disabled'
+          )->a( n = `state` v = `Disabled`
           )->a( n = `press` v = client->_event( `APP_01` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
-          )->a( n = `src` v = 'sap-icon://upload' ).
+          )->a( n = `src` v = `sap-icon://upload` ).
 
       page->ele( `GenericTile`
-          )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
+          )->a( n = `class` v = `sapUiTinyMarginBegin sapUiTinyMarginTop`
           )->a( n = `header` v = `JSON`
           )->a( n = `subheader` v = `Download DB Content`
           )->a( n = `press` v = client->_event( `APP_03` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
-          )->a( n = `src` v = 'sap-icon://download' ).
+          )->a( n = `src` v = `sap-icon://download` ).
 
       page = page->end(
                  )->ele( `HBox` ).
 
       page->ele( `GenericTile`
-          )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
+          )->a( n = `class` v = `sapUiTinyMarginBegin sapUiTinyMarginTop`
           )->a( n = `header` v = `CSV`
           )->a( n = `subheader` v = `Upload DB Content`
           )->a( n = `press` v = client->_event( `APP_04` )
           )->a( n = `enableNavigationButton` b = abap_false
-          )->a( n = `state` v = 'Disabled'
+          )->a( n = `state` v = `Disabled`
           )->ele( `TileContent`
           )->ele( `ImageContent`
-          )->a( n = `src` v = 'sap-icon://upload' ).
+          )->a( n = `src` v = `sap-icon://upload` ).
 
       page->ele( `GenericTile`
-          )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
+          )->a( n = `class` v = `sapUiTinyMarginBegin sapUiTinyMarginTop`
           )->a( n = `header` v = `CSV`
           )->a( n = `subheader` v = `Download DB Content`
           )->a( n = `press` v = client->_event( `APP_04` )
-          )->a( n = `state` v = 'Disabled'
+          )->a( n = `state` v = `Disabled`
           )->ele( `TileContent`
           )->ele( `ImageContent`
-          )->a( n = `src` v = 'sap-icon://download' ).
+          )->a( n = `src` v = `sap-icon://download` ).
 
       page = page->end(
                  )->ele( `HBox` ).
 
       page->ele( `GenericTile`
-          )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
+          )->a( n = `class` v = `sapUiTinyMarginBegin sapUiTinyMarginTop`
           )->a( n = `header` v = `XLSX`
           )->a( n = `subheader` v = `Upload DB Content`
-          )->a( n = `state` v = 'Disabled'
+          )->a( n = `state` v = `Disabled`
           )->a( n = `press` v = client->_event( `APP_05` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
-          )->a( n = `src` v = 'sap-icon://upload' ).
+          )->a( n = `src` v = `sap-icon://upload` ).
 
       page->ele( `GenericTile`
-          )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
+          )->a( n = `class` v = `sapUiTinyMarginBegin sapUiTinyMarginTop`
           )->a( n = `header` v = `XLSX`
           )->a( n = `subheader` v = `Download DB Content`
           )->a( n = `press` v = client->_event( `APP_06` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
-          )->a( n = `src` v = 'sap-icon://download' ).
+          )->a( n = `src` v = `sap-icon://download` ).
 
       client->view_display( view->stringify( ) ).
 
@@ -142,7 +142,6 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_06( ) ).
 
     ENDCASE.
-
 
   ENDMETHOD.
 ENDCLASS.

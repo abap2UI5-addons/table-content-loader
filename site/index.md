@@ -35,6 +35,7 @@ A start page with one tile per format and direction leads into small step-by-ste
 
 - abap2UI5
 - Standard ABAP on SAP NetWeaver AS ABAP 7.50 or higher
+- NetWeaver 7.02 - 7.40: the downported branch 702
 - ABAP Cloud supported (XLSX upload and download not ready for ABAP Cloud yet)
 - abap2UI5-addons/popups (file upload, input and confirmation popups)
 - abap2xlsx (reads and writes the XLSX files)

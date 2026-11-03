@@ -459,7 +459,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                     )->ele( `headerToolbar`
                     )->ele( `OverflowToolbar`
                     )->tag( `Title`
-                    )->a( n = `text` v = `Excel Fieldcatalog`
+                    )->a( n = `text` v = `Excel Field Catalog`
                     )->tag( `ToolbarSpacer`
                     )->tag( `Button`
                     )->a( n = `text` v = `Reset`

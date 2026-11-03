@@ -132,7 +132,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             INTO @ms_app-db_table_entries.
 
             IF to_upper( ms_app-db_table(1) ) <> `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
-              client->message_box_display( `Only Tables in namespace Z or Y allowed` ).
+              client->message_box_display( `Only tables in the Z or Y namespace are allowed` ).
             ENDIF.
 
             client->view_model_update( ).
@@ -195,7 +195,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           RETURN.
         ENDIF.
         IF NOT ( mv_tab_db_table CP `Z*` OR mv_tab_db_table CP `Y*` ).
-          client->message_box_display( text = `Only Tables in namespace Z or Y allowed`
+          client->message_box_display( text = `Only tables in the Z or Y namespace are allowed`
                                        type = `error` ).
           RETURN.
         ENDIF.

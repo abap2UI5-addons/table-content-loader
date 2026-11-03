@@ -101,12 +101,9 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
                      )->a( n = `height` v = `100%` ).
     DATA(page) = view->ele( `Shell`
                      )->ele( `Page`
-                     )->a( n = `title` v = 'abap2UI5 - CSV to ABAP internal Table'
+                     )->a( n = `title` v = 'abap2UI5 - CSV to ABAP Internal Table'
                      )->a( n = `navButtonPress` v = client->_event( 'BACK' )
-                     )->a( n = `showNavButton` b = abap_true
-                     )->ele( `headerContent`
-                     )->tag( `ToolbarSpacer`
-                     )->end( ).
+                     )->a( n = `showNavButton` b = abap_true ).
 
     IF mr_table IS NOT INITIAL.
       FIELD-SYMBOLS <tab> TYPE table.
@@ -126,7 +123,6 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
                       )->a( n = `customTextOff` v = 'View'
                       )->end(
                       )->end( ).
-
 
       DATA(lr_fields) = VALUE string_table( FOR row IN z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ) ( row-name ) ).
       DATA(lo_cols) = tab->ele( `columns` ).
