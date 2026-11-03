@@ -27,6 +27,10 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
 
     METHODS z2ui5_on_init.
     METHODS z2ui5_on_event.
+    "! handles the popup that returned - abap_true when it was one of ours
+    METHODS z2ui5_on_navigated
+      RETURNING
+        VALUE(result) TYPE abap_bool.
     METHODS z2ui5_view_display.
 
   PRIVATE SECTION.
@@ -47,48 +51,69 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    IF client->get( )-check_on_navigated = abap_true.
-      " which popup handed control back decides what to do - asked with IS
-      " INSTANCE OF, so an error of the branch that runs is not swallowed by
-      " the CATCH of a failed CAST
-      DATA(lo_prev) = client->get_app( client->get( )-s_draft-id_prev_app ).
-      IF lo_prev IS INSTANCE OF z2ui5_cl_popup_file_ul.
-        DATA(lo_popup_file) = CAST z2ui5_cl_popup_file_ul( lo_prev ).
-        IF lo_popup_file->result( )-check_confirmed = abap_true.
-          ms_app-file = lo_popup_file->result( )-value.
-          client->message_toast_display( `File uploaded successfully` ).
-          ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
-          client->view_model_update( ).
-        ENDIF.
-        RETURN.
-      ELSEIF lo_prev IS INSTANCE OF z2ui5_cl_popup_to_confirm.
-        IF CAST z2ui5_cl_popup_to_confirm( lo_prev )->result( ) = abap_true.
-          TRY.
-              FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
-              ASSIGN mt_tab->* TO <tab2>.
-              MODIFY (mv_tab_db_table) FROM TABLE @<tab2>.
-              IF sy-subrc <> 0.
-                ROLLBACK WORK.
-                client->message_box_display( text = |Not every row could be written to { mv_tab_db_table } - nothing was saved|
-                                             type = `error` ).
-                RETURN.
-              ENDIF.
-              COMMIT WORK AND WAIT.
-              client->message_box_display( `DB updated` ).
-            CATCH cx_root INTO DATA(lx_save).
-              ROLLBACK WORK.
-              client->message_box_display( text = lx_save->get_text( )
-                                           type = `error` ).
-          ENDTRY.
-        ENDIF.
-        RETURN.
-      ENDIF.
+    IF client->get( )-check_on_navigated = abap_true AND z2ui5_on_navigated( ) = abap_true.
+      RETURN.
     ENDIF.
 
     IF client->get( )-event IS NOT INITIAL.
       z2ui5_on_event( ).
     ENDIF.
 
+
+  ENDMETHOD.
+
+
+  METHOD z2ui5_on_navigated.
+
+    " which popup handed control back decides what to do - asked with one
+    " cast per popup (IS INSTANCE OF has no 7.02 downport). Each TRY holds
+    " only the cast, so an error of the branch that runs is not swallowed
+    " by its CATCH.
+    DATA lo_prev         TYPE REF TO z2ui5_if_app.
+    DATA lo_popup_file   TYPE REF TO z2ui5_cl_popup_file_ul.
+    DATA lo_popup_commit TYPE REF TO z2ui5_cl_popup_to_confirm.
+    lo_prev = client->get_app( client->get( )-s_draft-id_prev_app ).
+    TRY.
+        lo_popup_file ?= lo_prev.
+      CATCH cx_sy_move_cast_error.
+        CLEAR lo_popup_file.
+    ENDTRY.
+    TRY.
+        lo_popup_commit ?= lo_prev.
+      CATCH cx_sy_move_cast_error.
+        CLEAR lo_popup_commit.
+    ENDTRY.
+    IF lo_popup_file IS BOUND.
+      result = abap_true.
+      IF lo_popup_file->result( )-check_confirmed = abap_true.
+        ms_app-file = lo_popup_file->result( )-value.
+        client->message_toast_display( `File uploaded successfully` ).
+        ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
+        client->view_model_update( ).
+      ENDIF.
+      RETURN.
+    ELSEIF lo_popup_commit IS BOUND.
+      result = abap_true.
+      IF lo_popup_commit->result( ) = abap_true.
+        TRY.
+            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+            ASSIGN mt_tab->* TO <tab2>.
+            MODIFY (mv_tab_db_table) FROM TABLE @<tab2>.
+            IF sy-subrc <> 0.
+              ROLLBACK WORK.
+              client->message_box_display( text = |Not every row could be written to { mv_tab_db_table } - nothing was saved|
+                                           type = `error` ).
+              RETURN.
+            ENDIF.
+            COMMIT WORK AND WAIT.
+            client->message_box_display( `DB updated` ).
+          CATCH cx_root INTO DATA(lx_save).
+            ROLLBACK WORK.
+            client->message_box_display( text = lx_save->get_text( )
+                                         type = `error` ).
+        ENDTRY.
+      ENDIF.
+    ENDIF.
 
   ENDMETHOD.
 
@@ -121,7 +146,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
             ms_app-db_table = to_upper( ms_app-db_table ).
             CLEAR mv_tab_db_table.
-            CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table) WITH EMPTY KEY.
+            CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table) WITH DEFAULT KEY.
             ASSIGN mt_tab->* TO <tab2>.
 
             z2ui5_cl_tcl_context=>json_parse(

@@ -75,9 +75,33 @@ CI:
   (`abaplint.jsonc`) and ABAP Cloud (`.github/abaplint/abap_cloud.jsonc`)
 * `check-abap2ui5` — the abap2UI5-linter over the app classes and their
   views (`abap2ui5lint.jsonc`)
-* `check-rename` — namespace-rename check (`.github/abaplint/rename.json`)
+* `check-rename` — namespace-rename check (`npm run rename`, `.github/scripts/rename.mjs`)
 * `build-rename` — manual workflow that pushes a namespace-renamed branch
   `rename_<name>` for a parallel install
 
-There is no 702 downport: the abap2xlsx dependency has no `702` branch.
+* `publish-702` / `abap-702` — `publish-702` writes the downported `702`
+  branch on every push to `main` (`npm run auto_downport` against
+  `.github/abaplint/abap_702.jsonc`), and `abap-702` lints it. abap2xlsx needs
+  no `702` branch: its `main` is written for 7.02. Never commit to `702` by
+  hand.
+
 All `.abap`/`.xml`/config files are LF-only (`.gitattributes` enforces it).
+
+## Namespace rename
+
+`npm run rename` (CI: `check-rename`) and the manual `build-rename` workflow
+are abap2UI5's namespace rename for this addon - `.github/scripts/rename.mjs`,
+the same file in every addon that has one. Every `z2ui5_` object becomes
+`<name>_...`, for a customer name such as `ZMYUI5` or a registered namespace
+such as `/CA2UI5/` (at most 10 characters), and so does every reference to
+abap2UI5 and to the addons this one builds on: the branch `rename_<name>` runs
+on an abap2UI5 renamed with the same name by its own `build-rename`. What
+follows from it:
+
+- Every object name has at most 25 characters (a transparent table
+  11, an ICF node 10) - 30 minus what the longest new name adds.
+- No literal names a `z2ui5_` object: the rename rewrites references, never a
+  literal. Derive the name - from a typed reference, or behind the prefix of
+  the class's own name.
+- A change that spans several repositories: `RENAME_DEPS_FROM=<dir> npm run
+  rename` takes the dependencies from the clones in `<dir>`.

@@ -47,7 +47,7 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
           )->a( n = `header` v = `JSON`
           )->a( n = `subheader` v = `Upload DB Content`
           )->a( n = `state` v = 'Disabled'
-          )->a( n = `press` v = client->_event( `z2ui5_cl_tcl_app_01` )
+          )->a( n = `press` v = client->_event( `APP_01` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
           )->a( n = `src` v = 'sap-icon://upload' ).
@@ -56,7 +56,7 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
           )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
           )->a( n = `header` v = `JSON`
           )->a( n = `subheader` v = `Download DB Content`
-          )->a( n = `press` v = client->_event( `z2ui5_cl_tcl_app_03` )
+          )->a( n = `press` v = client->_event( `APP_03` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
           )->a( n = `src` v = 'sap-icon://download' ).
@@ -68,7 +68,7 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
           )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
           )->a( n = `header` v = `CSV`
           )->a( n = `subheader` v = `Upload DB Content`
-          )->a( n = `press` v = client->_event( `z2ui5_cl_tcl_app_04` )
+          )->a( n = `press` v = client->_event( `APP_04` )
           )->a( n = `enableNavigationButton` b = abap_false
           )->a( n = `state` v = 'Disabled'
           )->ele( `TileContent`
@@ -79,7 +79,7 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
           )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
           )->a( n = `header` v = `CSV`
           )->a( n = `subheader` v = `Download DB Content`
-          )->a( n = `press` v = client->_event( `z2ui5_cl_tcl_app_04` )
+          )->a( n = `press` v = client->_event( `APP_04` )
           )->a( n = `state` v = 'Disabled'
           )->ele( `TileContent`
           )->ele( `ImageContent`
@@ -93,7 +93,7 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
           )->a( n = `header` v = `XLSX`
           )->a( n = `subheader` v = `Upload DB Content`
           )->a( n = `state` v = 'Disabled'
-          )->a( n = `press` v = client->_event( `z2ui5_cl_tcl_app_05` )
+          )->a( n = `press` v = client->_event( `APP_05` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
           )->a( n = `src` v = 'sap-icon://upload' ).
@@ -102,7 +102,7 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
           )->a( n = `class` v = 'sapUiTinyMarginBegin sapUiTinyMarginTop'
           )->a( n = `header` v = `XLSX`
           )->a( n = `subheader` v = `Download DB Content`
-          )->a( n = `press` v = client->_event( `z2ui5_cl_tcl_app_06` )
+          )->a( n = `press` v = client->_event( `APP_06` )
           )->ele( `TileContent`
           )->ele( `ImageContent`
           )->a( n = `src` v = 'sap-icon://download' ).
@@ -123,20 +123,22 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
       " one branch per tile instead of CREATE OBJECT TYPE (event): the event
       " name comes from the browser, and any class of the system implementing
       " z2ui5_if_app could be started through it - an unknown name ended in a
-      " short dump. Static references also follow a namespace rename.
-      WHEN `z2ui5_cl_tcl_app_01`.
+      " short dump. Static references also follow a namespace rename, and the
+      " event is a plain name rather than the class's: the rename rewrites
+      " references, never a literal.
+      WHEN `APP_01`.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_01( ) ).
 
-      WHEN `z2ui5_cl_tcl_app_03`.
+      WHEN `APP_03`.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_03( ) ).
 
-      WHEN `z2ui5_cl_tcl_app_04`.
+      WHEN `APP_04`.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_04( ) ).
 
-      WHEN `z2ui5_cl_tcl_app_05`.
+      WHEN `APP_05`.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_05( ) ).
 
-      WHEN `z2ui5_cl_tcl_app_06`.
+      WHEN `APP_06`.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_06( ) ).
 
     ENDCASE.
