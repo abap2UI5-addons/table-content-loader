@@ -4,7 +4,7 @@ CLASS z2ui5_cl_tcl_app_05 DEFINITION PUBLIC.
 
     INTERFACES z2ui5_if_app.
 
-    DATA mv_tab_name TYPE string VALUE `z2ui5_xlsx_t_01`.
+    DATA mv_tab_name TYPE string.
     DATA mv_path TYPE string.
     DATA mv_value TYPE string.
     DATA mr_table TYPE REF TO data.

@@ -1,8 +1,7 @@
 # AGENTS.md — AI Assistant Guide for abap2UI5 table-content-loader
 
 > This file follows the cross-tool AGENTS.md convention and is the single
-> agent instruction file of this repository — Claude Code reads `AGENTS.md`
-> natively, there is no separate `CLAUDE.md`.
+> agent instruction file of this repository — `CLAUDE.md` only points here.
 
 ## Project Overview
 

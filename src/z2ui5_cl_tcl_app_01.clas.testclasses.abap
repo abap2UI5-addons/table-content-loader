@@ -23,9 +23,8 @@ CLASS ltcl_unit_test IMPLEMENTATION.
     DATA(lv_readyx) = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_ready ).
     DATA(lv_data2) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_readyx ).
 
-    IF lv_data2 <> lv_csv_base64.
-      ASSERT 1 = 0.
-    ENDIF.
+    cl_abap_unit_assert=>assert_equals( exp = lv_csv_base64
+                                        act = lv_data2 ).
 
   ENDMETHOD.
 

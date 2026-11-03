@@ -24,7 +24,6 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
         t_fcat                   TYPE z2ui5_cl_tcl_xlsx_api=>ty_t_xlsx,
         t_config                 TYPE STANDARD TABLE OF z2ui5_cl_tcl_xlsx_api=>ty_s_xlsx_settings WITH EMPTY KEY,
         t_config_head            TYPE STANDARD TABLE OF ty_s_config_head WITH EMPTY KEY,
-        check_download_active    TYPE abap_bool,
         check_file_row_limit     TYPE abap_bool VALUE abap_true,
         file_max_rows            TYPE i VALUE 10,
         file_rows                TYPE i,
@@ -263,14 +262,6 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         ENDIF.
         set_view( ).
 
-      WHEN 'DOWNLOAD'.
-        IF ms_draft-t_tab IS NOT BOUND.
-          client->message_box_display( `Table is empty, no export possible` ).
-          RETURN.
-        ENDIF.
-        ms_draft-check_download_active = abap_true.
-        set_view( ).
-
       WHEN `NEW`.
         DATA(lo_app) = z2ui5_cl_popup_input_val=>factory(
             title   = `Create a New XLSX Draft`
@@ -334,10 +325,6 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         )->a( n = `text` v = 'Load'
         )->a( n = `press` v = client->_event( 'LOAD' )
         )->a( n = `icon` v = `sap-icon://download-from-cloud`
-        )->tag( `Button`
-        )->a( n = `text` v = 'Save Draft'
-        )->a( n = `press` v = client->_event( 'DOWNLOAD' )
-        )->a( n = `icon` v = `sap-icon://upload-to-cloud`
         )->tag( `Input`
         )->a( n = `description` v = `Table`
         )->a( n = `value` v = client->_bind_edit( ms_draft-table_name )
@@ -472,7 +459,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                     )->ele( `headerToolbar`
                     )->ele( `OverflowToolbar`
                     )->tag( `Title`
-                    )->a( n = `text` v = `Excel Fieldcatalog`
+                    )->a( n = `text` v = `Excel Field Catalog`
                     )->tag( `ToolbarSpacer`
                     )->tag( `Button`
                     )->a( n = `text` v = `Reset`

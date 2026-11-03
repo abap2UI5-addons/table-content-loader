@@ -20,7 +20,7 @@ to or from a file, preview it and download it or save it to the database. For
 developers who move test data or Z table content between systems, on ABAP
 Cloud as well as on Standard ABAP.
 
-> Part of [abap2UI5-addons](https://github.com/abap2UI5-addons) - addons and apps for [abap2UI5](https://github.com/abap2UI5/abap2UI5), installed with [abapGit](https://abapgit.org).
+> Part of [abap2UI5-addons](https://github.com/abap2UI5-addons) - addons and apps for [abap2UI5](https://github.com/abap2UI5/abap2UI5), installed with [abapGit](https://abapgit.org). Documentation: [abap2ui5-addons.github.io/table-content-loader](https://abap2ui5-addons.github.io/table-content-loader/).
 
 <img width="700" alt="Table Content Loader start page with tiles for JSON, CSV and XLSX upload and download" src="https://github.com/abap2UI5-addons/table-content-loader/assets/102328295/73e044dc-137d-49fe-b6ac-0247fb542a0f">
 
@@ -81,11 +81,11 @@ started directly with `?app_start=<class>`.
 
 | Tile | Class | What you do |
 |---|---|---|
-| JSON - Upload DB Content | `z2ui5_cl_tcl_app_01` | (1) upload a JSON file, (2) check the target table, (3) convert the JSON into the table's rows, (4) preview the first rows, (5) save - after a confirmation the file's rows are written to the table: a row whose key exists is overwritten, a new key is inserted, rows that are not in the file stay (`MODIFY`) |
+| JSON - Upload DB Content | `z2ui5_cl_tcl_app_01` | tile disabled, start it directly. (1) upload a JSON file, (2) check the target table, (3) convert the JSON into the table's rows, (4) preview the first rows, (5) save - after a confirmation the file's rows are written to the table: a row whose key exists is overwritten, a new key is inserted, rows that are not in the file stay (`MODIFY`) |
 | JSON - Download DB Content | `z2ui5_cl_tcl_app_03` | (1) set the table, (2) convert its content to JSON, (3) preview the JSON, (4) download it |
 | CSV - Upload / Download DB Content | `z2ui5_cl_tcl_app_04` | upload a CSV file, view or edit its content as a table, download it as CSV (no database write yet) |
 | XLSX - Upload DB Content | `z2ui5_cl_tcl_app_05` | upload an XLSX file, view or edit its content as a table, download it as XLSX (no database write yet) |
-| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored - **Save Draft** does nothing yet, see [Limitations & Todo](#limitations--todo)) |
+| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored, see [Limitations & Todo](#limitations--todo)) |
 
 `z2ui5_cl_tcl_app_02` (view/edit/download) is not on the start page: it
 shows the import - edit - export round trip on a demo table of flight
@@ -104,9 +104,9 @@ This is a developer tool. It reads from any table the user names and writes into
 ## Limitations & Todo
 
 * CSV Upload & Download
-* JSON Download
+* JSON Upload - the start-page tile is disabled
 * XLSX Upload/Download for ABAP Cloud
-* Saving and reloading an XLSX draft - the **Save Draft** button of the XLSX download stores nothing yet
+* Saving and reloading an XLSX draft
 
 ## Development
 
