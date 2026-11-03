@@ -1,5 +1,10 @@
 name: check-rename
 
+# npm run rename: the namespace rename with the longest name this addon
+# allows, abap2UI5 and the addons it builds on renamed along - the renamed
+# sources must lint, every new name must fit its object type, and no literal
+# may name a renamed object (.github/scripts/rename.mjs)
+
 on:
   push:
     branches: [main]

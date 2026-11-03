@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Upload, edit and download table content (JSON, CSV, XLSX), built with abap2UI5.",
   "scripts": {
-    "rename": "abaplint .github/abaplint/rename.json --rename",
+    "rename": "node .github/scripts/rename.mjs",
     "lint": "abaplint ./abaplint.jsonc",
     "check:cloud": "abaplint .github/abaplint/abap_cloud.jsonc",
     "check:abap2ui5": "abap2ui5lint",
