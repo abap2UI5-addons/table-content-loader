@@ -8,3 +8,7 @@ output
 # the `badges` branch - never committed here
 .github/badges/
 .github/abaplint/rename-deps/
+site/node_modules/
+site/.vitepress/cache/
+site/.vitepress/dist/
+build/
