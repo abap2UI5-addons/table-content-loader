@@ -15,7 +15,7 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
         file_size             TYPE string,
         file_entries          TYPE string,
         check_appwidthlimited TYPE abap_bool VALUE abap_true,
-        db_table              TYPE string VALUE 'z2ui5_dbl_t_01',
+        db_table              TYPE string,
         db_table_entries      TYPE string,
       END OF ms_app.
 
