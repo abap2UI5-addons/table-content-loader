@@ -17,7 +17,7 @@ CLASS z2ui5_cl_tcl_app_02 DEFINITION PUBLIC.
         airpto    TYPE c LENGTH 3,
       END OF ty_s_spfli.
 
-    TYPES ty_t_table TYPE STANDARD TABLE OF ty_s_spfli WITH EMPTY KEY.
+    TYPES ty_t_table TYPE STANDARD TABLE OF ty_s_spfli WITH DEFAULT KEY.
 
     DATA:
       BEGIN OF ms_import,
@@ -100,24 +100,39 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
 
   METHOD z2ui5_on_event.
+        DATA temp3 TYPE z2ui5_cl_tcl_app_02=>ty_t_table.
+        DATA temp4 TYPE string.
+        DATA temp5 TYPE z2ui5_cl_tcl_app_02=>ty_s_spfli.
 
     CASE client->get( )-event.
 
       WHEN 'IMPORT_DB'.
-        ms_import-t_table = SWITCH #( ms_import-segment_key
-          WHEN 'json' THEN lcl_db=>get_table_by_json( ms_import-editor )
-          WHEN 'csv'  THEN lcl_db=>get_table_by_csv( ms_import-editor )
-          WHEN 'xml'  THEN lcl_db=>get_table_by_xml( ms_import-editor ) ).
+
+        CASE ms_import-segment_key.
+          WHEN 'json'.
+            temp3 = lcl_db=>get_table_by_json( ms_import-editor ).
+          WHEN 'csv'.
+            temp3 = lcl_db=>get_table_by_csv( ms_import-editor ).
+          WHEN 'xml'.
+            temp3 = lcl_db=>get_table_by_xml( ms_import-editor ).
+        ENDCASE.
+        ms_import-t_table = temp3.
 
         lcl_db=>db_save( ms_import-t_table ).
         client->message_box_display( 'Table data imported successfully' ).
 
       WHEN 'EXPORT_DB'.
         ms_export-t_table = lcl_db=>db_read( ).
-        ms_export-editor = SWITCH #( ms_export-segment_key
-          WHEN 'json' THEN lcl_db=>get_json_by_table( ms_export-t_table )
-          WHEN 'csv'  THEN lcl_db=>get_csv_by_table( ms_export-t_table )
-          WHEN 'xml'  THEN lcl_db=>get_xml_by_table( ms_export-t_table ) ).
+
+        CASE ms_export-segment_key.
+          WHEN 'json'.
+            temp4 = lcl_db=>get_json_by_table( ms_export-t_table ).
+          WHEN 'csv'.
+            temp4 = lcl_db=>get_csv_by_table( ms_export-t_table ).
+          WHEN 'xml'.
+            temp4 = lcl_db=>get_xml_by_table( ms_export-t_table ).
+        ENDCASE.
+        ms_export-editor = temp4.
 
         client->message_box_display( 'Table data exported successfully' ).
 
@@ -136,7 +151,9 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
         DELETE ms_edit-t_table WHERE selkz = abap_true.
 
       WHEN 'EDIT_ROW_ADD'.
-        INSERT VALUE #( ) INTO TABLE ms_edit-t_table.
+
+        CLEAR temp5.
+        INSERT temp5 INTO TABLE ms_edit-t_table.
 
       WHEN 'BTN_IMPORT'.
         mv_view = 'IMPORT_TABLE'.
@@ -154,7 +171,16 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
   METHOD z2ui5_on_render_view_edit.
 
-    DATA(page) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA grid TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA cont TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA scroll TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA tab TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA lt_fields TYPE string_table.
+    DATA lo_columns TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA lv_field LIKE LINE OF lt_fields.
+    DATA lo_cells TYPE REF TO z2ui5_cl_ui5_view_builder.
+    page = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
@@ -187,7 +213,8 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                      )->end(
                      )->end( ).
 
-    DATA(grid) = page->ele( n = `Grid` ns = `layout`
+
+    grid = page->ele( n = `Grid` ns = `layout`
                      )->a( n = `defaultSpan` v = 'L7 M7 S7'
                      )->ele( n = `content` ns = `layout` ).
 
@@ -204,7 +231,8 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                )->a( n = `defaultSpan` v = 'L12 M12 S12'
                )->ele( n = `content` ns = `layout` ).
 
-    DATA(cont) = grid->ele( n = `SimpleForm` ns = `form`
+
+    cont = grid->ele( n = `SimpleForm` ns = `form`
                      )->ele( n = `content` ns = `form` ).
 
     cont->ele( `OverflowToolbar`
@@ -222,25 +250,31 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
         )->a( n = `icon` v = 'sap-icon://add'
         )->a( n = `press` v = client->_event( 'EDIT_ROW_ADD' ) ).
 
-    DATA(scroll) = cont->ele( `ScrollContainer`
+
+    scroll = cont->ele( `ScrollContainer`
                        )->a( n = `vertical` b = abap_true
                        )->a( n = `horizontal` b = abap_true ).
 
-    DATA(tab) = scroll->ele( `Table`
+
+    tab = scroll->ele( `Table`
                     )->a( n = `width` v = '100rem'
                     )->a( n = `items` v = client->_bind_edit( ms_edit-t_table )
                     )->a( n = `mode` v = 'MultiSelect' ).
 
-    DATA(lt_fields) = lcl_db=>get_fieldlist_by_table( ms_edit-t_table ).
 
-    DATA(lo_columns) = tab->ele( `columns` ).
-    LOOP AT lt_fields INTO DATA(lv_field) FROM 2.
+    lt_fields = lcl_db=>get_fieldlist_by_table( ms_edit-t_table ).
+
+
+    lo_columns = tab->ele( `columns` ).
+
+    LOOP AT lt_fields INTO lv_field FROM 2.
       lo_columns->ele( `Column`
           )->tag( `Text`
           )->a( n = `text` t = lv_field ).
     ENDLOOP.
 
-    DATA(lo_cells) = tab->ele( `items`
+
+    lo_cells = tab->ele( `items`
                          )->ele( `ColumnListItem`
                          )->a( n = `selected` v = '{SELKZ}'
                          )->ele( `cells` ).
@@ -265,7 +299,10 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
   METHOD z2ui5_on_render_view_export.
 
-    DATA(page) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA grid TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA temp6 TYPE string.
+    page = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
@@ -299,7 +336,8 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                      )->end(
                      )->end( ).
 
-    DATA(grid) = page->ele( n = `Grid` ns = `layout`
+
+    grid = page->ele( n = `Grid` ns = `layout`
                      )->a( n = `defaultSpan` v = 'L7 M7 S7'
                      )->ele( n = `content` ns = `layout` ).
 
@@ -330,8 +368,14 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                )->a( n = `defaultSpan` v = 'L12 M12 S12'
                )->ele( n = `content` ns = `layout` ).
 
+
+    IF ms_export-segment_key = 'csv'.
+      temp6 = |plain_text|.
+    ELSE.
+      temp6 = ms_export-segment_key.
+    ENDIF.
     page->tag( n = `CodeEditor` ns = `editor`
-        )->a( n = `type` v = COND #( WHEN ms_export-segment_key = 'csv' THEN |plain_text| ELSE ms_export-segment_key )
+        )->a( n = `type` v = temp6
         )->a( n = `value` v = client->_bind( ms_export-editor )
         )->a( n = `editable` b = abap_false ).
 
@@ -351,7 +395,10 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
   METHOD z2ui5_on_render_view_import.
 
-    DATA(page) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA grid TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA temp7 TYPE string.
+    page = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
@@ -385,7 +432,8 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                      )->end(
                      )->end( ).
 
-    DATA(grid) = page->ele( n = `Grid` ns = `layout`
+
+    grid = page->ele( n = `Grid` ns = `layout`
                      )->a( n = `defaultSpan` v = 'L7 M12 S12'
                      )->ele( n = `content` ns = `layout` ).
 
@@ -416,8 +464,14 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
                )->a( n = `defaultSpan` v = 'L12 M12 S12'
                )->ele( n = `content` ns = `layout` ).
 
+
+    IF ms_import-segment_key = 'csv'.
+      temp7 = |plain_text|.
+    ELSE.
+      temp7 = ms_import-segment_key.
+    ENDIF.
     page->tag( n = `CodeEditor` ns = `editor`
-        )->a( n = `type` v = COND #( WHEN ms_import-segment_key = 'csv' THEN |plain_text| ELSE ms_import-segment_key )
+        )->a( n = `type` v = temp7
         )->a( n = `value` v = client->_bind_edit( ms_import-editor )
         )->a( n = `editable` b = abap_true ).
 

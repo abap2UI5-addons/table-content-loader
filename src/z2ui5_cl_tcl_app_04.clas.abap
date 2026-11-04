@@ -29,6 +29,15 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
 
 
   METHOD ui5_on_event.
+              FIELD-SYMBOLS <tab> TYPE table.
+              DATA lv_csv TYPE string.
+              DATA lv_xcsv TYPE xstring.
+              DATA lv_base TYPE string.
+              DATA temp1 TYPE string_table.
+              DATA temp2 LIKE LINE OF temp1.
+            DATA lv_data TYPE xstring.
+            DATA lv_ready TYPE string.
+        DATA x TYPE REF TO cx_root.
     TRY.
 
         CASE client->get( )-event.
@@ -41,20 +50,30 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
             " for it; the html:ZZPLAIN iframe this used to write was a trick
             " of the frozen view builder and downloaded nothing any more
             IF mr_table IS NOT INITIAL.
-              FIELD-SYMBOLS <tab> TYPE table.
+
               ASSIGN mr_table->* TO <tab>.
-              DATA(lv_csv) = z2ui5_cl_tcl_context=>itab_get_csv_by_itab( <tab> ).
-              DATA(lv_xcsv) = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_csv ).
-              DATA(lv_base) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xcsv ).
+
+              lv_csv = z2ui5_cl_tcl_context=>itab_get_csv_by_itab( <tab> ).
+
+              lv_xcsv = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_csv ).
+
+              lv_base = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xcsv ).
+
+              CLEAR temp1.
+
+              temp2 = |data:text/csv;base64,{ lv_base }|.
+              INSERT temp2 INTO TABLE temp1.
+              INSERT `table.csv` INTO TABLE temp1.
               client->follow_up_action( val   = client->cs_event-download_b64_file
-                                        t_arg = VALUE #( ( |data:text/csv;base64,{ lv_base }| )
-                                                         ( `table.csv` ) ) ).
+                                        t_arg = temp1 ).
             ENDIF.
 
           WHEN 'UPLOAD'.
 
-            DATA(lv_data) = z2ui5_cl_tcl_context=>conv_get_xstring_by_data_uri( mv_value ).
-            DATA(lv_ready) = z2ui5_cl_tcl_context=>conv_get_string_by_xstring( lv_data ).
+
+            lv_data = z2ui5_cl_tcl_context=>conv_get_xstring_by_data_uri( mv_value ).
+
+            lv_ready = z2ui5_cl_tcl_context=>conv_get_string_by_xstring( lv_data ).
 
             mr_table = z2ui5_cl_tcl_context=>itab_get_itab_by_csv( lv_ready ).
             client->message_box_display( `CSV loaded to table` ).
@@ -69,7 +88,8 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
 
         ENDCASE.
 
-      CATCH cx_root INTO DATA(x).
+
+      CATCH cx_root INTO x.
         client->message_box_display( text = x->get_text( ) type = `error` ).
     ENDTRY.
 
@@ -92,24 +112,39 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
 
   METHOD ui5_view_main_display.
 
-    DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+      FIELD-SYMBOLS <tab> TYPE table.
+      DATA tab TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA temp3 TYPE string_table.
+      DATA temp4 TYPE abap_component_tab.
+      DATA row LIKE LINE OF temp4.
+      DATA lr_fields LIKE temp3.
+      DATA lo_cols TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA temp5 LIKE LINE OF lr_fields.
+      DATA lr_col LIKE REF TO temp5.
+      DATA lo_cells TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA footer TYPE REF TO z2ui5_cl_ui5_view_builder.
+    view = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
                      )->a( n = `xmlns:z2ui5` v = `z2ui5.cc`
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
-    DATA(page) = view->ele( `Shell`
+
+    page = view->ele( `Shell`
                      )->ele( `Page`
                      )->a( n = `title` v = 'abap2UI5 - CSV to ABAP Internal Table'
                      )->a( n = `navButtonPress` v = client->_event( 'BACK' )
                      )->a( n = `showNavButton` b = abap_true ).
 
     IF mr_table IS NOT INITIAL.
-      FIELD-SYMBOLS <tab> TYPE table.
+
       ASSIGN mr_table->* TO <tab>.
 
-      DATA(tab) = page->ele( `Table`
+
+      tab = page->ele( `Table`
                       )->a( n = `items` v = client->_bind_edit( <tab> )
                       )->ele( `headerToolbar`
                       )->ele( `OverflowToolbar`
@@ -124,14 +159,27 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
                       )->end(
                       )->end( ).
 
-      DATA(lr_fields) = VALUE string_table( FOR row IN z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ) ( row-name ) ).
-      DATA(lo_cols) = tab->ele( `columns` ).
-      LOOP AT lr_fields REFERENCE INTO DATA(lr_col).
+
+      CLEAR temp3.
+
+      temp4 = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
+
+      LOOP AT temp4 INTO row.
+        INSERT row-name INTO TABLE temp3.
+      ENDLOOP.
+
+      lr_fields = temp3.
+
+      lo_cols = tab->ele( `columns` ).
+
+
+      LOOP AT lr_fields REFERENCE INTO lr_col.
         lo_cols->ele( `Column`
             )->tag( `Text`
             )->a( n = `text` v = lr_col->* ).
       ENDLOOP.
-      DATA(lo_cells) = tab->ele( `items`
+
+      lo_cells = tab->ele( `items`
                            )->ele( `ColumnListItem`
                            )->ele( `cells` ).
       LOOP AT lr_fields REFERENCE INTO lr_col.
@@ -145,7 +193,8 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
       ENDLOOP.
     ENDIF.
 
-    DATA(footer) = page->ele( `footer`
+
+    footer = page->ele( `footer`
                        )->ele( `OverflowToolbar` ).
 
     footer->tag( n = `FileUploader` ns = `z2ui5`
@@ -170,7 +219,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
 
     me->client = client.
 
-    IF client->check_on_init( ).
+    IF client->check_on_init( ) IS NOT INITIAL.
       ui5_on_init( ).
       RETURN.
     ENDIF.

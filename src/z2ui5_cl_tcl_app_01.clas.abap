@@ -72,6 +72,9 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
     DATA lo_prev         TYPE REF TO z2ui5_if_app.
     DATA lo_popup_file   TYPE REF TO z2ui5_cl_popup_file_ul.
     DATA lo_popup_commit TYPE REF TO z2ui5_cl_popup_to_confirm.
+        DATA temp1 TYPE i.
+            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+            DATA lx_save TYPE REF TO cx_root.
     lo_prev = client->get_app( client->get( )-s_draft-id_prev_app ).
     TRY.
         lo_popup_file ?= lo_prev.
@@ -88,7 +91,9 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
       IF lo_popup_file->result( )-check_confirmed = abap_true.
         ms_app-file = lo_popup_file->result( )-value.
         client->message_toast_display( `File uploaded successfully` ).
-        ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
+
+        temp1 = ( strlen( ms_app-file ) ) / 1000.
+        ms_app-file_size = temp1.
         client->view_model_update( ).
       ENDIF.
       RETURN.
@@ -96,9 +101,9 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
       result = abap_true.
       IF lo_popup_commit->result( ) = abap_true.
         TRY.
-            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+
             ASSIGN mt_tab->* TO <tab2>.
-            MODIFY (mv_tab_db_table) FROM TABLE @<tab2>.
+            MODIFY (mv_tab_db_table) FROM TABLE <tab2>.
             IF sy-subrc <> 0.
               ROLLBACK WORK.
               client->message_box_display( text = |Not every row could be written to { mv_tab_db_table } - nothing was saved|
@@ -107,7 +112,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             ENDIF.
             COMMIT WORK AND WAIT.
             client->message_box_display( `DB updated` ).
-          CATCH cx_root INTO DATA(lx_save).
+
+          CATCH cx_root INTO lx_save.
             ROLLBACK WORK.
             client->message_box_display( text = lx_save->get_text( )
                                          type = `error` ).
@@ -119,6 +125,9 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
 
   METHOD z2ui5_on_event.
+            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+            DATA x TYPE REF TO cx_root.
+        DATA lr_tab TYPE REF TO data.
 
     CASE client->get( )-event.
 
@@ -129,7 +138,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
             SELECT SINGLE COUNT( * )
             FROM (ms_app-db_table)
-            INTO @ms_app-db_table_entries.
+            INTO ms_app-db_table_entries.
 
             IF to_upper( ms_app-db_table(1) ) <> `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
               client->message_box_display( `Only tables in the Z or Y namespace are allowed` ).
@@ -142,7 +151,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
       WHEN `PROCESS`.
         TRY.
-            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+
 
             ms_app-db_table = to_upper( ms_app-db_table ).
             CLEAR mv_tab_db_table.
@@ -161,7 +170,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             ms_app-file_entries = lines( <tab2> ).
             client->view_model_update( ).
 
-          CATCH cx_root INTO DATA(x).
+
+          CATCH cx_root INTO x.
             client->message_box_display( x->get_text( ) ).
         ENDTRY.
 
@@ -173,7 +183,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           RETURN.
         ENDIF.
 
-        DATA lr_tab TYPE REF TO data.
+
 
         lr_tab = z2ui5_cl_tcl_context=>conv_copy_ref_data( mt_tab ).
 
@@ -221,7 +231,11 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
   METHOD z2ui5_view_display.
 
-    DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA temp1 TYPE xsdboolean.
+    DATA content TYPE REF TO z2ui5_cl_ui5_view_builder.
+    view = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
@@ -229,12 +243,15 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
 
-    DATA(page) = view->ele( `Shell`
+
+
+    temp1 = boolc( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ).
+    page = view->ele( `Shell`
                      )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited )
                      )->ele( `Page`
                      )->a( n = `title` v = 'abap2UI5 - JSON File Upload'
                      )->a( n = `navButtonPress` v = client->_event( `BACK` )
-                     )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
+                     )->a( n = `showNavButton` b = temp1
                      )->ele( `headerContent`
                      )->ele( `OverflowToolbar`
                      )->tag( `ToolbarSpacer`
@@ -249,7 +266,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                      )->end(
                      )->end( ).
 
-    DATA(content) = page->ele( n = `SimpleForm` ns = `form`
+
+    content = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `editable` v = `true` ).
 
     content->tag( `Label`
