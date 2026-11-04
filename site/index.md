@@ -5,8 +5,8 @@ hero:
   name: "Table Content Loader"
   text: "Upload, edit and download table content as JSON, CSV or XLSX."
   image:
-    src: /favicon.png
-    alt: abap2UI5
+    src: /logo.svg
+    alt: abap2UI5 addons
   actions:
     - theme: brand
       text: Get started
