@@ -338,7 +338,15 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
     FIELD-SYMBOLS <tab> TYPE STANDARD TABLE.
     DATA lr_row TYPE REF TO data.
 
-    SPLIT val AT cv_char_util_newline INTO TABLE DATA(lt_rows).
+    " lines may end in CR LF - a file saved on Windows, and the CSV that
+    " itab_get_csv_by_itab writes. Split at the LF alone, every line kept its
+    " CR: the header's last column became a name no structure accepts, and
+    " the last value of every row carried the CR
+    DATA(lv_csv) = replace( val  = val
+                            sub  = cv_char_util_cr_lf
+                            with = cv_char_util_newline
+                            occ  = 0 ).
+    SPLIT lv_csv AT cv_char_util_newline INTO TABLE DATA(lt_rows).
     SPLIT lt_rows[ 1 ] AT `;` INTO TABLE DATA(lt_cols).
 
     LOOP AT lt_cols REFERENCE INTO DATA(lr_col).
