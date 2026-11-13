@@ -40,6 +40,8 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
     DATA: lt_field_catalog  TYPE zexcel_t_fieldcatalog,
           ls_table_settings TYPE zexcel_s_table_settings.
+        DATA temp1 TYPE zexcel_sheet_title.
+        DATA x TYPE REF TO zcx_excel.
 
 
     " abap2xlsx reports a failure with ZCX_EXCEL - a static exception the
@@ -48,11 +50,13 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
     TRY.
 
         " Creates active sheet
-        lo_excel = NEW #( ).
+        CREATE OBJECT lo_excel.
 
         " Get active sheet
         lo_worksheet = lo_excel->get_active_worksheet( ).
-        lo_worksheet->set_title( CONV #( title ) ).
+
+        temp1 = title.
+        lo_worksheet->set_title( temp1 ).
 
         lt_field_catalog = fieldcatalog.
         IF lt_field_catalog IS INITIAL.
@@ -70,10 +74,11 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
         lo_worksheet->freeze_panes( ip_num_rows = 1 ).
 
-        lo_writer = NEW zcl_excel_writer_2007( ).
+        CREATE OBJECT lo_writer TYPE zcl_excel_writer_2007.
         result = lo_writer->write_file( lo_excel ).
 
-      CATCH zcx_excel INTO DATA(x).
+
+      CATCH zcx_excel INTO x.
         RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
           EXPORTING
             val = x.
@@ -87,17 +92,19 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
     DATA: lo_excel     TYPE REF TO zcl_excel,
           lo_reader    TYPE REF TO zif_excel_reader,
           lo_worksheet TYPE REF TO zcl_excel_worksheet.
+        DATA x TYPE REF TO zcx_excel.
 
     " a file abap2xlsx cannot read ends in ZCX_EXCEL - passed on with its text
     TRY.
-        lo_reader = NEW zcl_excel_reader_2007( ).
+        CREATE OBJECT lo_reader TYPE zcl_excel_reader_2007.
         lo_excel = lo_reader->load( val ).
         lo_worksheet = lo_excel->get_worksheet_by_index( 1 ).
         lo_worksheet->convert_to_table(
           IMPORTING
             er_data          = result
         ).
-      CATCH zcx_excel INTO DATA(x).
+
+      CATCH zcx_excel INTO x.
         RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
           EXPORTING
             val = x.
