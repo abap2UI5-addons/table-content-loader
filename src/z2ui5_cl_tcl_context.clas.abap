@@ -346,6 +346,21 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
                             sub  = cv_char_util_cr_lf
                             with = cv_char_util_newline
                             occ  = 0 ).
+
+    " Excel's "CSV UTF-8" starts the file with the byte order mark EF BB BF,
+    " and the UTF-8 decoding keeps it as the character U+FEFF: the first
+    " column name became U+FEFF + name, which no structure accepts. Built at
+    " run time from its bytes - a literal U+FEFF in the source breaks the
+    " 7-bit rule and the downport. Where the decoding drops it, it is empty
+    TRY.
+        DATA(lv_bom) = conv_get_string_by_xstring( CONV xstring( `EFBBBF` ) ).
+        IF lv_bom IS NOT INITIAL AND find( val = lv_csv sub = lv_bom ) = 0.
+          lv_csv = substring( val = lv_csv off = strlen( lv_bom ) ).
+        ENDIF.
+      CATCH z2ui5_cx_tcl_error ##NO_HANDLER.
+        " no codepage API: the text cannot have come through one either
+    ENDTRY.
+
     SPLIT lv_csv AT cv_char_util_newline INTO TABLE DATA(lt_rows).
     SPLIT lt_rows[ 1 ] AT `;` INTO TABLE DATA(lt_cols).
 
