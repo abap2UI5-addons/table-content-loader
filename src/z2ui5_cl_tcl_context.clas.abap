@@ -182,6 +182,14 @@ CLASS z2ui5_cl_tcl_context DEFINITION
       RETURNING
         VALUE(result) TYPE xstring.
 
+    "! An uploaded text file: UTF-8, and Windows-1252 when the bytes are not
+    "! valid UTF-8 - what Excel's plain "CSV" export writes on Windows
+    CLASS-METHODS conv_get_string_by_file
+      IMPORTING
+        val           TYPE xstring
+      RETURNING
+        VALUE(result) TYPE string.
+
   PROTECTED SECTION.
 
   PRIVATE SECTION.
@@ -198,6 +206,19 @@ CLASS z2ui5_cl_tcl_context DEFINITION
     " Guards the cycle z2ui5_cx_tcl_error=>constructor -> uuid_get_c32 ->
     " RAISE z2ui5_cx_tcl_error -> ... see uuid_get_c32.
     CLASS-DATA gv_uuid_failed TYPE abap_bool.
+
+    "! codepage: the IANA name CL_ABAP_CONV_CODEPAGE takes; encoding: the
+    "! name or SAP code page number CL_ABAP_CONV_IN_CE takes. invalid is set
+    "! when a converter ran and rejected the bytes; no converter at all
+    "! raises UNSUPPORTED_CODEPAGE_API
+    CLASS-METHODS conv_get_string_by_xstring_cp
+      IMPORTING
+        val      TYPE xstring
+        codepage TYPE string
+        encoding TYPE string
+      EXPORTING
+        result   TYPE string
+        invalid  TYPE abap_bool.
 ENDCLASS.
 
 
@@ -693,15 +714,77 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
 
   METHOD conv_get_string_by_xstring.
 
+    DATA lv_invalid TYPE abap_bool.
+
+    conv_get_string_by_xstring_cp( EXPORTING val      = val
+                                             codepage = `UTF-8`
+                                             encoding = `UTF-8`
+                                   IMPORTING result   = result
+                                             invalid  = lv_invalid ).
+    IF lv_invalid = abap_true.
+      RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+        EXPORTING
+          val = `UNSUPPORTED_ENCODING - the data is not valid UTF-8`.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD conv_get_string_by_file.
+
+    DATA lv_invalid TYPE abap_bool.
+
+    conv_get_string_by_xstring_cp( EXPORTING val      = val
+                                             codepage = `UTF-8`
+                                             encoding = `UTF-8`
+                                   IMPORTING result   = result
+                                             invalid  = lv_invalid ).
+    IF lv_invalid = abap_false.
+      RETURN.
+    ENDIF.
+
+    " Not valid UTF-8: Excel's plain "CSV" export on Windows writes
+    " Windows-1252 (SAP code page 1160), and an umlaut is then a single byte
+    " no UTF-8 decoder accepts. Only a conversion error gets here - a
+    " missing codepage API left conv_get_string_by_xstring_cp with its own
+    " UNSUPPORTED_CODEPAGE_API above
+    TRY.
+        conv_get_string_by_xstring_cp( EXPORTING val      = val
+                                                 codepage = `windows-1252`
+                                                 encoding = `1160`
+                                       IMPORTING result   = result
+                                                 invalid  = lv_invalid ).
+      CATCH z2ui5_cx_tcl_error.
+        " neither API knows Windows-1252 here
+        lv_invalid = abap_true.
+    ENDTRY.
+
+    IF lv_invalid = abap_true.
+      CLEAR result.
+      RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+        EXPORTING
+          val = |UNSUPPORTED_ENCODING - the file is neither UTF-8 nor Windows-1252, | &&
+                |save it as "CSV UTF-8" and upload it again|.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD conv_get_string_by_xstring_cp.
+
     DATA conv          TYPE REF TO object.
     DATA conv_codepage TYPE c LENGTH 21.
     DATA conv_in_class TYPE c LENGTH 18.
+    DATA lv_encoding   TYPE c LENGTH 20.
     DATA lx_first      TYPE REF TO cx_root.
+
+    CLEAR result.
+    invalid = abap_false.
 
     TRY.
 
         conv_codepage = `CL_ABAP_CONV_CODEPAGE`.
         CALL METHOD (conv_codepage)=>create_in
+          EXPORTING
+            codepage = codepage
           RECEIVING
             instance = conv.
 
@@ -712,11 +795,19 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
             result = result.
         RETURN.
 
+      CATCH cx_sy_conversion_codepage.
+        " the API is there and the bytes are not valid in this code page -
+        " the classic API would reject them too
+        CLEAR result.
+        invalid = abap_true.
+        RETURN.
+
       CATCH cx_root INTO lx_first ##NO_HANDLER.
         " deliberate: capturing the cause IS the handling - it is chained into
         " UNSUPPORTED_CODEPAGE_API below if the classic API fails too. Falling
         " through is the point; the modern class is absent on older releases,
-        " which is the whole reason both paths exist
+        " which is the whole reason both paths exist. A code page the modern
+        " class does not know (CX_PARAMETER_INVALID_RANGE) falls through too
     ENDTRY.
 
     " The classic API. Guarded by its own TRY since 2026-09: it used to be the
@@ -732,9 +823,10 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
     TRY.
 
         conv_in_class = `CL_ABAP_CONV_IN_CE`.
+        lv_encoding = encoding.
         CALL METHOD (conv_in_class)=>create
           EXPORTING
-            encoding = `UTF-8`
+            encoding = lv_encoding
           RECEIVING
             conv     = conv.
 
@@ -743,6 +835,10 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
             input = val
           IMPORTING
             data  = result.
+
+      CATCH cx_sy_conversion_codepage.
+        CLEAR result.
+        invalid = abap_true.
 
       CATCH cx_root.
         RAISE EXCEPTION TYPE z2ui5_cx_tcl_error

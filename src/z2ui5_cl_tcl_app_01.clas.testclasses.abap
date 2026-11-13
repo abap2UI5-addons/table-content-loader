@@ -6,6 +6,8 @@ CLASS ltcl_unit_test DEFINITION FINAL FOR TESTING
 
   PRIVATE SECTION.
     METHODS first_test FOR TESTING RAISING cx_static_check.
+    METHODS file_utf8 FOR TESTING RAISING cx_static_check.
+    METHODS file_windows_1252 FOR TESTING RAISING cx_static_check.
 
 ENDCLASS.
 
@@ -25,6 +27,28 @@ CLASS ltcl_unit_test IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_equals( exp = lv_csv_base64
                                         act = lv_data2 ).
+
+  ENDMETHOD.
+
+  METHOD file_utf8.
+
+    " H + a-umlaut in UTF-8 - hex, as a literal umlaut breaks the 7-bit rule
+    DATA(lv_text) = z2ui5_cl_tcl_context=>conv_get_string_by_file( CONV xstring( `48C3A4` ) ).
+
+    cl_abap_unit_assert=>assert_equals(
+        exp = CONV xstring( `48C3A4` )
+        act = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_text ) ).
+
+  ENDMETHOD.
+
+  METHOD file_windows_1252.
+
+    " H + a-umlaut as Excel's plain "CSV" writes it on Windows: E4 alone is not UTF-8
+    DATA(lv_text) = z2ui5_cl_tcl_context=>conv_get_string_by_file( CONV xstring( `48E4` ) ).
+
+    cl_abap_unit_assert=>assert_equals(
+        exp = CONV xstring( `48C3A4` )
+        act = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_text ) ).
 
   ENDMETHOD.
 

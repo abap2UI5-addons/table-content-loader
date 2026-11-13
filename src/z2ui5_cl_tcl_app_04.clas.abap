@@ -54,7 +54,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
           WHEN 'UPLOAD'.
 
             DATA(lv_data) = z2ui5_cl_tcl_context=>conv_get_xstring_by_data_uri( mv_value ).
-            DATA(lv_ready) = z2ui5_cl_tcl_context=>conv_get_string_by_xstring( lv_data ).
+            DATA(lv_ready) = z2ui5_cl_tcl_context=>conv_get_string_by_file( lv_data ).
 
             mr_table = z2ui5_cl_tcl_context=>itab_get_itab_by_csv( lv_ready ).
             client->message_box_display( `CSV loaded to table` ).
