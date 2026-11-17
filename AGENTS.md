@@ -57,6 +57,10 @@ tables of the Z/Y namespace only (the JSON upload's save refuses any other),
 without an authorization check of its own. Before using it beyond a development
 system, add your own `AUTHORITY-CHECK`s and restrict who may run the app.
 
+**Shipping without an authorization check is a deliberate decision of the
+maintainer (2026-11-17), stated in the README - do not add one and do not
+report its absence as a finding.**
+
 ## Coding Style
 
 Follows the abap2UI5 core conventions (see its
