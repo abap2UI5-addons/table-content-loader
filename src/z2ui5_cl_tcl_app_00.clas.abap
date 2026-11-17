@@ -17,17 +17,26 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
 
 
   METHOD z2ui5_if_app~main.
+      DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+        DATA temp1 TYPE REF TO z2ui5_cl_tcl_app_01.
+        DATA temp2 TYPE REF TO z2ui5_cl_tcl_app_03.
+        DATA temp3 TYPE REF TO z2ui5_cl_tcl_app_04.
+        DATA temp4 TYPE REF TO z2ui5_cl_tcl_app_05.
+        DATA temp5 TYPE REF TO z2ui5_cl_tcl_app_06.
 
     IF client->get( )-check_on_navigated = abap_true.
 
-      DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+
+      view = z2ui5_cl_ui5_view_builder=>factory(
                        )->ele( n = `View` ns = `mvc`
                        )->a( n = `xmlns` v = `sap.m`
                        )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
                        )->a( n = `displayBlock` v = `true`
                        )->a( n = `height` v = `100%` ).
 
-      DATA(page) = view->ele( `Shell`
+
+      page = view->ele( `Shell`
                        )->ele( `Page`
                        )->a( n = `title` v = `abap2UI5 - Table Content Loader`
                        )->a( n = `navButtonPress` v = client->_event( `BACK` )
@@ -127,19 +136,29 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
       " event is a plain name rather than the class's: the rename rewrites
       " references, never a literal.
       WHEN `APP_01`.
-        client->nav_app_call( NEW z2ui5_cl_tcl_app_01( ) ).
+
+        CREATE OBJECT temp1 TYPE z2ui5_cl_tcl_app_01.
+        client->nav_app_call( temp1 ).
 
       WHEN `APP_03`.
-        client->nav_app_call( NEW z2ui5_cl_tcl_app_03( ) ).
+
+        CREATE OBJECT temp2 TYPE z2ui5_cl_tcl_app_03.
+        client->nav_app_call( temp2 ).
 
       WHEN `APP_04`.
-        client->nav_app_call( NEW z2ui5_cl_tcl_app_04( ) ).
+
+        CREATE OBJECT temp3 TYPE z2ui5_cl_tcl_app_04.
+        client->nav_app_call( temp3 ).
 
       WHEN `APP_05`.
-        client->nav_app_call( NEW z2ui5_cl_tcl_app_05( ) ).
+
+        CREATE OBJECT temp4 TYPE z2ui5_cl_tcl_app_05.
+        client->nav_app_call( temp4 ).
 
       WHEN `APP_06`.
-        client->nav_app_call( NEW z2ui5_cl_tcl_app_06( ) ).
+
+        CREATE OBJECT temp5 TYPE z2ui5_cl_tcl_app_06.
+        client->nav_app_call( temp5 ).
 
     ENDCASE.
 

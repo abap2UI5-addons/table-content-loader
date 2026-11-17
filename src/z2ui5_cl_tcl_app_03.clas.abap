@@ -42,7 +42,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
   METHOD factory_popup_by_itab.
 
-    result = NEW #( ).
+    CREATE OBJECT result.
     result->ms_app-itab = z2ui5_cl_tcl_context=>conv_copy_ref_data( itab ).
     result->ms_app-check_popup = abap_true.
 
@@ -71,6 +71,10 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
 
   METHOD z2ui5_on_event.
+        FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+            DATA x TYPE REF TO cx_root.
+            DATA lv_prev_json TYPE string.
+            DATA x_preview TYPE REF TO cx_root.
 
     CASE client->get( )-event.
 
@@ -81,7 +85,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT SINGLE COUNT( * )
             FROM (ms_app-db_table)
-            INTO @ms_app-db_table_entries.
+            INTO ms_app-db_table_entries.
 
             client->view_model_update( ).
           CATCH cx_root.
@@ -90,7 +94,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
       WHEN `PROCESS`.
 
-        FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+
 
         " a table name that does not exist reaches here too - the table and
         " the SELECT sit in the TRY, so it ends in a message, not in a dump
@@ -100,12 +104,13 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT *
             FROM (ms_app-db_table)
-            INTO CORRESPONDING FIELDS OF TABLE @<tab2>.
+            INTO CORRESPONDING FIELDS OF TABLE <tab2>.
 
             ms_app-file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
             client->message_toast_display( |JSON created| ).
 
-          CATCH cx_root INTO DATA(x).
+
+          CATCH cx_root INTO x.
             client->message_box_display( x->get_text( ) ).
         ENDTRY.
 
@@ -117,13 +122,15 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT *
             FROM (ms_app-db_table)
-            INTO CORRESPONDING FIELDS OF TABLE @<tab2>
+            INTO CORRESPONDING FIELDS OF TABLE <tab2>
             UP TO 10 ROWS.
 
-            DATA(lv_prev_json) = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
+
+            lv_prev_json = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
             client->nav_app_call( z2ui5_cl_popup_textedit=>factory( lv_prev_json ) ).
 
-          CATCH cx_root INTO DATA(x_preview).
+
+          CATCH cx_root INTO x_preview.
             client->message_box_display( x_preview->get_text( ) ).
         ENDTRY.
 
@@ -146,14 +153,20 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
 
   METHOD z2ui5_view_display.
+      DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA temp1 TYPE xsdboolean.
+    DATA content TYPE REF TO z2ui5_cl_ui5_view_builder.
 
     IF ms_app-check_popup = abap_true.
-      DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+
+      view = z2ui5_cl_ui5_view_builder=>factory(
                        )->ele( n = `FragmentDefinition` ns = `core`
                        )->a( n = `xmlns` v = `sap.m`
                        )->a( n = `xmlns:core` v = `sap.ui.core`
                        )->a( n = `xmlns:form` v = `sap.ui.layout.form` ).
-      DATA(page) = view->ele( `Dialog` ).
+
+      page = view->ele( `Dialog` ).
     ELSE.
       view = z2ui5_cl_ui5_view_builder=>factory(
                  )->ele( n = `View` ns = `mvc`
@@ -162,12 +175,14 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
                  )->a( n = `xmlns:form` v = `sap.ui.layout.form`
                  )->a( n = `displayBlock` v = `true`
                  )->a( n = `height` v = `100%` ).
+
+      temp1 = boolc( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ).
       page = view->ele( `Shell`
                  )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited )
                  )->ele( `Page`
                  )->a( n = `title` v = 'abap2UI5 - JSON File Download'
                  )->a( n = `navButtonPress` v = client->_event( 'BACK' )
-                 )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
+                 )->a( n = `showNavButton` b = temp1
                  )->ele( `headerContent`
                  )->ele( `OverflowToolbar`
                  )->tag( `ToolbarSpacer`
@@ -179,7 +194,8 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
                  )->end( ).
     ENDIF.
 
-    DATA(content) = page->ele( n = `SimpleForm` ns = `form`
+
+    content = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `editable` v = `true` ).
 
     content->tag( `Label`

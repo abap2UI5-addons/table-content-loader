@@ -25,6 +25,13 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
 
 
   METHOD ui5_on_event.
+            FIELD-SYMBOLS <tab_dl> TYPE table.
+            DATA lv_xlsx TYPE xstring.
+            DATA lv_base TYPE string.
+            DATA temp1 TYPE string_table.
+            DATA temp2 LIKE LINE OF temp1.
+            DATA lv_xdata TYPE xstring.
+        DATA x TYPE REF TO cx_root.
     TRY.
 
         CASE client->get( )-event.
@@ -42,18 +49,26 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
             " the browser saves the file - the frontend action the core has
             " for it, as in the CSV app; the hidden html:iframe with a data:
             " URI this used to write downloads nothing any more
-            FIELD-SYMBOLS <tab_dl> TYPE table.
+
             ASSIGN mr_table->* TO <tab_dl>.
-            DATA(lv_xlsx) = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( <tab_dl> ).
-            DATA(lv_base) = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xlsx ).
+
+            lv_xlsx = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( <tab_dl> ).
+
+            lv_base = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_xlsx ).
+
+            CLEAR temp1.
+
+            temp2 = |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ lv_base }|.
+            INSERT temp2 INTO TABLE temp1.
+            INSERT `table.xlsx` INTO TABLE temp1.
             client->follow_up_action(
                 val   = client->cs_event-download_b64_file
-                t_arg = VALUE #( ( |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ lv_base }| )
-                                 ( `table.xlsx` ) ) ).
+                t_arg = temp1 ).
 
           WHEN 'UPLOAD'.
 
-            DATA(lv_xdata) = z2ui5_cl_tcl_context=>conv_get_xstring_by_data_uri( mv_value ).
+
+            lv_xdata = z2ui5_cl_tcl_context=>conv_get_xstring_by_data_uri( mv_value ).
             mr_table = z2ui5_cl_tcl_xlsx_api=>get_table_by_xlsx( lv_xdata ).
             client->message_box_display( `XLSX loaded to table` ).
 
@@ -67,7 +82,8 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
 
         ENDCASE.
 
-      CATCH cx_root INTO DATA(x).
+
+      CATCH cx_root INTO x.
         client->message_box_display( text = x->get_text( ) type = `error` ).
     ENDTRY.
   ENDMETHOD.
@@ -75,14 +91,25 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
 
   METHOD ui5_view_main_display.
 
-    DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+      FIELD-SYMBOLS <tab> TYPE table.
+      DATA tab TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA lr_fields TYPE abap_component_tab.
+      DATA lo_cols TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA temp3 LIKE LINE OF lr_fields.
+      DATA lr_col LIKE REF TO temp3.
+      DATA lo_cells TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA footer TYPE REF TO z2ui5_cl_ui5_view_builder.
+    view = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
                      )->a( n = `xmlns:z2ui5` v = `z2ui5.cc`
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
-    DATA(page) = view->ele( `Shell`
+
+    page = view->ele( `Shell`
                      )->ele( `Page`
                      )->a( n = `title` v = 'abap2UI5 - XLSX Uploader'
                      )->a( n = `navButtonPress` v = client->_event( 'BACK' )
@@ -100,10 +127,11 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
         )->tag( `ToolbarSpacer` ).
 
     IF mr_table IS NOT INITIAL.
-      FIELD-SYMBOLS <tab> TYPE table.
+
       ASSIGN mr_table->* TO <tab>.
 
-      DATA(tab) = page->ele( `Table`
+
+      tab = page->ele( `Table`
                       )->a( n = `items` v = client->_bind_edit( <tab> )
                       )->ele( `headerToolbar`
                       )->ele( `OverflowToolbar`
@@ -118,14 +146,19 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
                       )->end(
                       )->end( ).
 
-      DATA(lr_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
-      DATA(lo_cols) = tab->ele( `columns` ).
-      LOOP AT lr_fields REFERENCE INTO DATA(lr_col).
+
+      lr_fields = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
+
+      lo_cols = tab->ele( `columns` ).
+
+
+      LOOP AT lr_fields REFERENCE INTO lr_col.
         lo_cols->ele( `Column`
             )->tag( `Text`
             )->a( n = `text` t = lr_col->name ).
       ENDLOOP.
-      DATA(lo_cells) = tab->ele( `items`
+
+      lo_cells = tab->ele( `items`
                            )->ele( `ColumnListItem`
                            )->ele( `cells` ).
       LOOP AT lr_fields REFERENCE INTO lr_col.
@@ -139,7 +172,8 @@ CLASS Z2UI5_CL_TCL_APP_05 IMPLEMENTATION.
       ENDLOOP.
     ENDIF.
 
-    DATA(footer) = page->ele( `footer`
+
+    footer = page->ele( `footer`
                        )->ele( `OverflowToolbar` ).
 
     footer->tag( n = `FileUploader` ns = `z2ui5`
