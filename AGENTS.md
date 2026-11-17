@@ -50,6 +50,13 @@ Installed alongside via abapGit; declared in the abaplint configs:
 * [popups](https://github.com/abap2UI5-addons/popups)
 * [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx)
 
+popups (and layout-management, which popups builds on, for the unit run) are
+pinned by commit in `.github/deps.json`: CI and `npm run unit` resolve them
+there, the monthly `bump-deps` moves the pins, and the weekly `ci` run checks
+their `main` tips. abap2UI5 and abap2xlsx are still resolved from their
+default branch. The 702 config gives popups' `702` branch a folder of its own
+(`/popups-702`), beside the one the CI template fills with the pinned commit.
+
 ## Security
 
 This is a developer tool. It reads from any table the user names and writes into
@@ -72,27 +79,32 @@ ABAP with Hungarian prefixes, backtick string literals, string templates
 
 Run `npm run check` before considering changes complete: it runs the same
 abaplint, abap2UI5-linter and rename steps as CI, and all of them must pass.
-CI:
+CI comes from the shared CI template of abap2UI5-addons (reusable workflows in
+[rap-ext](https://github.com/abap2UI5-addons/rap-ext/blob/main/.github/ci/README.md),
+pinned by commit in the `uses:` lines and moved by `bump-deps`):
 
-* `abap-standard` / `abap-cloud` — lint against Standard ABAP
-  (`abaplint.jsonc`) and ABAP Cloud (`.github/abaplint/abap_cloud.jsonc`)
-* `check-abap2ui5` — the abap2UI5-linter over the app classes and their
-  views (`abap2ui5lint.jsonc`)
-* `check-rename` — namespace-rename check (`npm run rename`, `.github/scripts/rename.mjs`)
+* `ci` - one job per check: abaplint against Standard ABAP
+  (`abaplint.jsonc`) and ABAP Cloud (`.github/abaplint/abap_cloud.jsonc`),
+  `abap2ui5lint` (the app classes and their views, `abap2ui5lint.jsonc`),
+  `rename` (`npm run rename`, `.github/scripts/rename.mjs`) and `unit`:
+  `npm run unit` (`.github/scripts/unit.mjs`) copies the classes the tests
+  reach (`z2ui5_cl_tcl_app_01`, `_context`, `z2ui5_cx_tcl_error` - the rest
+  builds on abap2xlsx) into a checkout of abap2UI5's `main` with
+  abap2UI5-ext, layout-management and popups, downports, transpiles and runs
+  the tests on the Node runtime. `file_windows_1252` is skipped there (the
+  runtime has no Windows-1252 converter) and runs in a system only
 * `build-rename` — manual workflow that pushes a namespace-renamed branch
   `rename_<name>` for a parallel install
-
-* `publish-702` / `abap-702` — `publish-702` writes the downported `702`
-  branch on every push to `main` (`npm run auto_downport` against
-  `.github/abaplint/abap_702.jsonc`), and `abap-702` lints it. abap2xlsx needs
-  no `702` branch: its `main` is written for 7.02. Never commit to `702` by
-  hand.
+* `ci-702` — writes the downported `702` branch on every push to `main`
+  (`npm run auto_downport` against `.github/abaplint/abap_702.jsonc`) and
+  lints it. abap2xlsx needs no `702` branch: its `main` is written for 7.02.
+  Never commit to `702` by hand.
 
 All `.abap`/`.xml`/config files are LF-only (`.gitattributes` enforces it).
 
 ## Namespace rename
 
-`npm run rename` (CI: `check-rename`) and the manual `build-rename` workflow
+`npm run rename` (CI: the `rename` job of `ci`) and the manual `build-rename` workflow
 are abap2UI5's namespace rename for this addon - `.github/scripts/rename.mjs`,
 the same file in every addon that has one. Every `z2ui5_` object becomes
 `<name>_...`, for a customer name such as `ZMYUI5` or a registered namespace
