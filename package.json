@@ -16,7 +16,8 @@
     "downport": "abaplint --fix .github/abaplint/abap_702.jsonc && npm run syfixes",
     "auto_downport": "(abaplint --fix .github/abaplint/abap_702.jsonc || true) && npm run syfixes && npm run strip_trailing_ws && abaplint .github/abaplint/abap_702.jsonc && cp -f .github/abaplint/abap_702.jsonc abaplint.jsonc && npm run abaplintpathfix",
     "site": "npm run build --prefix site",
-    "site:dev": "npm run dev --prefix site"
+    "site:dev": "npm run dev --prefix site",
+    "unit": "node .github/scripts/unit.mjs"
   },
   "repository": {
     "type": "git",
