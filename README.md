@@ -7,11 +7,10 @@
 [![abap2xlsx](https://img.shields.io/badge/requires-abap2xlsx-blue)](https://github.com/abap2xlsx/abap2xlsx)
 [![License](https://img.shields.io/github/license/abap2UI5-addons/table-content-loader)](LICENSE)
 <br>
-[![ABAP Cloud](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/table-content-loader/abap-cloud.yaml?branch=main&label=ABAP%20Cloud)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/abap-cloud.yaml)
-[![ABAP Standard](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/table-content-loader/abap-standard.yaml?branch=main&label=ABAP%20Standard)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/abap-standard.yaml)
-[![rename](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/table-content-loader/check-rename.yaml?branch=main&label=rename)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-rename.yaml)
-[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml)
-[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/check-abap2ui5.yaml)
+[![CI](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/table-content-loader/ci.yaml?branch=main&label=CI)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ci.yaml)
+[![ABAP 7.02](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/table-content-loader/ci-702.yaml?branch=main&label=ABAP%207.02)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ci-702.yaml)
+[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ci.yaml)
+[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Ftable-content-loader%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ci.yaml)
 
 **Upload, edit and download the content of database tables as JSON, CSV or
 XLSX - in the browser.** A start page with one tile per format and direction
