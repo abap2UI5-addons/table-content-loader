@@ -110,7 +110,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
       ASSIGN mr_table->* TO <tab>.
 
       DATA(tab) = page->ele( `Table`
-                      )->a( n = `items` v = client->_bind_edit( <tab> )
+                      )->a( n = `items` v = client->_bind( <tab> )
                       )->ele( `headerToolbar`
                       )->ele( `OverflowToolbar`
                       )->tag( `Title`
@@ -118,7 +118,7 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
                       )->tag( `ToolbarSpacer`
                       )->tag( `Switch`
                       )->a( n = `change` v = client->_event( `CHANGE` )
-                      )->a( n = `state` v = client->_bind_edit( mv_check_edit )
+                      )->a( n = `state` v = client->_bind( mv_check_edit )
                       )->a( n = `customTextOn` v = 'Edit'
                       )->a( n = `customTextOff` v = 'View'
                       )->end(
@@ -149,8 +149,8 @@ CLASS Z2UI5_CL_TCL_APP_04 IMPLEMENTATION.
                        )->ele( `OverflowToolbar` ).
 
     footer->tag( n = `FileUploader` ns = `z2ui5`
-        )->a( n = `value` v = client->_bind_edit( mv_value )
-        )->a( n = `path` v = client->_bind_edit( mv_path )
+        )->a( n = `value` v = client->_bind( mv_value )
+        )->a( n = `path` v = client->_bind( mv_path )
         )->a( n = `placeholder` v = `File path here...`
         )->a( n = `upload` v = client->_event( 'UPLOAD' ) ).
 
