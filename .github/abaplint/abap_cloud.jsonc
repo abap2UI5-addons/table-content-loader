@@ -15,7 +15,7 @@
       // workflow for one yet
       "branch": "main",
       "folder": "/abap2UI5",
-      "files": "/src/**/*.*"
+      "files": "/src/0[0-2]/**/*.*"
     },
     {
       "url": "https://github.com/abap2UI5-addons/popups",
