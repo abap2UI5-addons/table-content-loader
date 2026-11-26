@@ -83,7 +83,6 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
             FROM (ms_app-db_table)
             INTO @ms_app-db_table_entries.
 
-            client->view_model_update( ).
           CATCH cx_root.
             client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
         ENDTRY.
@@ -163,7 +162,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
                  )->a( n = `displayBlock` v = `true`
                  )->a( n = `height` v = `100%` ).
       page = view->ele( `Shell`
-                 )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                 )->a( n = `appWidthLimited` v = client->_bind( ms_app-check_appwidthlimited )
                  )->ele( `Page`
                  )->a( n = `title` v = 'abap2UI5 - JSON File Download'
                  )->a( n = `navButtonPress` v = client->_event( 'BACK' )
@@ -174,7 +173,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
                  )->tag( `Label`
                  )->a( n = `text` v = `Shell`
                  )->tag( `Switch`
-                 )->a( n = `state` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                 )->a( n = `state` v = client->_bind( ms_app-check_appwidthlimited )
                  )->end(
                  )->end( ).
     ENDIF.
@@ -187,7 +186,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         )->tag( `Input`
         )->a( n = `width` v = `30%`
         )->a( n = `description` v = `DB Table`
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table )
+        )->a( n = `value` v = client->_bind( ms_app-db_table )
         )->tag( `Label`
         )->tag( `Button`
         )->a( n = `text` v = `Go`
@@ -197,7 +196,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         )->tag( `Input`
         )->a( n = `width` v = `30%`
         )->a( n = `description` v = `DB Entries`
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table_entries )
+        )->a( n = `value` v = client->_bind( ms_app-db_table_entries )
         )->a( n = `enabled` b = abap_false
         )->tag( `Label`
         )->a( n = `text` v = `(2) DB -> JSON`

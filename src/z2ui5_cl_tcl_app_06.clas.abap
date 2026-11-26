@@ -327,7 +327,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         )->a( n = `icon` v = `sap-icon://download-from-cloud`
         )->tag( `Input`
         )->a( n = `description` v = `Table`
-        )->a( n = `value` v = client->_bind_edit( ms_draft-table_name )
+        )->a( n = `value` v = client->_bind( ms_draft-table_name )
         )->a( n = `width` v = `15%`
         )->a( n = `enabled` b = abap_false
         )->tag( `ToolbarSpacer` ).
@@ -374,7 +374,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                      )->a( n = `horizontal` b = abap_true ).
 
     DATA(tab) = cont->ele( `Table`
-                    )->a( n = `items` v = client->_bind_edit( ms_draft-t_config )
+                    )->a( n = `items` v = client->_bind( ms_draft-t_config )
                     )->ele( `headerToolbar`
                     )->ele( `OverflowToolbar`
                     )->tag( `Title`
@@ -412,7 +412,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                )->a( n = `horizontal` b = abap_true ).
 
     tab = cont->ele( `Table`
-              )->a( n = `items` v = client->_bind_edit( ms_draft-t_config_head )
+              )->a( n = `items` v = client->_bind( ms_draft-t_config_head )
               )->ele( `headerToolbar`
               )->ele( `OverflowToolbar`
               )->tag( `Title`
@@ -455,7 +455,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                      )->a( n = `horizontal` b = abap_true ).
 
     DATA(tab) = cont->ele( `Table`
-                    )->a( n = `items` v = client->_bind_edit( ms_draft-t_fcat )
+                    )->a( n = `items` v = client->_bind( ms_draft-t_fcat )
                     )->ele( `headerToolbar`
                     )->ele( `OverflowToolbar`
                     )->tag( `Title`
@@ -499,12 +499,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     content->tag( `Label`
         )->a( n = `text` v = `Activate Row Limitation`
         )->tag( `CheckBox`
-        )->a( n = `selected` v = client->_bind_edit( ms_draft-check_file_row_limit )
+        )->a( n = `selected` v = client->_bind( ms_draft-check_file_row_limit )
         )->tag( `Label`
         )->a( n = `text` v = `Rows`
         )->tag( `Input`
-        )->a( n = `value` v = client->_bind_edit( ms_draft-file_max_rows )
-        )->a( n = `enabled` v = client->_bind_edit( ms_draft-check_file_row_limit )
+        )->a( n = `value` v = client->_bind( ms_draft-file_max_rows )
+        )->a( n = `enabled` v = client->_bind( ms_draft-check_file_row_limit )
         )->a( n = `width` v = `10%`
         )->tag( `Label`
         )->a( n = `text` v = `Prepare File with abap2xlsx`
@@ -558,7 +558,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                       )->tag( `ToolbarSpacer`
                       )->tag( `Input`
                       )->a( n = `description` v = `rows`
-                      )->a( n = `value` v = client->_bind_edit( ms_draft-max_rows )
+                      )->a( n = `value` v = client->_bind( ms_draft-max_rows )
                       )->a( n = `width` v = `10%`
                       )->tag( `Button`
                       )->a( n = `text` v = `Reset`

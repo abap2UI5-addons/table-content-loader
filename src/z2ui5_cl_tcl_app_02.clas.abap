@@ -228,7 +228,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
     DATA(tab) = scroll->ele( `Table`
                     )->a( n = `width` v = '100rem'
-                    )->a( n = `items` v = client->_bind_edit( ms_edit-t_table )
+                    )->a( n = `items` v = client->_bind( ms_edit-t_table )
                     )->a( n = `mode` v = 'MultiSelect' ).
 
     DATA(lt_fields) = lcl_db=>get_fieldlist_by_table( ms_edit-t_table ).
@@ -314,7 +314,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
         )->tag( `Label`
         )->a( n = `text` v = 'Format'
         )->ele( `SegmentedButton`
-        )->a( n = `selectedKey` v = client->_bind_edit( ms_export-segment_key )
+        )->a( n = `selectedKey` v = client->_bind( ms_export-segment_key )
         )->ele( `items`
         )->tag( `SegmentedButtonItem`
         )->a( n = `key` v = 'json'
@@ -400,7 +400,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
         )->tag( `Label`
         )->a( n = `text` v = 'Format'
         )->ele( `SegmentedButton`
-        )->a( n = `selectedKey` v = client->_bind_edit( ms_import-segment_key )
+        )->a( n = `selectedKey` v = client->_bind( ms_import-segment_key )
         )->ele( `items`
         )->tag( `SegmentedButtonItem`
         )->a( n = `key` v = 'json'
@@ -418,7 +418,7 @@ CLASS Z2UI5_CL_TCL_APP_02 IMPLEMENTATION.
 
     page->tag( n = `CodeEditor` ns = `editor`
         )->a( n = `type` v = COND #( WHEN ms_import-segment_key = 'csv' THEN |plain_text| ELSE ms_import-segment_key )
-        )->a( n = `value` v = client->_bind_edit( ms_import-editor )
+        )->a( n = `value` v = client->_bind( ms_import-editor )
         )->a( n = `editable` b = abap_true ).
 
     page->ele( `footer`

@@ -89,7 +89,6 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         ms_app-file = lo_popup_file->result( )-value.
         client->message_toast_display( `File uploaded successfully` ).
         ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
-        client->view_model_update( ).
       ENDIF.
       RETURN.
     ELSEIF lo_popup_commit IS BOUND.
@@ -135,7 +134,6 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
               client->message_box_display( `Only tables in the Z or Y namespace are allowed` ).
             ENDIF.
 
-            client->view_model_update( ).
           CATCH cx_root.
             client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
         ENDTRY.
@@ -159,7 +157,6 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             " only a conversion that went through can be saved
             mv_tab_db_table = ms_app-db_table.
             ms_app-file_entries = lines( <tab2> ).
-            client->view_model_update( ).
 
           CATCH cx_root INTO DATA(x).
             client->message_box_display( x->get_text( ) ).
@@ -230,7 +227,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                      )->a( n = `height` v = `100%` ).
 
     DATA(page) = view->ele( `Shell`
-                     )->a( n = `appWidthLimited` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                     )->a( n = `appWidthLimited` v = client->_bind( ms_app-check_appwidthlimited )
                      )->ele( `Page`
                      )->a( n = `title` v = 'abap2UI5 - JSON File Upload'
                      )->a( n = `navButtonPress` v = client->_event( `BACK` )
@@ -241,7 +238,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                      )->tag( `Label`
                      )->a( n = `text` v = `Shell`
                      )->tag( `Switch`
-                     )->a( n = `state` v = client->_bind_edit( ms_app-check_appwidthlimited )
+                     )->a( n = `state` v = client->_bind( ms_app-check_appwidthlimited )
                      )->tag( `Link`
                      )->a( n = `text` v = 'Project on GitHub'
                      )->a( n = `target` v = '_blank'
@@ -269,7 +266,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         )->tag( `Input`
         )->a( n = `width` v = `30%`
         )->a( n = `description` v = `DB Table`
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table )
+        )->a( n = `value` v = client->_bind( ms_app-db_table )
         )->tag( `Label`
         )->tag( `Button`
         )->a( n = `text` v = `Go`
@@ -279,7 +276,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         )->tag( `Input`
         )->a( n = `width` v = `30%`
         )->a( n = `description` v = `DB Entries`
-        )->a( n = `value` v = client->_bind_edit( ms_app-db_table_entries )
+        )->a( n = `value` v = client->_bind( ms_app-db_table_entries )
         )->a( n = `enabled` b = abap_false
         )->tag( `Label`
         )->a( n = `text` v = `(3) JSON -> ITAB`
@@ -291,7 +288,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         )->tag( `Input`
         )->a( n = `width` v = `30%`
         )->a( n = `description` v = `Number of Entries`
-        )->a( n = `value` v = client->_bind_edit( ms_app-file_entries )
+        )->a( n = `value` v = client->_bind( ms_app-file_entries )
         )->a( n = `enabled` b = abap_false
         )->tag( `Label`
         )->a( n = `text` v = `(4) Preview Rows`
