@@ -31,7 +31,7 @@
   "devDependencies": {
     "@abap2ui5/linter": "^0.11.0",
     "@abap2ui5/linter-render": "^0.11.0",
-    "@abaplint/cli": "^2.120.92"
+    "@abaplint/cli": "^2.120.120"
   },
   "engines": {
     "node": ">=22"
