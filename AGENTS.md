@@ -101,7 +101,11 @@ pinned by commit in the `uses:` lines and moved by `bump-deps`):
   builds on abap2xlsx) into a checkout of abap2UI5's `main` with
   abap2UI5-ext, layout-management and popups, downports, transpiles and runs
   the tests on the Node runtime. `file_windows_1252` is skipped there (the
-  runtime has no Windows-1252 converter) and runs in a system only
+  runtime has no Windows-1252 converter) and runs in a system only - and
+  `npm run check:702`, the 7.02 gate of a pull request:
+  `.github/scripts/check-702.sh` downports a scratch copy of `src/` in
+  `build/702` and lints it with `.github/abaplint/abap_702.jsonc` (`src/`
+  itself is never rewritten)
 * `build-rename` — manual workflow that pushes a namespace-renamed branch
   `rename_<name>` for a parallel install
 * `ci-702` — writes the downported `702` branch on every push to `main`
