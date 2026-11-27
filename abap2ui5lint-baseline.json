@@ -3,7 +3,6 @@
   "findings": {
     "src/z2ui5_cl_tcl_app_00.clas.abap|member-too-new|sap.m.GenericTile|enableNavigationButton|": 1,
     "src/z2ui5_cl_tcl_app_02.clas.abap|unused-public-attribute||st_db|": 1,
-    "src/z2ui5_cl_tcl_app_03.clas.abap|display-root-mismatch||popup_display|mvc:View": 1,
     "src/z2ui5_cl_tcl_app_06.clas.abap|unknown-binding-path|sap.m.Table|items|/MS_DRAFT/T_CONFIG": 1
   }
 }
