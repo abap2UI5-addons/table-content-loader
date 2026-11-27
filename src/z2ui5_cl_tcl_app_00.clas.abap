@@ -107,6 +107,18 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
           )->ele( `ImageContent`
           )->a( n = `src` v = `sap-icon://download` ).
 
+      page = page->end(
+                 )->ele( `HBox` ).
+
+      page->ele( `GenericTile`
+          )->a( n = `class` v = `sapUiTinyMarginBegin sapUiTinyMarginTop`
+          )->a( n = `header` v = `Demo`
+          )->a( n = `subheader` v = `Import, Edit, Export`
+          )->a( n = `press` v = client->_event( `APP_02` )
+          )->ele( `TileContent`
+          )->ele( `ImageContent`
+          )->a( n = `src` v = `sap-icon://edit` ).
+
       client->view_display( view->stringify( ) ).
 
     ENDIF.
@@ -128,6 +140,9 @@ CLASS Z2UI5_CL_TCL_APP_00 IMPLEMENTATION.
       " references, never a literal.
       WHEN `APP_01`.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_01( ) ).
+
+      WHEN `APP_02`.
+        client->nav_app_call( NEW z2ui5_cl_tcl_app_02( ) ).
 
       WHEN `APP_03`.
         client->nav_app_call( NEW z2ui5_cl_tcl_app_03( ) ).
