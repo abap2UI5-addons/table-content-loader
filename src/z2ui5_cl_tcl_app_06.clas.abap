@@ -617,6 +617,59 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view_preview.
 
+    " the rows of the data preview as the sheet shows them: the columns of
+    " the field catalogue that are displayed, in its order, under its texts
+    IF ms_draft-t_tab IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    FIELD-SYMBOLS <tab> TYPE table.
+    ASSIGN ms_draft-t_tab->* TO <tab>.
+
+    DATA(lv_title) = ``.
+    IF line_exists( ms_draft-t_config_head[ 1 ] ).
+      lv_title = ms_draft-t_config_head[ 1 ]-title.
+    ENDIF.
+
+    DATA(lt_fcat) = ms_draft-t_fcat.
+    DELETE lt_fcat WHERE dynpfld = abap_false.
+    SORT lt_fcat BY position.
+
+    DATA(tab) = page->ele( `ScrollContainer`
+                    )->a( n = `height` v = `100%`
+                    )->a( n = `width` v = `100%`
+                    )->a( n = `vertical` b = abap_true
+                    )->a( n = `horizontal` b = abap_true
+                    )->ele( `Table`
+                    )->a( n = `items` v = client->_bind( <tab> )
+                    )->ele( `headerToolbar`
+                    )->ele( `OverflowToolbar`
+                    )->tag( `Title`
+                    )->a( n = `text` t = |(4) XLSX Preview - { lv_title }|
+                    )->end(
+                    )->end( ).
+
+    DATA(lo_columns) = tab->ele( `columns` ).
+    LOOP AT lt_fcat INTO DATA(ls_fcat).
+      DATA(lv_header) = CONV string( ls_fcat-column_name ).
+      IF lv_header IS INITIAL.
+        lv_header = ls_fcat-scrtext_l.
+      ENDIF.
+      IF lv_header IS INITIAL.
+        lv_header = ls_fcat-fieldname.
+      ENDIF.
+      lo_columns->ele( `Column`
+          )->tag( `Text`
+          )->a( n = `text` t = lv_header ).
+    ENDLOOP.
+
+    DATA(lo_cells) = tab->ele( `items`
+                         )->ele( `ColumnListItem`
+                         )->ele( `cells` ).
+    LOOP AT lt_fcat INTO ls_fcat.
+      lo_cells->tag( `Text`
+          )->a( n = `text` v = `{` && ls_fcat-fieldname && `}` ).
+    ENDLOOP.
 
   ENDMETHOD.
 
