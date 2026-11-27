@@ -219,6 +219,54 @@ CLASS z2ui5_cl_tcl_context DEFINITION
       EXPORTING
         result   TYPE string
         invalid  TYPE abap_bool.
+
+    " Splits CSV text into rows of cells, RFC 4180: a cell may be wrapped in
+    " double quotes and then carry the separator, a line break and a doubled
+    " quote. Rows end with CRLF, LF or CR. Empty rows are left out.
+    TYPES ty_t_csv_rows TYPE STANDARD TABLE OF string_table WITH EMPTY KEY.
+
+    CLASS-METHODS csv_split_rows
+      IMPORTING
+        val           TYPE string
+        separator     TYPE string DEFAULT `;`
+      RETURNING
+        VALUE(result) TYPE ty_t_csv_rows.
+
+    " Reads a quoted cell: pos stands on the opening quote and is moved
+    " behind the closing one; a doubled quote inside is one quote.
+    CLASS-METHODS csv_read_quoted
+      IMPORTING
+        val  TYPE string
+      CHANGING
+        pos  TYPE i
+        cell TYPE string.
+
+    " The text without the byte order mark Excel's "CSV UTF-8" starts a
+    " file with.
+    CLASS-METHODS csv_strip_bom
+      IMPORTING
+        val           TYPE string
+      RETURNING
+        VALUE(result) TYPE string.
+
+    " A header cell as a component name: letters, digits and underscores,
+    " not empty, not starting with a digit, at most 30 characters.
+    CLASS-METHODS csv_get_column_name
+      IMPORTING
+        val           TYPE string
+        index         TYPE i
+      RETURNING
+        VALUE(result) TYPE string.
+
+    " One CSV cell: wrapped in double quotes when it carries the separator,
+    " a quote or a line break, quotes doubled.
+    CLASS-METHODS csv_escape_cell
+      IMPORTING
+        val           TYPE string
+        separator     TYPE string DEFAULT `;`
+      RETURNING
+        VALUE(result) TYPE string.
+
 ENDCLASS.
 
 
@@ -314,26 +362,25 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD itab_get_csv_by_itab.
-
     FIELD-SYMBOLS <tab> TYPE table.
     DATA lt_lines TYPE string_table.
-    DATA lv_line TYPE string.
+    DATA lt_cells TYPE string_table.
 
     ASSIGN val TO <tab>.
     DATA(tab) = CAST cl_abap_tabledescr( cl_abap_typedescr=>describe_by_data( <tab> ) ).
 
     DATA(struc) = CAST cl_abap_structdescr( tab->get_table_line_type( ) ).
 
-    CLEAR lv_line.
     LOOP AT struc->get_components( ) REFERENCE INTO DATA(lr_comp).
-      lv_line = |{ lv_line }{ lr_comp->name };|.
+      INSERT csv_escape_cell( lr_comp->name ) INTO TABLE lt_cells.
     ENDLOOP.
-    INSERT lv_line INTO TABLE lt_lines.
+    INSERT concat_lines_of( table = lt_cells
+                            sep   = `;` ) INTO TABLE lt_lines.
 
     DATA lr_row TYPE REF TO data.
     LOOP AT <tab> REFERENCE INTO lr_row.
 
-      CLEAR lv_line.
+      CLEAR lt_cells.
       DATA(lv_index) = 1.
       DO.
         ASSIGN lr_row->* TO FIELD-SYMBOL(<row>).
@@ -342,59 +389,55 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
           EXIT.
         ENDIF.
         lv_index = lv_index + 1.
-        DATA(lv_field_val) = |{ <field> }|.
-        REPLACE ALL OCCURRENCES OF `;` IN lv_field_val WITH `,`.
-        lv_line = |{ lv_line }{ lv_field_val };|.
+        " the value as it is - a separator, a quote or a line break inside
+        " it is quoted, not replaced
+        INSERT csv_escape_cell( |{ <field> }| ) INTO TABLE lt_cells.
       ENDDO.
-      INSERT lv_line INTO TABLE lt_lines.
+      INSERT concat_lines_of( table = lt_cells
+                              sep   = `;` ) INTO TABLE lt_lines.
     ENDLOOP.
 
-    result = concat_lines_of( table = lt_lines sep = cv_char_util_cr_lf ).
-
+    result = concat_lines_of( table = lt_lines
+                              sep   = cv_char_util_cr_lf ).
   ENDMETHOD.
 
   METHOD itab_get_itab_by_csv.
-
     DATA lt_comp TYPE cl_abap_structdescr=>component_table.
     FIELD-SYMBOLS <tab> TYPE STANDARD TABLE.
     DATA lr_row TYPE REF TO data.
+    DATA lt_names TYPE string_table.
+    FIELD-SYMBOLS <field> TYPE any.
 
-    " lines may end in CR LF - a file saved on Windows, and the CSV that
-    " itab_get_csv_by_itab writes. Split at the LF alone, every line kept its
-    " CR: the header's last column became a name no structure accepts, and
-    " the last value of every row carried the CR
-    DATA(lv_csv) = replace( val  = val
-                            sub  = cv_char_util_cr_lf
-                            with = cv_char_util_newline
-                            occ  = 0 ).
+    DATA(lt_rows) = csv_split_rows( csv_strip_bom( val ) ).
+    " no row, no header to build a table from
+    IF lt_rows IS INITIAL.
+      RETURN.
+    ENDIF.
 
-    " Excel's "CSV UTF-8" starts the file with the byte order mark EF BB BF,
-    " and the UTF-8 decoding keeps it as the character U+FEFF: the first
-    " column name became U+FEFF + name, which no structure accepts. Built at
-    " run time from its bytes - a literal U+FEFF in the source breaks the
-    " 7-bit rule and the downport. Where the decoding drops it, it is empty
-    TRY.
-        DATA(lv_bom) = conv_get_string_by_xstring( CONV xstring( `EFBBBF` ) ).
-        IF lv_bom IS NOT INITIAL AND find( val = lv_csv sub = lv_bom ) = 0.
-          lv_csv = substring( val = lv_csv off = strlen( lv_bom ) ).
-        ENDIF.
-      CATCH z2ui5_cx_tcl_error ##NO_HANDLER.
-        " no codepage API: the text cannot have come through one either
-    ENDTRY.
-
-    SPLIT lv_csv AT cv_char_util_newline INTO TABLE DATA(lt_rows).
-    SPLIT lt_rows[ 1 ] AT `;` INTO TABLE DATA(lt_cols).
+    DATA(lt_cols) = lt_rows[ 1 ].
+    " a header written with a separator behind the last column
+    DATA(lv_last) = lines( lt_cols ).
+    IF lv_last > 1 AND lt_cols[ lv_last ] IS INITIAL.
+      DELETE lt_cols INDEX lv_last.
+    ENDIF.
 
     LOOP AT lt_cols REFERENCE INTO DATA(lr_col).
+      DATA(lv_tabix) = sy-tabix.
 
-      DATA(lv_name) = c_trim_upper( lr_col->* ).
-      REPLACE ALL OCCURRENCES OF ` ` IN lv_name WITH `_`.
+      DATA(lv_name) = csv_get_column_name( val   = lr_col->*
+                                           index = lv_tabix ).
+      " a name the header carries twice
+      IF line_exists( lt_names[ table_line = lv_name ] ).
+        lv_name = |COL{ lv_tabix }|.
+      ENDIF.
+      INSERT lv_name INTO TABLE lt_names.
 
+      " a string per column - a fixed length cut every longer value
       INSERT VALUE #( name = lv_name
-                      type = cl_abap_elemdescr=>get_c( 40 ) ) INTO TABLE lt_comp.
+                      type = cl_abap_elemdescr=>get_string( ) ) INTO TABLE lt_comp.
     ENDLOOP.
 
-    DATA(struc) = cl_abap_structdescr=>get( lt_comp ).
+    DATA(struc) = cl_abap_structdescr=>create( lt_comp ).
     DATA(data) = CAST cl_abap_datadescr( struc ).
     DATA(o_table_desc) = cl_abap_tabledescr=>create( p_line_type  = data
                                                      p_table_kind = cl_abap_tabledescr=>tablekind_std
@@ -402,17 +445,18 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
 
     CREATE DATA result TYPE HANDLE o_table_desc.
     ASSIGN result->* TO <tab>.
-    DELETE lt_rows WHERE table_line IS INITIAL.
 
     LOOP AT lt_rows REFERENCE INTO DATA(lr_rows) FROM 2.
 
-      SPLIT lr_rows->* AT `;` INTO TABLE lt_cols.
       CREATE DATA lr_row TYPE HANDLE struc.
+      ASSIGN lr_row->* TO FIELD-SYMBOL(<row>).
 
-      LOOP AT lt_cols REFERENCE INTO lr_col.
-        ASSIGN lr_row->* TO FIELD-SYMBOL(<row>).
-        ASSIGN COMPONENT sy-tabix OF STRUCTURE <row> TO FIELD-SYMBOL(<field>).
-        IF sy-subrc <> 0.
+      DATA(lv_index) = 0.
+      LOOP AT lr_rows->* REFERENCE INTO lr_col.
+        lv_index = lv_index + 1.
+        UNASSIGN <field>.
+        ASSIGN COMPONENT lv_index OF STRUCTURE <row> TO <field>.
+        IF <field> IS NOT ASSIGNED.
           EXIT.
         ENDIF.
         <field> = lr_col->*.
@@ -420,7 +464,6 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
 
       INSERT <row> INTO TABLE <tab>.
     ENDLOOP.
-
   ENDMETHOD.
 
   METHOD json_parse.
@@ -950,4 +993,165 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
         ENDTRY.
     ENDTRY.
   ENDMETHOD.
+
+  METHOD csv_escape_cell.
+
+    result = val.
+    IF result NA |"\n\r| AND find( val = result
+                                   sub = separator ) < 0.
+      RETURN.
+    ENDIF.
+    result = replace( val  = result
+                      sub  = `"`
+                      with = `""`
+                      occ  = 0 ).
+    result = |"{ result }"|.
+
+  ENDMETHOD.
+
+  METHOD csv_split_rows.
+    DATA lt_cells TYPE string_table.
+    DATA lv_cell  TYPE string.
+    " the cell was opened with a quote - an empty quoted cell is content
+    DATA lv_was_quoted TYPE abap_bool.
+    DATA lv_pos   TYPE i.
+    DATA lv_next  TYPE string.
+
+    DATA(lv_len) = strlen( val ).
+    DATA(lv_sep_len) = strlen( separator ).
+    IF lv_sep_len = 0.
+      RETURN.
+    ENDIF.
+
+    WHILE lv_pos < lv_len.
+
+      DATA(lv_char) = substring( val = val
+                                 off = lv_pos
+                                 len = 1 ).
+
+      IF lv_char = `"` AND lv_cell IS INITIAL AND lv_was_quoted = abap_false.
+        csv_read_quoted( EXPORTING val  = val
+                         CHANGING  pos  = lv_pos
+                                   cell = lv_cell ).
+        lv_was_quoted = abap_true.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_pos + lv_sep_len <= lv_len AND substring( val = val
+                                                      off = lv_pos
+                                                      len = lv_sep_len ) = separator.
+        INSERT lv_cell INTO TABLE lt_cells.
+        CLEAR lv_cell.
+        lv_was_quoted = abap_false.
+        lv_pos = lv_pos + lv_sep_len.
+        CONTINUE.
+      ENDIF.
+
+      IF lv_char <> |\n| AND lv_char <> |\r|.
+        lv_cell = lv_cell && lv_char.
+        lv_pos = lv_pos + 1.
+        CONTINUE.
+      ENDIF.
+
+      " the end of a row - CRLF is one line end. An empty row is left out
+      lv_next = substring( val = val
+                           off = lv_pos + 1
+                           len = nmin( val1 = 1
+                                       val2 = lv_len - lv_pos - 1 ) ).
+      IF lv_char = |\r| AND lv_next = |\n|.
+        lv_pos = lv_pos + 1.
+      ENDIF.
+      lv_pos = lv_pos + 1.
+      IF lt_cells IS NOT INITIAL OR lv_cell IS NOT INITIAL OR lv_was_quoted = abap_true.
+        INSERT lv_cell INTO TABLE lt_cells.
+        INSERT lt_cells INTO TABLE result.
+      ENDIF.
+      CLEAR lt_cells.
+      CLEAR lv_cell.
+      lv_was_quoted = abap_false.
+
+    ENDWHILE.
+
+    IF lt_cells IS NOT INITIAL OR lv_cell IS NOT INITIAL OR lv_was_quoted = abap_true.
+      INSERT lv_cell INTO TABLE lt_cells.
+      INSERT lt_cells INTO TABLE result.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD csv_read_quoted.
+
+    DATA(lv_len) = strlen( val ).
+    pos = pos + 1.
+
+    WHILE pos < lv_len.
+      DATA(lv_char) = substring( val = val
+                                 off = pos
+                                 len = 1 ).
+      pos = pos + 1.
+      IF lv_char <> `"`.
+        cell = cell && lv_char.
+        CONTINUE.
+      ENDIF.
+      " a quote: doubled it is one quote of the text, alone it closes the cell
+      IF pos >= lv_len OR substring( val = val
+                                     off = pos
+                                     len = 1 ) <> `"`.
+        RETURN.
+      ENDIF.
+      cell = cell && `"`.
+      pos = pos + 1.
+    ENDWHILE.
+
+  ENDMETHOD.
+
+  METHOD csv_strip_bom.
+
+    " the UTF-8 decoding keeps the mark EF BB BF as the character U+FEFF in
+    " front of the first column name. Built at run time from its bytes - a
+    " literal U+FEFF in the source breaks the 7-bit rule and the downport.
+    " Where the decoding drops it, it is empty
+    result = val.
+    TRY.
+        DATA(lv_bom) = conv_get_string_by_xstring( CONV xstring( `EFBBBF` ) ).
+        IF lv_bom IS NOT INITIAL AND find( val = result
+                                           sub = lv_bom ) = 0.
+          result = substring( val = result
+                              off = strlen( lv_bom ) ).
+        ENDIF.
+      CATCH z2ui5_cx_tcl_error ##NO_HANDLER.
+        " no codepage API: the text cannot have come through one either
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD csv_get_column_name.
+
+    DATA lv_pos TYPE i.
+
+    DATA(lv_name) = c_trim_upper( val ).
+    DATA(lv_len) = strlen( lv_name ).
+
+    WHILE lv_pos < lv_len.
+      DATA(lv_char) = substring( val = lv_name
+                                 off = lv_pos
+                                 len = 1 ).
+      IF lv_char CA `ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_`.
+        result = result && lv_char.
+      ELSE.
+        result = result && `_`.
+      ENDIF.
+      lv_pos = lv_pos + 1.
+    ENDWHILE.
+
+    IF result IS INITIAL.
+      result = |COL{ index }|.
+    ELSEIF result(1) CA `0123456789`.
+      result = `C_` && result.
+    ENDIF.
+    IF strlen( result ) > 30.
+      result = result(30).
+    ENDIF.
+
+  ENDMETHOD.
+
 ENDCLASS.

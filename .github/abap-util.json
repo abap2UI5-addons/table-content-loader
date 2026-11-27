@@ -1,0 +1,20 @@
+{
+  "master": "abap-util/abap-util",
+  "commit": null,
+  "note": "the copies were taken before this manifest existed and differ from the master in more than what was changed here - there is no commit they match. sync-check lists the differences: what a refresh would bring, and what has to be synced back",
+  "rename": [
+    ["z2ui5_cl_tcl_context", "zabaputil_cl_util_context"],
+    ["z2ui5_cx_tcl_error", "zabaputil_cx_util_error"]
+  ],
+  "copies": [
+    {
+      "copy": "src/z2ui5_cl_tcl_context.clas.abap",
+      "master": "src/zabaputil_cl_util_context.clas.abap",
+      "trimmed": true
+    },
+    {
+      "copy": "src/z2ui5_cx_tcl_error.clas.abap",
+      "master": "src/zabaputil_cx_util_error.clas.abap"
+    }
+  ]
+}
