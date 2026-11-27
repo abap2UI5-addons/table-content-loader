@@ -69,9 +69,22 @@ default branch. The 702 config gives popups' `702` branch a folder of its own
 ## Security
 
 This is a developer tool. It reads from any table the user names and writes into
-tables of the Z/Y namespace only (the JSON upload's save refuses any other),
-without an authorization check of its own. Before using it beyond a development
-system, add your own `AUTHORITY-CHECK`s and restrict who may run the app.
+tables of the Z/Y namespace (the JSON upload is the only writer), without an
+authorization check of its own. Before using it beyond a development system,
+add your own `AUTHORITY-CHECK`s and restrict who may run the app.
+
+The write boundary is a name check, not a data-ownership check
+(`z2ui5_cl_tcl_app_01=>get_write_refusal`, applied on Save and again right
+before the `MODIFY`): a name must start with `Z`/`Y` and must not carry
+abap2UI5's prefix - every table of the framework and of its addons (the draft
+table, config-management's configuration, sql-console's histories) is read
+back as program state, so a planted row acts in another user's session. The
+prefix is derived from `z2ui5_if_app` by type, never written as a literal, so
+the namespace rename carries it. A new writing path must go through the same
+method. Every dynamic `FROM` / `CREATE DATA ... TYPE (name)` takes its name
+from `z2ui5_cl_tcl_context=>db_get_table_name` (one plain DDIC table or view
+name) - never straight from a bound field; where the name outlives the
+roundtrip (app 06) the checked name is kept in a protected attribute.
 
 **Shipping without an authorization check is a deliberate decision of the
 maintainer (2026-11-17), stated in the README - do not add one and do not

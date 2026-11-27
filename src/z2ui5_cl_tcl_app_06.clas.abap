@@ -56,6 +56,9 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
   PROTECTED SECTION.
     DATA check_initialized TYPE abap_bool.
     DATA mv_file TYPE string.
+    " the table of the draft as on_callback checked it - ms_draft-table_name
+    " is bound, so the statements read this one, never the bound field
+    DATA mv_table_name TYPE string.
   PRIVATE SECTION.
     " the rows of the preview and of the file when the input asks for none
     CONSTANTS mc_default_rows TYPE i VALUE 10.
@@ -70,13 +73,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     TRY.
 
-        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_draft-table_name ).
-        " the name is bound - an unknown one answers with no table at all
-        IF lr_tab IS NOT BOUND.
-          client->message_box_display( text = |Table { ms_draft-table_name } not found|
-                                       type = 'error' ).
+        " no draft yet - no checked table to read
+        IF mv_table_name IS INITIAL.
+          client->message_toast_display( `Create a draft with New first` ).
           RETURN.
         ENDIF.
+        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( mv_table_name ).
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
 
@@ -88,13 +90,13 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
             ms_draft-file_max_rows = mc_default_rows.
           ENDIF.
 
-          SELECT * FROM (ms_draft-table_name)
+          SELECT * FROM (mv_table_name)
             INTO CORRESPONDING FIELDS OF TABLE @<tab>
             UP TO @ms_draft-file_max_rows ROWS.
 
         ELSE.
 
-          SELECT * FROM (ms_draft-table_name)
+          SELECT * FROM (mv_table_name)
             INTO CORRESPONDING FIELDS OF TABLE @<tab>.
 
         ENDIF.
@@ -119,7 +121,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
   METHOD load_table.
 
     " Load before a draft exists has no table to fill
-    IF ms_draft-t_tab IS NOT BOUND.
+    IF ms_draft-t_tab IS NOT BOUND OR mv_table_name IS INITIAL.
       client->message_toast_display( `Create a draft with New first` ).
       RETURN.
     ENDIF.
@@ -132,10 +134,10 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
       ms_draft-max_rows = mc_default_rows.
     ENDIF.
 
-    " the name is bound, so a request can carry one that is no table - that
-    " is a message, not a short dump
+    " the checked name of the draft, never the bound field - the rows land in
+    " the table type built for it
     TRY.
-        SELECT * FROM (ms_draft-table_name)
+        SELECT * FROM (mv_table_name)
           INTO CORRESPONDING FIELDS OF TABLE @<tab>
           UP TO @ms_draft-max_rows ROWS.
       CATCH cx_root INTO DATA(lx).
@@ -164,18 +166,20 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     TRY.
         " the table and its field catalogue first - a name that does not
         " exist or a catalogue that cannot be built keeps the draft there is
-        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ls_input-value ).
-        " an unknown name answers with no table at all - not an exception
-        IF lr_tab IS NOT BOUND.
+        " only a plain DDIC table name - it ends up in a dynamic FROM
+        DATA(lv_table_name) = z2ui5_cl_tcl_context=>db_get_table_name( ls_input-value ).
+        IF lv_table_name IS INITIAL.
           client->message_box_display( text = |Table { ls_input-value } not found|
                                        type = 'error' ).
           RETURN.
         ENDIF.
+        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( lv_table_name ).
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
         DATA(lt_fcat) = zcl_excel_common=>get_fieldcatalog( <tab> ).
 
-        ms_draft-table_name = ls_input-value.
+        mv_table_name = lv_table_name.
+        ms_draft-table_name = lv_table_name.
         ms_draft-check_load_pressed = abap_true.
         ms_draft-t_tab = lr_tab.
         ms_draft-t_fcat = lt_fcat.
@@ -218,7 +222,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         client->follow_up_action(
             val   = client->cs_event-download_b64_file
             t_arg = VALUE #( ( |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ mv_file }| )
-                             ( |{ to_lower( ms_draft-table_name ) }.xlsx| ) ) ).
+                             ( |{ to_lower( mv_table_name ) }.xlsx| ) ) ).
 
       WHEN 'CREATE_FILE'.
         create_file( ).

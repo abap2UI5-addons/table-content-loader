@@ -87,7 +87,7 @@ started directly with `?app_start=<class>`.
 | Tile | Class | What you do |
 |---|---|---|
 | JSON - Upload DB Content | `z2ui5_cl_tcl_app_01` | tile disabled, start it directly. (1) upload a JSON file, (2) check the target table, (3) convert the JSON into the table's rows, (4) preview the first rows, (5) save - after a confirmation the file's rows are written to the table: a row whose key exists is overwritten, a new key is inserted, rows that are not in the file stay (`MODIFY`) |
-| JSON - Download DB Content | `z2ui5_cl_tcl_app_03` | (1) set the table, (2) convert its content to JSON, (3) preview the JSON, (4) download it |
+| JSON - Download DB Content | `z2ui5_cl_tcl_app_03` | (1) set the table, (2) convert its content to JSON - at most **Max Rows** rows (default 1000), (3) preview the JSON, (4) download it |
 | CSV - Upload / Download DB Content | `z2ui5_cl_tcl_app_04` | upload a CSV file, view or edit its content as a table, download it as CSV (no database write yet). The file is read as UTF-8 (Excel's "CSV UTF-8"), and as Windows-1252 (Excel's plain "CSV" on Windows) when it is not valid UTF-8 |
 | XLSX - Upload DB Content | `z2ui5_cl_tcl_app_05` | upload an XLSX file, view or edit its content as a table, download it as XLSX (no database write yet) |
 | XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored, see [Limitations](#limitations)) |
@@ -101,7 +101,21 @@ started directly with `?app_start=<class>`.
 
 ## Security
 
-This is a developer tool. It reads from any table the user names and writes into tables of the Z/Y namespace only, without an authorization check of its own. Before using it beyond a development system, add your own authorization checks (e.g. `AUTHORITY-CHECK` on `S_TABU_DIS`/`S_TABU_NAM`) and restrict who may run the app.
+This is a developer tool. It reads from any table the user names and, without an authorization check of its own, writes into tables of the Z/Y namespace (the JSON upload is the only app that writes). Before using it beyond a development system, add your own authorization checks (e.g. `AUTHORITY-CHECK` on `S_TABU_DIS`/`S_TABU_NAM`) and restrict who may run the app.
+
+The write boundary is a check of the table **name**, not of who owns the data:
+
+* the upload writes only into a table whose name starts with `Z` or `Y`;
+* it refuses every table of abap2UI5 and of its addons - every name with the
+  framework's prefix (`Z2UI5_`, or the name a namespace rename gave it). Their
+  drafts, configuration and histories are read back as program state, so rows
+  planted there would act in other users' sessions. A table of your own that
+  starts with that prefix is refused as well;
+* any other Z/Y table is written as the file says, whoever's data it holds -
+  an existing key is overwritten.
+
+Table names typed into the apps reach the database only as a single DDIC
+table or view name (no join, alias or further clause).
 
 **That is a deliberate decision, not an open item.** abap2UI5 itself has no
 central authorization hook either: the framework leaves the check to the app,

@@ -137,6 +137,16 @@ CLASS z2ui5_cl_tcl_context DEFINITION
       RETURNING
         VALUE(result) TYPE REF TO data.
 
+    "! The name in upper case when it is a single name of a DDIC structure
+    "! type - a database table or view - and empty for anything else: a
+    "! dynamic FROM built from it holds no join, alias or further clause.
+    "! Never raises.
+    CLASS-METHODS db_get_table_name
+      IMPORTING
+        val           TYPE clike
+      RETURNING
+        VALUE(result) TYPE string.
+
     CLASS-METHODS rtti_check_ref_data
       IMPORTING
         val           TYPE any
@@ -787,6 +797,32 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
     DATA(data_desc) = CAST cl_abap_datadescr( lo_type ).
     DATA(gr_dyntable_typ) = cl_abap_tabledescr=>create( data_desc ).
     CREATE DATA result TYPE HANDLE gr_dyntable_typ.
+
+  ENDMETHOD.
+
+  METHOD db_get_table_name.
+
+    DATA(lv_name) = to_upper( condense( val ) ).
+    " letters, digits, underscore and the namespace slash only - no blank,
+    " so nothing after the name reaches the statement
+    IF lv_name IS INITIAL OR lv_name CN `ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_/`.
+      RETURN.
+    ENDIF.
+
+    " type_not_found is a classic exception - see rtti_create_tab_by_name
+    DATA lo_type TYPE REF TO cl_abap_typedescr.
+    cl_abap_typedescr=>describe_by_name( EXPORTING  p_name         = lv_name
+                                         RECEIVING  p_descr_ref    = lo_type
+                                         EXCEPTIONS type_not_found = 1
+                                                    OTHERS         = 2 ).
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+    IF lo_type->kind <> cl_abap_typedescr=>kind_struct OR lo_type->is_ddic_type( ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    result = lv_name.
 
   ENDMETHOD.
 
