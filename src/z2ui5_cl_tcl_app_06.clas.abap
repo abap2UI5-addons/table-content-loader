@@ -57,6 +57,8 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
     DATA check_initialized TYPE abap_bool.
     DATA mv_file TYPE string.
   PRIVATE SECTION.
+    " the rows of the preview and of the file when the input asks for none
+    CONSTANTS mc_default_rows TYPE i VALUE 10.
 ENDCLASS.
 
 
@@ -79,6 +81,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         ASSIGN lr_tab->* TO <tab>.
 
         IF ms_draft-check_file_row_limit = abap_true.
+
+          " UP TO 0 ROWS reads every row - a limit of 0 or less is no limit
+          " the user meant, the default stands in
+          IF ms_draft-file_max_rows <= 0.
+            ms_draft-file_max_rows = mc_default_rows.
+          ENDIF.
 
           SELECT * FROM (ms_draft-table_name)
             INTO CORRESPONDING FIELDS OF TABLE @<tab>
@@ -118,6 +126,11 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     FIELD-SYMBOLS <tab> TYPE table.
     ASSIGN ms_draft-t_tab->* TO <tab>.
+
+    " UP TO 0 ROWS reads every row - the preview shows the default then
+    IF ms_draft-max_rows <= 0.
+      ms_draft-max_rows = mc_default_rows.
+    ENDIF.
 
     " the name is bound, so a request can carry one that is no table - that
     " is a message, not a short dump
