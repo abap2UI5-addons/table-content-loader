@@ -37,6 +37,7 @@ A start page with one tile per format and direction leads into small step-by-ste
 - Standard ABAP on SAP NetWeaver AS ABAP 7.50 or higher
 - NetWeaver 7.02 - 7.40: the downported branch 702
 - ABAP Cloud supported (XLSX upload and download not ready for ABAP Cloud yet)
+- abap2UI5-addons/layout-management (needed by popups)
 - abap2UI5-addons/popups (file upload, input and confirmation popups)
 - abap2xlsx (reads and writes the XLSX files)
 
@@ -44,7 +45,7 @@ A start page with one tile per format and direction leads into small step-by-ste
 
 With [abapGit](https://abapgit.org), from [the repository](https://github.com/abap2UI5-addons/table-content-loader):
 
-- Install with abapGit in this order: abap2UI5, abap2UI5-addons/popups, abap2xlsx, then this repository (branch main)
+- Install with abapGit in this order: abap2UI5, abap2UI5-addons/layout-management, abap2UI5-addons/popups, abap2xlsx, then this repository (branch main, or 702 on NetWeaver 7.02 - 7.40)
 - Start the start page with ?app_start=z2ui5_cl_tcl_app_00; every app can also be started directly with ?app_start=&lt;class&gt;
 - Add your own authorization checks before using it beyond a development system
 

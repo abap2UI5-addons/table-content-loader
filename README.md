@@ -1,8 +1,9 @@
 # table-content-loader
 
 [![abap2UI5-addons](https://img.shields.io/badge/abap2UI5--addons-app-1873b4)](https://github.com/abap2UI5-addons)
-[![ABAP](https://img.shields.io/badge/ABAP-Cloud%20%7C%20Standard%20%E2%89%A5%207.50-blue)](#installation)
+[![ABAP](https://img.shields.io/badge/ABAP-Cloud%20%7C%20Standard%20%E2%89%A5%207.50%20%7C%207.02-blue)](#installation)
 [![abap2UI5](https://img.shields.io/badge/requires-abap2UI5-blue)](https://github.com/abap2UI5/abap2UI5)
+[![layout-management](https://img.shields.io/badge/requires-layout--management-blue)](https://github.com/abap2UI5-addons/layout-management)
 [![popups](https://img.shields.io/badge/requires-popups-blue)](https://github.com/abap2UI5-addons/popups)
 [![abap2xlsx](https://img.shields.io/badge/requires-abap2xlsx-blue)](https://github.com/abap2xlsx/abap2xlsx)
 [![License](https://img.shields.io/github/license/abap2UI5-addons/table-content-loader)](LICENSE)
@@ -42,8 +43,12 @@ before you use it beyond a development system.
   7.50 or higher. XLSX upload and download are not ready for ABAP Cloud yet
   (see [Limitations](#limitations)).
 - NetWeaver 7.02 - 7.40: the branch `702`, downported automatically from
-  `main` on every push - pull abap2UI5 and popups from their `702` branches as well
+  `main` on every push - pull abap2UI5, layout-management and popups from
+  their `702` branches as well
 - [abap2UI5](https://github.com/abap2UI5/abap2UI5)
+- [abap2UI5-addons/layout-management](https://github.com/abap2UI5-addons/layout-management) -
+  needed by popups, whose value help and search help popups fail activation
+  without it
 - [abap2UI5-addons/popups](https://github.com/abap2UI5-addons/popups) - file
   upload, input and confirmation popups
 - [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx) - reads and writes the
@@ -52,9 +57,10 @@ before you use it beyond a development system.
 **Steps** - with [abapGit](https://abapgit.org), in this order:
 
 1. [abap2UI5](https://github.com/abap2UI5/abap2UI5)
-2. [abap2UI5-addons/popups](https://github.com/abap2UI5-addons/popups)
-3. [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx)
-4. this repository (branch `main`)
+2. [abap2UI5-addons/layout-management](https://github.com/abap2UI5-addons/layout-management)
+3. [abap2UI5-addons/popups](https://github.com/abap2UI5-addons/popups)
+4. [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx)
+5. this repository - branch `main`, or `702` on NetWeaver 7.02 - 7.40
 
 **Start** - open the start page like any abap2UI5 app:
 
