@@ -86,8 +86,11 @@
       "skipSharedMemory": true,
       "skipTestclasses": true
     },
+    // the vendored abap-util copy stays as its master ships it (csv_split_rows)
     "cyclomatic_complexity": {
-      "exclude": [],
+      "exclude": [
+        "/src/z2ui5_cl_tcl_context\\."
+      ],
       "max": 10,
       "severity": "Error"
     },
