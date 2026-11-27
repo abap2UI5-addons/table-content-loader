@@ -25,21 +25,30 @@ CLASS z2ui5_cl_tcl_app_03 DEFINITION
         check_popup           TYPE abap_bool,
         " deprecated, see factory_popup_by_itab
         itab                  TYPE REF TO data,
+        " deprecated: no longer filled - the file is kept in mv_file until it
+        " is downloaded. To be removed together with ms_app-itab.
         file                  TYPE string,
         check_appwidthlimited TYPE abap_bool VALUE abap_true,
         db_table              TYPE string VALUE 'SPFLI',
         db_table_entries      TYPE string,
+        " the most rows DB -> JSON reads; 0 or less stands for the default
+        max_rows              TYPE i VALUE 1000,
       END OF ms_app.
 
   PROTECTED SECTION.
 
     DATA client TYPE REF TO z2ui5_if_client.
+    " the JSON of step (2) - not bound, and cleared once it is handed to the
+    " download, so it does not travel in every later draft
+    DATA mv_file TYPE string.
 
     METHODS z2ui5_on_init.
     METHODS z2ui5_on_event.
     METHODS z2ui5_view_display.
 
   PRIVATE SECTION.
+    " the rows DB -> JSON reads when the input asks for none
+    CONSTANTS mc_default_rows TYPE i VALUE 1000.
 ENDCLASS.
 
 
@@ -106,6 +115,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         " a table name that does not exist reaches here too - no table for
         " it, or a SELECT that fails, ends in a message, not in a dump
         TRY.
+            CLEAR mv_file.
             " the name is bound - only a plain DDIC table name reaches the FROM
             DATA(lv_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
             IF lv_table IS INITIAL.
@@ -115,12 +125,23 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
             mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( lv_table ).
             ASSIGN mt_tab->* TO <tab2>.
 
+            " UP TO 0 ROWS reads every row - a limit of 0 or less is no limit
+            " the user meant, the default stands in
+            IF ms_app-max_rows <= 0.
+              ms_app-max_rows = mc_default_rows.
+            ENDIF.
+
             SELECT *
             FROM (lv_table)
-            INTO CORRESPONDING FIELDS OF TABLE @<tab2>.
+            INTO CORRESPONDING FIELDS OF TABLE @<tab2>
+            UP TO @ms_app-max_rows ROWS.
 
-            ms_app-file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
-            client->message_toast_display( |JSON created| ).
+            mv_file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
+            IF lines( <tab2> ) >= ms_app-max_rows.
+              client->message_toast_display( |JSON created - the first { ms_app-max_rows } rows, raise Max Rows for more| ).
+            ELSE.
+              client->message_toast_display( |JSON created - { lines( <tab2> ) } rows| ).
+            ENDIF.
 
           CATCH cx_root INTO DATA(x).
             client->message_box_display( x->get_text( ) ).
@@ -151,7 +172,13 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         ENDTRY.
 
       WHEN 'DOWNLOAD'.
-        client->nav_app_call( z2ui5_cl_popup_file_dl=>factory( ms_app-file ) ).
+        IF mv_file IS INITIAL.
+          client->message_toast_display( `Create the JSON first - step (2)` ).
+          RETURN.
+        ENDIF.
+        client->nav_app_call( z2ui5_cl_popup_file_dl=>factory( mv_file ) ).
+        " handed to the download popup - the app keeps no copy
+        CLEAR mv_file.
 
       WHEN 'BACK'.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
@@ -224,6 +251,12 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         )->a( n = `enabled` b = abap_false
         )->tag( `Label`
         )->a( n = `text` v = `(2) DB -> JSON`
+        )->tag( `Input`
+        )->a( n = `width` v = `30%`
+        )->a( n = `description` v = `Max Rows`
+        )->a( n = `type` v = `Number`
+        )->a( n = `value` v = client->_bind( ms_app-max_rows )
+        )->tag( `Label`
         )->tag( `Button`
         )->a( n = `text` v = `Go`
         )->a( n = `width` v = `10%`
