@@ -46,8 +46,10 @@ dependency management).
 `sync-check`: with abap-util checked out next to this repository,
 `node ../abap-util/.github/scripts/sync-check.mjs --consumer . --report`
 lists every method whose body or declaration differs from the master and
-every method only this copy has. No commit is pinned yet - the copies were
-taken before the manifest existed.
+every method only this copy has. `commit` is the abap-util commit the copies
+match: run the script without `--report` at that commit and it fails on any
+difference that is not named under `settled` or `own`. After a refresh, set
+`commit` to the commit the copies were taken from.
 
 ## Dependencies
 
