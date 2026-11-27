@@ -1,7 +1,6 @@
 {
   "master": "abap-util/abap-util",
-  "commit": null,
-  "note": "the copies were taken before this manifest existed and differ from the master in more than what was changed here - there is no commit they match. sync-check lists the differences: what a refresh would bring, and what has to be synced back",
+  "commit": "185070fbe7612e69285958b2ccfba0e92196f9fd",
   "rename": [
     ["z2ui5_cl_tcl_context", "zabaputil_cl_util_context"],
     ["z2ui5_cx_tcl_error", "zabaputil_cx_util_error"]
@@ -10,7 +9,12 @@
     {
       "copy": "src/z2ui5_cl_tcl_context.clas.abap",
       "master": "src/zabaputil_cl_util_context.clas.abap",
-      "trimmed": true
+      "trimmed": true,
+      "settled": {
+        "json_parse": "this addon has no ajson of its own and calls the one of the abap2UI5 core (z2ui5_cl_ajson)",
+        "json_stringify": "same - the ajson of the abap2UI5 core",
+        "conv_get_string_by_xstring": "goes through conv_get_string_by_xstring_cp and raises on bytes that are not valid UTF-8; the master keeps its lenient two-step conversion"
+      }
     },
     {
       "copy": "src/z2ui5_cx_tcl_error.clas.abap",
