@@ -69,6 +69,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     TRY.
 
         DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_draft-table_name ).
+        " the name is bound - an unknown one answers with no table at all
+        IF lr_tab IS NOT BOUND.
+          client->message_box_display( text = |Table { ms_draft-table_name } not found|
+                                       type = 'error' ).
+          RETURN.
+        ENDIF.
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
 
@@ -146,6 +152,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         " the table and its field catalogue first - a name that does not
         " exist or a catalogue that cannot be built keeps the draft there is
         DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ls_input-value ).
+        " an unknown name answers with no table at all - not an exception
+        IF lr_tab IS NOT BOUND.
+          client->message_box_display( text = |Table { ls_input-value } not found|
+                                       type = 'error' ).
+          RETURN.
+        ENDIF.
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
         DATA(lt_fcat) = zcl_excel_common=>get_fieldcatalog( <tab> ).

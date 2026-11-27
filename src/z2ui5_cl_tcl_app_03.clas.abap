@@ -91,10 +91,15 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
         FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
 
-        " a table name that does not exist reaches here too - the table and
-        " the SELECT sit in the TRY, so it ends in a message, not in a dump
+        " a table name that does not exist reaches here too - no table for
+        " it, or a SELECT that fails, ends in a message, not in a dump
         TRY.
             mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
+            " an unknown name answers with no table at all - not an exception
+            IF mt_tab IS NOT BOUND.
+              client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
+              RETURN.
+            ENDIF.
             ASSIGN mt_tab->* TO <tab2>.
 
             SELECT *
@@ -112,6 +117,11 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
         TRY.
             mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
+            " an unknown name answers with no table at all - not an exception
+            IF mt_tab IS NOT BOUND.
+              client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
+              RETURN.
+            ENDIF.
             ASSIGN mt_tab->* TO <tab2>.
 
             SELECT *
