@@ -40,7 +40,7 @@ before you use it beyond a development system.
 - ABAP Cloud (S/4 Public Cloud, BTP ABAP Environment, S/4 Private Cloud or
   On-Premise with ABAP for Cloud) or Standard ABAP on SAP NetWeaver AS ABAP
   7.50 or higher. XLSX upload and download are not ready for ABAP Cloud yet
-  (see [Limitations & Todo](#limitations--todo)).
+  (see [Limitations](#limitations)).
 - NetWeaver 7.02 - 7.40: the branch `702`, downported automatically from
   `main` on every push - pull abap2UI5 and popups from their `702` branches as well
 - [abap2UI5](https://github.com/abap2UI5/abap2UI5)
@@ -84,7 +84,7 @@ started directly with `?app_start=<class>`.
 | JSON - Download DB Content | `z2ui5_cl_tcl_app_03` | (1) set the table, (2) convert its content to JSON, (3) preview the JSON, (4) download it |
 | CSV - Upload / Download DB Content | `z2ui5_cl_tcl_app_04` | upload a CSV file, view or edit its content as a table, download it as CSV (no database write yet). The file is read as UTF-8 (Excel's "CSV UTF-8"), and as Windows-1252 (Excel's plain "CSV" on Windows) when it is not valid UTF-8 |
 | XLSX - Upload DB Content | `z2ui5_cl_tcl_app_05` | upload an XLSX file, view or edit its content as a table, download it as XLSX (no database write yet) |
-| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored, see [Limitations & Todo](#limitations--todo)) |
+| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored, see [Limitations](#limitations)) |
 
 `z2ui5_cl_tcl_app_02` (view/edit/download) is not on the start page: it
 shows the import - edit - export round trip on a demo table of flight
@@ -108,7 +108,7 @@ Cloud releases - depends on the system the addon runs in, so none is built in
 and none is planned. Whoever opens the app to more people than its developers
 adds the check that fits their system.
 
-## Limitations & Todo
+## Limitations
 
 * CSV Upload & Download
 * JSON Upload - the start-page tile is disabled
