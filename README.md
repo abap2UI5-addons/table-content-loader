@@ -85,10 +85,7 @@ started directly with `?app_start=<class>`.
 | CSV - Upload / Download DB Content | `z2ui5_cl_tcl_app_04` | upload a CSV file, view or edit its content as a table, download it as CSV (no database write yet). The file is read as UTF-8 (Excel's "CSV UTF-8"), and as Windows-1252 (Excel's plain "CSV" on Windows) when it is not valid UTF-8 |
 | XLSX - Upload DB Content | `z2ui5_cl_tcl_app_05` | upload an XLSX file, view or edit its content as a table, download it as XLSX (no database write yet) |
 | XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored, see [Limitations](#limitations)) |
-
-`z2ui5_cl_tcl_app_02` (view/edit/download) is not on the start page: it
-shows the import - edit - export round trip on a demo table of flight
-connections.
+| Demo - Import, Edit, Export | `z2ui5_cl_tcl_app_02` | the import - edit - export round trip on a demo table of flight connections |
 
 ## Features
 

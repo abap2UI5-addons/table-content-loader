@@ -57,6 +57,8 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
     DATA check_initialized TYPE abap_bool.
     DATA mv_file TYPE string.
   PRIVATE SECTION.
+    " the rows of the preview and of the file when the input asks for none
+    CONSTANTS mc_default_rows TYPE i VALUE 10.
 ENDCLASS.
 
 
@@ -69,10 +71,22 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     TRY.
 
         DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_draft-table_name ).
+        " the name is bound - an unknown one answers with no table at all
+        IF lr_tab IS NOT BOUND.
+          client->message_box_display( text = |Table { ms_draft-table_name } not found|
+                                       type = 'error' ).
+          RETURN.
+        ENDIF.
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
 
         IF ms_draft-check_file_row_limit = abap_true.
+
+          " UP TO 0 ROWS reads every row - a limit of 0 or less is no limit
+          " the user meant, the default stands in
+          IF ms_draft-file_max_rows <= 0.
+            ms_draft-file_max_rows = mc_default_rows.
+          ENDIF.
 
           SELECT * FROM (ms_draft-table_name)
             INTO CORRESPONDING FIELDS OF TABLE @<tab>
@@ -113,6 +127,11 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     FIELD-SYMBOLS <tab> TYPE table.
     ASSIGN ms_draft-t_tab->* TO <tab>.
 
+    " UP TO 0 ROWS reads every row - the preview shows the default then
+    IF ms_draft-max_rows <= 0.
+      ms_draft-max_rows = mc_default_rows.
+    ENDIF.
+
     " the name is bound, so a request can carry one that is no table - that
     " is a message, not a short dump
     TRY.
@@ -146,6 +165,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         " the table and its field catalogue first - a name that does not
         " exist or a catalogue that cannot be built keeps the draft there is
         DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ls_input-value ).
+        " an unknown name answers with no table at all - not an exception
+        IF lr_tab IS NOT BOUND.
+          client->message_box_display( text = |Table { ls_input-value } not found|
+                                       type = 'error' ).
+          RETURN.
+        ENDIF.
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
         DATA(lt_fcat) = zcl_excel_common=>get_fieldcatalog( <tab> ).
@@ -592,6 +617,59 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view_preview.
 
+    " the rows of the data preview as the sheet shows them: the columns of
+    " the field catalogue that are displayed, in its order, under its texts
+    IF ms_draft-t_tab IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    FIELD-SYMBOLS <tab> TYPE table.
+    ASSIGN ms_draft-t_tab->* TO <tab>.
+
+    DATA(lv_title) = ``.
+    IF line_exists( ms_draft-t_config_head[ 1 ] ).
+      lv_title = ms_draft-t_config_head[ 1 ]-title.
+    ENDIF.
+
+    DATA(lt_fcat) = ms_draft-t_fcat.
+    DELETE lt_fcat WHERE dynpfld = abap_false.
+    SORT lt_fcat BY position.
+
+    DATA(tab) = page->ele( `ScrollContainer`
+                    )->a( n = `height` v = `100%`
+                    )->a( n = `width` v = `100%`
+                    )->a( n = `vertical` b = abap_true
+                    )->a( n = `horizontal` b = abap_true
+                    )->ele( `Table`
+                    )->a( n = `items` v = client->_bind( <tab> )
+                    )->ele( `headerToolbar`
+                    )->ele( `OverflowToolbar`
+                    )->tag( `Title`
+                    )->a( n = `text` t = |(4) XLSX Preview - { lv_title }|
+                    )->end(
+                    )->end( ).
+
+    DATA(lo_columns) = tab->ele( `columns` ).
+    LOOP AT lt_fcat INTO DATA(ls_fcat).
+      DATA(lv_header) = CONV string( ls_fcat-column_name ).
+      IF lv_header IS INITIAL.
+        lv_header = ls_fcat-scrtext_l.
+      ENDIF.
+      IF lv_header IS INITIAL.
+        lv_header = ls_fcat-fieldname.
+      ENDIF.
+      lo_columns->ele( `Column`
+          )->tag( `Text`
+          )->a( n = `text` t = lv_header ).
+    ENDLOOP.
+
+    DATA(lo_cells) = tab->ele( `items`
+                         )->ele( `ColumnListItem`
+                         )->ele( `cells` ).
+    LOOP AT lt_fcat INTO ls_fcat.
+      lo_cells->tag( `Text`
+          )->a( n = `text` v = `{` && ls_fcat-fieldname && `}` ).
+    ENDLOOP.
 
   ENDMETHOD.
 
