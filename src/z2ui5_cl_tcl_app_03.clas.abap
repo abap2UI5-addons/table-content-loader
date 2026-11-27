@@ -8,6 +8,10 @@ CLASS z2ui5_cl_tcl_app_03 DEFINITION
 
     DATA mt_tab TYPE REF TO data.
 
+    " deprecated: nothing calls it, and the popup it opens ignores itab - it
+    " shows the same table form as the app, in a dialog. Start the app with
+    " NEW z2ui5_cl_tcl_app_03( ) instead. Kept for compatibility, to be
+    " removed together with ms_app-itab and ms_app-check_popup.
     CLASS-METHODS factory_popup_by_itab
       IMPORTING
         itab            TYPE data
@@ -17,7 +21,9 @@ CLASS z2ui5_cl_tcl_app_03 DEFINITION
     DATA:
       BEGIN OF ms_app,
         check_initialized     TYPE abap_bool,
+        " deprecated, see factory_popup_by_itab
         check_popup           TYPE abap_bool,
+        " deprecated, see factory_popup_by_itab
         itab                  TYPE REF TO data,
         file                  TYPE string,
         check_appwidthlimited TYPE abap_bool VALUE abap_true,
