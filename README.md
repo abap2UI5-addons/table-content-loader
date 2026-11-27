@@ -101,7 +101,18 @@ started directly with `?app_start=<class>`.
 
 ## Security
 
-This is a developer tool. It reads from any table the user names and writes into tables of the Z/Y namespace only, without an authorization check of its own. Before using it beyond a development system, add your own authorization checks (e.g. `AUTHORITY-CHECK` on `S_TABU_DIS`/`S_TABU_NAM`) and restrict who may run the app.
+This is a developer tool. It reads from any table the user names and, without an authorization check of its own, writes into tables of the Z/Y namespace (the JSON upload is the only app that writes). Before using it beyond a development system, add your own authorization checks (e.g. `AUTHORITY-CHECK` on `S_TABU_DIS`/`S_TABU_NAM`) and restrict who may run the app.
+
+The write boundary is a check of the table **name**, not of who owns the data:
+
+* the upload writes only into a table whose name starts with `Z` or `Y`;
+* it refuses every table of abap2UI5 and of its addons - every name with the
+  framework's prefix (`Z2UI5_`, or the name a namespace rename gave it). Their
+  drafts, configuration and histories are read back as program state, so rows
+  planted there would act in other users' sessions. A table of your own that
+  starts with that prefix is refused as well;
+* any other Z/Y table is written as the file says, whoever's data it holds -
+  an existing key is overwritten.
 
 **That is a deliberate decision, not an open item.** abap2UI5 itself has no
 central authorization hook either: the framework leaves the check to the app,

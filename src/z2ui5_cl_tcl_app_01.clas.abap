@@ -34,6 +34,17 @@ CLASS z2ui5_cl_tcl_app_01 DEFINITION
     METHODS z2ui5_view_display.
 
   PRIVATE SECTION.
+
+    "! Why the upload must not write into the table - empty when it may.
+    "! Only tables of the Z or Y namespace, and none of abap2UI5's own or
+    "! of its addons': their drafts, configuration and histories are read
+    "! back as program state, so rows planted there act in other users'
+    "! sessions. A check of the name, not of who owns the data.
+    CLASS-METHODS get_write_refusal
+      IMPORTING
+        val           TYPE string
+      RETURNING
+        VALUE(result) TYPE string.
 ENDCLASS.
 
 
@@ -94,6 +105,13 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
     ELSEIF lo_popup_commit IS BOUND.
       result = abap_true.
       IF lo_popup_commit->result( ) = abap_true.
+        " the boundary once more right before the write - whatever led here
+        DATA(lv_refusal) = get_write_refusal( mv_tab_db_table ).
+        IF lv_refusal IS NOT INITIAL.
+          client->message_box_display( text = lv_refusal
+                                       type = `error` ).
+          RETURN.
+        ENDIF.
         TRY.
             FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
             ASSIGN mt_tab->* TO <tab2>.
@@ -130,8 +148,9 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             FROM (ms_app-db_table)
             INTO @ms_app-db_table_entries.
 
-            IF to_upper( ms_app-db_table(1) ) <> `Z` AND to_upper( ms_app-db_table(1) ) <> `Y`.
-              client->message_box_display( `Only tables in the Z or Y namespace are allowed` ).
+            DATA(lv_check_refusal) = get_write_refusal( ms_app-db_table ).
+            IF lv_check_refusal IS NOT INITIAL.
+              client->message_box_display( lv_check_refusal ).
             ENDIF.
 
           CATCH cx_root.
@@ -191,8 +210,9 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                                        type = `error` ).
           RETURN.
         ENDIF.
-        IF NOT ( mv_tab_db_table CP `Z*` OR mv_tab_db_table CP `Y*` ).
-          client->message_box_display( text = `Only tables in the Z or Y namespace are allowed`
+        DATA(lv_save_refusal) = get_write_refusal( mv_tab_db_table ).
+        IF lv_save_refusal IS NOT INITIAL.
+          client->message_box_display( text = lv_save_refusal
                                        type = `error` ).
           RETURN.
         ENDIF.
@@ -205,6 +225,32 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         client->nav_app_leave( client->get_app( client->get( )-s_draft-id_prev_app_stack ) ).
 
     ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD get_write_refusal.
+
+    DATA(lv_name) = to_upper( val ).
+    IF NOT ( lv_name CP `Z*` OR lv_name CP `Y*` ).
+      result = `Only tables in the Z or Y namespace are allowed`.
+      RETURN.
+    ENDIF.
+
+    " the prefix every object of abap2UI5 and of its addons carries - the
+    " draft table Z2UI5_T_01, the configuration Z2UI5_T_29, the addons'
+    " histories. Taken from the core's app interface by type rather than
+    " written down, so a namespace rename (rename.mjs) carries it along:
+    " Z2UI5_IF_APP gives Z2UI5_
+    DATA lo_app TYPE REF TO z2ui5_if_app.
+    DATA(lo_app_ref) = CAST cl_abap_refdescr( cl_abap_typedescr=>describe_by_data( lo_app ) ).
+    DATA(lv_core_intf) = lo_app_ref->get_referenced_type( )->get_relative_name( ).
+    DATA(lv_prefix) = substring( val = lv_core_intf
+                                 len = strlen( lv_core_intf ) - strlen( `IF_APP` ) ).
+    IF lv_prefix IS NOT INITIAL AND strlen( lv_name ) >= strlen( lv_prefix )
+        AND substring( val = lv_name len = strlen( lv_prefix ) ) = lv_prefix.
+      result = |{ lv_name } belongs to abap2UI5 or one of its addons - the upload does not write their tables|.
+    ENDIF.
 
   ENDMETHOD.
 
