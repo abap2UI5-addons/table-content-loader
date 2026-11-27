@@ -81,7 +81,10 @@ table, config-management's configuration, sql-console's histories) is read
 back as program state, so a planted row acts in another user's session. The
 prefix is derived from `z2ui5_if_app` by type, never written as a literal, so
 the namespace rename carries it. A new writing path must go through the same
-method.
+method. Every dynamic `FROM` / `CREATE DATA ... TYPE (name)` takes its name
+from `z2ui5_cl_tcl_context=>db_get_table_name` (one plain DDIC table or view
+name) - never straight from a bound field; where the name outlives the
+roundtrip (app 06) the checked name is kept in a protected attribute.
 
 **Shipping without an authorization check is a deliberate decision of the
 maintainer (2026-11-17), stated in the README - do not add one and do not

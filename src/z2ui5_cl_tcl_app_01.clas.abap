@@ -143,12 +143,18 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
         TRY.
             ms_app-db_table = to_upper( ms_app-db_table ).
+            " the name is bound - only a plain DDIC table name reaches the FROM
+            DATA(lv_check_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+            IF lv_check_table IS INITIAL.
+              client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
+              RETURN.
+            ENDIF.
 
             SELECT SINGLE COUNT( * )
-            FROM (ms_app-db_table)
+            FROM (lv_check_table)
             INTO @ms_app-db_table_entries.
 
-            DATA(lv_check_refusal) = get_write_refusal( ms_app-db_table ).
+            DATA(lv_check_refusal) = get_write_refusal( lv_check_table ).
             IF lv_check_refusal IS NOT INITIAL.
               client->message_box_display( lv_check_refusal ).
             ENDIF.
@@ -163,7 +169,12 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
             ms_app-db_table = to_upper( ms_app-db_table ).
             CLEAR mv_tab_db_table.
-            CREATE DATA mt_tab TYPE STANDARD TABLE OF (ms_app-db_table) WITH DEFAULT KEY.
+            DATA(lv_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+            IF lv_table IS INITIAL.
+              client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
+              RETURN.
+            ENDIF.
+            CREATE DATA mt_tab TYPE STANDARD TABLE OF (lv_table) WITH DEFAULT KEY.
             ASSIGN mt_tab->* TO <tab2>.
 
             z2ui5_cl_tcl_context=>json_parse(
@@ -174,7 +185,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             ).
 
             " only a conversion that went through can be saved
-            mv_tab_db_table = ms_app-db_table.
+            mv_tab_db_table = lv_table.
             ms_app-file_entries = lines( <tab2> ).
 
           CATCH cx_root INTO DATA(x).

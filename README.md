@@ -114,6 +114,9 @@ The write boundary is a check of the table **name**, not of who owns the data:
 * any other Z/Y table is written as the file says, whoever's data it holds -
   an existing key is overwritten.
 
+Table names typed into the apps reach the database only as a single DDIC
+table or view name (no join, alias or further clause).
+
 **That is a deliberate decision, not an open item.** abap2UI5 itself has no
 central authorization hook either: the framework leaves the check to the app,
 and this addon leaves it to the installation. Which check is the right one -

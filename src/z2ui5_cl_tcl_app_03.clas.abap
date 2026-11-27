@@ -84,9 +84,15 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
         TRY.
             ms_app-db_table = to_upper( ms_app-db_table ).
+            " the name is bound - only a plain DDIC table name reaches the FROM
+            DATA(lv_check_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+            IF lv_check_table IS INITIAL.
+              client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
+              RETURN.
+            ENDIF.
 
             SELECT SINGLE COUNT( * )
-            FROM (ms_app-db_table)
+            FROM (lv_check_table)
             INTO @ms_app-db_table_entries.
 
           CATCH cx_root.
@@ -100,16 +106,17 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         " a table name that does not exist reaches here too - no table for
         " it, or a SELECT that fails, ends in a message, not in a dump
         TRY.
-            mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
-            " an unknown name answers with no table at all - not an exception
-            IF mt_tab IS NOT BOUND.
+            " the name is bound - only a plain DDIC table name reaches the FROM
+            DATA(lv_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+            IF lv_table IS INITIAL.
               client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
               RETURN.
             ENDIF.
+            mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( lv_table ).
             ASSIGN mt_tab->* TO <tab2>.
 
             SELECT *
-            FROM (ms_app-db_table)
+            FROM (lv_table)
             INTO CORRESPONDING FIELDS OF TABLE @<tab2>.
 
             ms_app-file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
@@ -122,16 +129,17 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
       WHEN `PREVIEW`.
 
         TRY.
-            mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( ms_app-db_table ).
-            " an unknown name answers with no table at all - not an exception
-            IF mt_tab IS NOT BOUND.
+            " the name is bound - only a plain DDIC table name reaches the FROM
+            DATA(lv_preview_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+            IF lv_preview_table IS INITIAL.
               client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
               RETURN.
             ENDIF.
+            mt_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( lv_preview_table ).
             ASSIGN mt_tab->* TO <tab2>.
 
             SELECT *
-            FROM (ms_app-db_table)
+            FROM (lv_preview_table)
             INTO CORRESPONDING FIELDS OF TABLE @<tab2>
             UP TO 10 ROWS.
 

@@ -15,6 +15,9 @@ CLASS ltcl_unit_test DEFINITION FINAL FOR TESTING
     METHODS write_refused_addon_table FOR TESTING RAISING cx_static_check.
     METHODS write_refused_other_namespace FOR TESTING RAISING cx_static_check.
     METHODS write_allowed_own_table FOR TESTING RAISING cx_static_check.
+    METHODS table_name_plain FOR TESTING RAISING cx_static_check.
+    METHODS table_name_with_clause FOR TESTING RAISING cx_static_check.
+    METHODS table_name_no_structure FOR TESTING RAISING cx_static_check.
 
     "! the name of the core's draft table - by type, so a rename carries it
     METHODS get_core_table
@@ -98,6 +101,31 @@ CLASS ltcl_unit_test IMPLEMENTATION.
   METHOD write_allowed_own_table.
 
     cl_abap_unit_assert=>assert_initial( z2ui5_cl_tcl_app_01=>get_write_refusal( `YTCL_TEST_TABLE` ) ).
+
+  ENDMETHOD.
+
+  METHOD table_name_plain.
+
+    cl_abap_unit_assert=>assert_equals(
+        exp = get_core_table( )
+        act = z2ui5_cl_tcl_context=>db_get_table_name( | { to_lower( get_core_table( ) ) } | ) ).
+
+  ENDMETHOD.
+
+  METHOD table_name_with_clause.
+
+    " a join or any further clause is no table name
+    cl_abap_unit_assert=>assert_initial(
+        z2ui5_cl_tcl_context=>db_get_table_name( |{ get_core_table( ) } AS a| ) ).
+    cl_abap_unit_assert=>assert_initial(
+        z2ui5_cl_tcl_context=>db_get_table_name( |{ get_core_table( ) },{ get_core_table( ) }| ) ).
+
+  ENDMETHOD.
+
+  METHOD table_name_no_structure.
+
+    cl_abap_unit_assert=>assert_initial( z2ui5_cl_tcl_context=>db_get_table_name( `STRING` ) ).
+    cl_abap_unit_assert=>assert_initial( z2ui5_cl_tcl_context=>db_get_table_name( `` ) ).
 
   ENDMETHOD.
 

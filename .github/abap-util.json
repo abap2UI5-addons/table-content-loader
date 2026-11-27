@@ -14,6 +14,9 @@
         "json_parse": "this addon has no ajson of its own and calls the one of the abap2UI5 core (z2ui5_cl_ajson)",
         "json_stringify": "same - the ajson of the abap2UI5 core",
         "conv_get_string_by_xstring": "goes through conv_get_string_by_xstring_cp and raises on bytes that are not valid UTF-8; the master keeps its lenient two-step conversion"
+      },
+      "own": {
+        "db_get_table_name": "checks a bound table name before it reaches a dynamic FROM (a plain DDIC structure name, nothing else); not in the master yet - to be synced back"
       }
     },
     {
