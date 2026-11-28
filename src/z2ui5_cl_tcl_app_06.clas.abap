@@ -176,7 +176,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( lv_table_name ).
         FIELD-SYMBOLS <tab> TYPE table.
         ASSIGN lr_tab->* TO <tab>.
-        DATA(lt_fcat) = zcl_excel_common=>get_fieldcatalog( <tab> ).
+        DATA(lt_fcat) = z2ui5_cl_tcl_xlsx_api=>get_fieldcatalog( <tab> ).
 
         mv_table_name = lv_table_name.
         ms_draft-table_name = lv_table_name.
@@ -189,9 +189,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         " old ones (create_file reads the first entry of each)
         CLEAR: mv_file, ms_draft-file_rows, ms_draft-file_size,
                ms_draft-t_config, ms_draft-t_config_head.
-        DATA ls_table_settings TYPE zexcel_s_table_settings.
-        ls_table_settings-table_style  = zcl_excel_table=>builtinstyle_medium5.
-        INSERT ls_table_settings INTO TABLE ms_draft-t_config.
+        INSERT z2ui5_cl_tcl_xlsx_api=>get_settings_default( ) INTO TABLE ms_draft-t_config.
 
         DATA ls_config_head TYPE ty_s_config_head.
         ls_config_head-title = `tabtitle`.
@@ -274,9 +272,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
       WHEN `RESET_CONFIG`.
         CLEAR ms_draft-t_config.
-        DATA ls_table_settings TYPE zexcel_s_table_settings.
-        ls_table_settings-table_style = zcl_excel_table=>builtinstyle_medium5.
-        INSERT ls_table_settings INTO TABLE ms_draft-t_config.
+        INSERT z2ui5_cl_tcl_xlsx_api=>get_settings_default( ) INTO TABLE ms_draft-t_config.
         CLEAR ms_draft-t_config_head.
         DATA ls_config_head TYPE ty_s_config_head.
         ls_config_head-title = `tabtitle`.
@@ -287,7 +283,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         IF ms_draft-t_tab IS BOUND.
           FIELD-SYMBOLS <tab_fcat> TYPE table.
           ASSIGN ms_draft-t_tab->* TO <tab_fcat>.
-          ms_draft-t_fcat = zcl_excel_common=>get_fieldcatalog( <tab_fcat> ).
+          ms_draft-t_fcat = z2ui5_cl_tcl_xlsx_api=>get_fieldcatalog( <tab_fcat> ).
         ENDIF.
         set_view( ).
 
@@ -430,8 +426,14 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                          )->ele( `ColumnListItem`
                          )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
-      lo_cells->tag( `Input`
-          )->a( n = `value` v = `{` && lv_field-name && `}` ).
+      " a flag is a check box - an input would show true or false
+      IF z2ui5_cl_tcl_context=>boolean_check_by_name( lv_field-type->get_relative_name( ) ) = abap_true.
+        lo_cells->tag( `CheckBox`
+            )->a( n = `selected` v = `{` && lv_field-name && `}` ).
+      ELSE.
+        lo_cells->tag( `Input`
+            )->a( n = `value` v = `{` && lv_field-name && `}` ).
+      ENDIF.
     ENDLOOP.
 
     cont = page->ele( `ScrollContainer`
@@ -468,8 +470,14 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                    )->ele( `ColumnListItem`
                    )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
-      lo_cells->tag( `Input`
-          )->a( n = `value` v = `{` && lv_field-name && `}` ).
+      " a flag is a check box - an input would show true or false
+      IF z2ui5_cl_tcl_context=>boolean_check_by_name( lv_field-type->get_relative_name( ) ) = abap_true.
+        lo_cells->tag( `CheckBox`
+            )->a( n = `selected` v = `{` && lv_field-name && `}` ).
+      ELSE.
+        lo_cells->tag( `Input`
+            )->a( n = `value` v = `{` && lv_field-name && `}` ).
+      ENDIF.
     ENDLOOP.
 
   ENDMETHOD.
@@ -511,8 +519,14 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                          )->ele( `ColumnListItem`
                          )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
-      lo_cells->tag( `Input`
-          )->a( n = `value` v = `{` && lv_field-name && `}` ).
+      " a flag is a check box - an input would show true or false
+      IF z2ui5_cl_tcl_context=>boolean_check_by_name( lv_field-type->get_relative_name( ) ) = abap_true.
+        lo_cells->tag( `CheckBox`
+            )->a( n = `selected` v = `{` && lv_field-name && `}` ).
+      ELSE.
+        lo_cells->tag( `Input`
+            )->a( n = `value` v = `{` && lv_field-name && `}` ).
+      ENDIF.
     ENDLOOP.
 
   ENDMETHOD.
@@ -536,7 +550,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         )->a( n = `enabled` v = client->_bind( ms_draft-check_file_row_limit )
         )->a( n = `width` v = `10%`
         )->tag( `Label`
-        )->a( n = `text` v = `Prepare File with abap2xlsx`
+        )->a( n = `text` v = `Prepare File`
         )->tag( `Button`
         )->a( n = `text` v = `Create`
         )->a( n = `width` v = `7%`
@@ -635,9 +649,10 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
       lv_title = ms_draft-t_config_head[ 1 ]-title.
     ENDIF.
 
+    " a formula column has no field in the rows: Excel works it out
     DATA(lt_fcat) = ms_draft-t_fcat.
-    DELETE lt_fcat WHERE dynpfld = abap_false.
-    SORT lt_fcat BY position.
+    DELETE lt_fcat WHERE visible = abap_false OR formula IS NOT INITIAL.
+    SORT lt_fcat STABLE BY position.
 
     DATA(tab) = page->ele( `ScrollContainer`
                     )->a( n = `height` v = `100%`
@@ -655,12 +670,9 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     DATA(lo_columns) = tab->ele( `columns` ).
     LOOP AT lt_fcat INTO DATA(ls_fcat).
-      DATA(lv_header) = CONV string( ls_fcat-column_name ).
+      DATA(lv_header) = ls_fcat-header.
       IF lv_header IS INITIAL.
-        lv_header = ls_fcat-scrtext_l.
-      ENDIF.
-      IF lv_header IS INITIAL.
-        lv_header = ls_fcat-fieldname.
+        lv_header = ls_fcat-name.
       ENDIF.
       lo_columns->ele( `Column`
           )->tag( `Text`
@@ -672,7 +684,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                          )->ele( `cells` ).
     LOOP AT lt_fcat INTO ls_fcat.
       lo_cells->tag( `Text`
-          )->a( n = `text` v = `{` && ls_fcat-fieldname && `}` ).
+          )->a( n = `text` v = `{` && ls_fcat-name && `}` ).
     ENDLOOP.
 
   ENDMETHOD.

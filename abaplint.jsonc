@@ -21,11 +21,6 @@
       "url": "https://github.com/abap2UI5-addons/popups",
       "folder": "/popups",
       "files": "/src/**/*.*"
-    },
-    {
-      "url": "https://github.com/abap2xlsx/abap2xlsx",
-      "folder": "/abap2xlsx",
-      "files": "/src/**/*.*"
     }
   ],
   "syntax": {
@@ -86,10 +81,12 @@
       "skipSharedMemory": true,
       "skipTestclasses": true
     },
-    // the vendored abap-util copy stays as its master ships it (csv_split_rows)
+    // the vendored abap-util copies stay as their master ships them
+    // (csv_split_rows of the context class, the writer of the XLSX class)
     "cyclomatic_complexity": {
       "exclude": [
-        "/src/z2ui5_cl_tcl_context\\."
+        "/src/z2ui5_cl_tcl_context\\.",
+        "/src/01/z2ui5_cl_tcl_xlsx\\."
       ],
       "max": 10,
       "severity": "Error"

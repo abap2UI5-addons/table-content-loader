@@ -1,5 +1,5 @@
 "! The XLSX upload: the CSV app z2ui5_cl_tcl_app_04 with the format of an
-"! XLSX file (abap2xlsx)
+"! XLSX file (z2ui5_cl_tcl_xlsx_api)
 CLASS z2ui5_cl_tcl_app_05 DEFINITION PUBLIC
   INHERITING FROM z2ui5_cl_tcl_app_04.
 
@@ -27,7 +27,7 @@ CLASS z2ui5_cl_tcl_app_05 IMPLEMENTATION.
 
     result = VALUE #( name     = `XLSX`
                       title    = `abap2UI5 - XLSX Uploader`
-                      mime     = `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+                      mime     = z2ui5_cl_tcl_xlsx=>mime_type
                       filename = `table.xlsx` ).
 
   ENDMETHOD.

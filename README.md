@@ -5,7 +5,6 @@
 [![abap2UI5](https://img.shields.io/badge/requires-abap2UI5-blue)](https://github.com/abap2UI5/abap2UI5)
 [![layout-management](https://img.shields.io/badge/requires-layout--management-blue)](https://github.com/abap2UI5-addons/layout-management)
 [![popups](https://img.shields.io/badge/requires-popups-blue)](https://github.com/abap2UI5-addons/popups)
-[![abap2xlsx](https://img.shields.io/badge/requires-abap2xlsx-blue)](https://github.com/abap2xlsx/abap2xlsx)
 [![License](https://img.shields.io/github/license/abap2UI5-addons/table-content-loader)](LICENSE)
 <br>
 [![CI](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/table-content-loader/ci.yaml?branch=main&label=CI)](https://github.com/abap2UI5-addons/table-content-loader/actions/workflows/ci.yaml)
@@ -40,8 +39,7 @@ before you use it beyond a development system.
 
 - ABAP Cloud (S/4 Public Cloud, BTP ABAP Environment, S/4 Private Cloud or
   On-Premise with ABAP for Cloud) or Standard ABAP on SAP NetWeaver AS ABAP
-  7.50 or higher. XLSX upload and download are not ready for ABAP Cloud yet
-  (see [Limitations](#limitations)).
+  7.50 or higher.
 - NetWeaver 7.02 - 7.40: the branch `702`, downported automatically from
   `main` on every push - pull abap2UI5, layout-management and popups from
   their `702` branches as well
@@ -51,16 +49,18 @@ before you use it beyond a development system.
   without it
 - [abap2UI5-addons/popups](https://github.com/abap2UI5-addons/popups) - file
   upload, input and confirmation popups
-- [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx) - reads and writes the
-  XLSX files (`z2ui5_cl_tcl_xlsx_api`)
+
+The XLSX files are written and read in plain ABAP (`z2ui5_cl_tcl_xlsx`, a
+copy of [abap-util](https://github.com/abap-util/abap-util)'s XLSX class) -
+abap2xlsx is no longer needed, and the XLSX apps are built for ABAP Cloud and
+7.02 like the rest.
 
 **Steps** - with [abapGit](https://abapgit.org), in this order:
 
 1. [abap2UI5](https://github.com/abap2UI5/abap2UI5)
 2. [abap2UI5-addons/layout-management](https://github.com/abap2UI5-addons/layout-management)
 3. [abap2UI5-addons/popups](https://github.com/abap2UI5-addons/popups)
-4. [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx)
-5. this repository - branch `main`, or `702` on NetWeaver 7.02 - 7.40
+4. this repository - branch `main`, or `702` on NetWeaver 7.02 - 7.40
 
 **Start** - open the start page like any abap2UI5 app:
 
@@ -90,7 +90,7 @@ started directly with `?app_start=<class>`.
 | JSON - Download DB Content | `z2ui5_cl_tcl_app_03` | (1) set the table, (2) convert its content to JSON - at most **Max Rows** rows (default 1000), (3) preview the JSON, (4) download it |
 | CSV - Upload / Download DB Content | `z2ui5_cl_tcl_app_04` | both tiles disabled, start it directly. Upload a CSV file, view or edit its content as a table, download it as CSV (no database write yet). The file is read as UTF-8 (Excel's "CSV UTF-8"), and as Windows-1252 (Excel's plain "CSV" on Windows) when it is not valid UTF-8 |
 | XLSX - Upload DB Content | `z2ui5_cl_tcl_app_05` | tile disabled, start it directly. Upload an XLSX file, view or edit its content as a table, download it as XLSX (no database write yet) |
-| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet head, (3) configure the columns, (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored, see [Limitations](#limitations)) |
+| XLSX - Download DB Content | `z2ui5_cl_tcl_app_06` | create a draft for a table, then (1) preview the data, (2) configure the sheet (name of the sheet; an Excel table with its style, name, stripes and filter buttons; the start cell; a frozen header row), (3) configure the columns (order, visibility, header, width, number format, a formula column, a totals row), (4) preview the XLSX, (5) download it; **Load** reads the table's rows again (the draft itself is not stored, see [Limitations](#limitations)) |
 | Demo - Import, Edit, Export | `z2ui5_cl_tcl_app_02` | the import - edit - export round trip on a demo table of flight connections |
 
 ## Features
@@ -130,7 +130,6 @@ adds the check that fits their system.
 * CSV Upload & Download - no database write yet; both start-page tiles are disabled
 * JSON Upload - the start-page tile is disabled
 * XLSX Upload - no database write yet; the start-page tile is disabled
-* XLSX Upload/Download for ABAP Cloud
 * Saving and reloading an XLSX draft
 
 ## Development

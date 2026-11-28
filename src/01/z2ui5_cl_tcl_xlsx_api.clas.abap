@@ -1,3 +1,8 @@
+"! The XLSX format of the upload and the download app (05, 06): a sheet out
+"! of a table, laid out by the settings and the field catalog app 06 lets
+"! the user edit, and the first sheet of a file as a table. The files are
+"! written and read by z2ui5_cl_tcl_xlsx - plain ABAP, no abap2xlsx - so the
+"! apps run on ABAP Cloud and on 7.02 as they do on Standard ABAP.
 CLASS z2ui5_cl_tcl_xlsx_api DEFINITION
   PUBLIC
   FINAL
@@ -5,18 +10,79 @@ CLASS z2ui5_cl_tcl_xlsx_api DEFINITION
 
   PUBLIC SECTION.
 
-    TYPES ty_t_xlsx TYPE zexcel_t_fieldcatalog.
-    TYPES ty_s_xlsx_settings TYPE zexcel_s_table_settings.
+    TYPES:
+      "! a column of the sheet - a row of the field catalog
+      BEGIN OF ty_s_xlsx,
+        "! the field of the table - empty for a formula column
+        name     TYPE string,
+        "! the columns stand in the order of their positions
+        position TYPE i,
+        "! a column that is not visible is left out of the sheet
+        visible  TYPE abap_bool,
+        "! the text of the header cell - empty: the name
+        header   TYPE string,
+        "! the width in characters - 0: by the content
+        width    TYPE i,
+        "! a number format as Excel writes it (`#,##0.00`, `dd.mm.yyyy`)
+        format   TYPE string,
+        "! a formula instead of the field, with `{row}` for the number of
+        "! its row (`C{row}*D{row}`)
+        formula  TYPE string,
+        "! the cell of the column in a totals row: sum, average, count,
+        "! countNums, min, max, stdDev, var - or a text as a label
+        total    TYPE string,
+      END OF ty_s_xlsx.
+    TYPES ty_t_xlsx TYPE STANDARD TABLE OF ty_s_xlsx WITH EMPTY KEY.
 
+    TYPES:
+      "! how the sheet is laid out
+      BEGIN OF ty_s_xlsx_settings,
+        "! the rows as an Excel table of that style (`TableStyleMedium5`) -
+        "! empty: a plain sheet
+        table_style    TYPE string,
+        "! the name of the Excel table - empty: Table1
+        table_name     TYPE string,
+        "! the cell the header row starts in - empty: A1
+        start_cell     TYPE string,
+        "! the stripes of the Excel table: its rows, its columns
+        row_stripes    TYPE abap_bool,
+        column_stripes TYPE abap_bool,
+        "! filter buttons on the header row
+        filter         TYPE abap_bool,
+        "! the header row stays in place while the rows scroll
+        freeze_header  TYPE abap_bool,
+      END OF ty_s_xlsx_settings.
+
+    "! the settings a new draft starts with: an Excel table with row
+    "! stripes and filter buttons under a frozen header row
+    CLASS-METHODS get_settings_default
+      RETURNING
+        VALUE(result) TYPE ty_s_xlsx_settings.
+
+    "! the field catalog of a table: every elementary field in its order,
+    "! visible, under the medium text of its data element where it has one
+    CLASS-METHODS get_fieldcatalog
+      IMPORTING
+        val           TYPE ANY TABLE
+      RETURNING
+        VALUE(result) TYPE ty_t_xlsx.
+
+    "! The first sheet of a file as a table of strings whose components are
+    "! named after the header row. Unbound for a sheet without a cell;
+    "! z2ui5_cx_tcl_error for a file that is no .xlsx workbook
     CLASS-METHODS get_table_by_xlsx
       IMPORTING
         val           TYPE xstring
       RETURNING
         VALUE(result) TYPE REF TO data.
 
+    "! A workbook of one sheet with the rows of val.
+    "! @parameter title        | the name of the sheet
+    "! @parameter settings     | initial: get_settings_default( )
+    "! @parameter fieldcatalog | initial: get_fieldcatalog( val )
     CLASS-METHODS get_xlsx_by_table
       IMPORTING
-        val           TYPE any
+        val           TYPE ANY TABLE
         title         TYPE clike DEFAULT `Internal table`
         settings      TYPE ty_s_xlsx_settings OPTIONAL
         fieldcatalog  TYPE ty_t_xlsx OPTIONAL
@@ -32,76 +98,108 @@ ENDCLASS.
 CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
 
-  METHOD get_xlsx_by_table.
+  METHOD get_settings_default.
 
-    DATA: lo_excel     TYPE REF TO zcl_excel,
-          lo_writer    TYPE REF TO zif_excel_writer,
-          lo_worksheet TYPE REF TO zcl_excel_worksheet.
-
-    DATA: lt_field_catalog  TYPE zexcel_t_fieldcatalog,
-          ls_table_settings TYPE zexcel_s_table_settings.
-
-
-    " abap2xlsx reports a failure with ZCX_EXCEL - a static exception the
-    " signature does not declare, so it would leave this method as the text-less
-    " CX_SY_NO_HANDLER; passed on with its own text instead
-    TRY.
-
-        " Creates active sheet
-        lo_excel = NEW #( ).
-
-        " Get active sheet
-        lo_worksheet = lo_excel->get_active_worksheet( ).
-        lo_worksheet->set_title( CONV #( title ) ).
-
-        lt_field_catalog = fieldcatalog.
-        IF lt_field_catalog IS INITIAL.
-          lt_field_catalog = zcl_excel_common=>get_fieldcatalog( val ).
-        ENDIF.
-
-        ls_table_settings = settings.
-        IF ls_table_settings IS INITIAL.
-          ls_table_settings-table_style = zcl_excel_table=>builtinstyle_medium5.
-        ENDIF.
-
-        lo_worksheet->bind_table( ip_table          = val
-                                  is_table_settings = ls_table_settings
-                                  it_field_catalog  = lt_field_catalog ).
-
-        lo_worksheet->freeze_panes( ip_num_rows = 1 ).
-
-        lo_writer = NEW zcl_excel_writer_2007( ).
-        result = lo_writer->write_file( lo_excel ).
-
-      CATCH zcx_excel INTO DATA(x).
-        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
-          EXPORTING
-            val = x.
-    ENDTRY.
-
+    result-table_style = `TableStyleMedium5`.
+    result-row_stripes = abap_true.
+    result-filter = abap_true.
+    result-freeze_header = abap_true.
 
   ENDMETHOD.
 
+
+  METHOD get_fieldcatalog.
+
+    DATA ls_field TYPE ty_s_xlsx.
+
+    DATA(lt_comp) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( val ).
+    LOOP AT lt_comp REFERENCE INTO DATA(lr_comp).
+      " a structure, a table or a reference in a row is no column
+      IF lr_comp->type->kind <> z2ui5_cl_tcl_context=>cv_typedescr_kind_elem.
+        CONTINUE.
+      ENDIF.
+
+      CLEAR ls_field.
+      ls_field-name = lr_comp->name.
+      ls_field-position = lines( result ) + 1.
+      ls_field-visible = abap_true.
+      IF lr_comp->type->is_ddic_type( ) = abap_true.
+        TRY.
+            DATA(ls_text) = z2ui5_cl_tcl_context=>rtti_get_data_element_texts(
+                                lr_comp->type->get_relative_name( ) ).
+            ls_field-header = ls_text-medium.
+            IF ls_field-header IS INITIAL.
+              ls_field-header = ls_text-long.
+            ENDIF.
+          CATCH cx_root ##NO_HANDLER.
+            " no text to be had - the name below
+        ENDTRY.
+      ENDIF.
+      IF ls_field-header IS INITIAL.
+        ls_field-header = ls_field-name.
+      ENDIF.
+      INSERT ls_field INTO TABLE result.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD get_xlsx_by_table.
+
+    DATA ls_layout TYPE z2ui5_cl_tcl_xlsx=>ty_s_layout.
+
+    DATA(lt_fieldcatalog) = fieldcatalog.
+    IF lt_fieldcatalog IS INITIAL.
+      lt_fieldcatalog = get_fieldcatalog( val ).
+    ENDIF.
+    DATA(ls_settings) = settings.
+    IF ls_settings IS INITIAL.
+      ls_settings = get_settings_default( ).
+    ENDIF.
+
+    " the columns in the order of their positions - STABLE: two with the
+    " same position stay in the order of the catalog
+    SORT lt_fieldcatalog STABLE BY position.
+    LOOP AT lt_fieldcatalog REFERENCE INTO DATA(lr_field).
+      IF lr_field->visible = abap_false.
+        CONTINUE.
+      ENDIF.
+      INSERT VALUE #( name    = lr_field->name
+                      header  = lr_field->header
+                      width   = lr_field->width
+                      format  = lr_field->format
+                      formula = lr_field->formula
+                      total   = lr_field->total ) INTO TABLE ls_layout-t_column.
+    ENDLOOP.
+    IF ls_layout-t_column IS INITIAL.
+      " an empty column list would be every field to the XLSX class
+      RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+        EXPORTING
+          val = `XLSX_NO_COLUMN - the field catalog shows no column`.
+    ENDIF.
+
+    ls_layout-table_style = ls_settings-table_style.
+    ls_layout-table_name = ls_settings-table_name.
+    ls_layout-start_cell = ls_settings-start_cell.
+    ls_layout-no_row_stripes = xsdbool( ls_settings-row_stripes = abap_false ).
+    ls_layout-column_stripes = ls_settings-column_stripes.
+    " the filter of the Excel table, or of the plain sheet
+    ls_layout-no_filter = xsdbool( ls_settings-filter = abap_false ).
+    ls_layout-auto_filter = ls_settings-filter.
+    ls_layout-freeze_header = ls_settings-freeze_header.
+
+    result = z2ui5_cl_tcl_xlsx=>factory(
+        )->add_sheet( val    = val
+                      name   = title
+                      layout = ls_layout
+        )->get_xlsx( ).
+
+  ENDMETHOD.
+
+
   METHOD get_table_by_xlsx.
 
-    DATA: lo_excel     TYPE REF TO zcl_excel,
-          lo_reader    TYPE REF TO zif_excel_reader,
-          lo_worksheet TYPE REF TO zcl_excel_worksheet.
-
-    " a file abap2xlsx cannot read ends in ZCX_EXCEL - passed on with its text
-    TRY.
-        lo_reader = NEW zcl_excel_reader_2007( ).
-        lo_excel = lo_reader->load( val ).
-        lo_worksheet = lo_excel->get_worksheet_by_index( 1 ).
-        lo_worksheet->convert_to_table(
-          IMPORTING
-            er_data          = result
-        ).
-      CATCH zcx_excel INTO DATA(x).
-        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
-          EXPORTING
-            val = x.
-    ENDTRY.
+    result = z2ui5_cl_tcl_xlsx=>factory_by_xlsx( val )->get_table_ref( ).
 
   ENDMETHOD.
 

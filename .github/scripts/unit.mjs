@@ -51,26 +51,14 @@ const CONFIG = {
     { name: "popups", url: "https://github.com/abap2UI5-addons/popups", ref: "main" },
   ],
   // copied into <abap2UI5>/src/<into>/: entries relative to <from>/src - of
-  // this repository only the classes the tests reach: the rest builds on
-  // abap2xlsx, which the transpiled runtime does not carry
+  // this repository everything: since the XLSX files are written and read
+  // by z2ui5_cl_tcl_xlsx, no class builds on anything the transpiled
+  // runtime does not carry
   packages: [
     { into: "zz_abap2ui5_ext", from: path.join(WORK, "abap2UI5-ext"), entries: ["."] },
     { into: "zz_layout_management", from: path.join(WORK, "layout-management"), entries: ["."] },
     { into: "zz_popups", from: path.join(WORK, "popups"), entries: ["."] },
-    {
-      into: "zz_table_content_loader",
-      from: ROOT,
-      entries: [
-        "package.devc.xml",
-        "z2ui5_cl_tcl_app_01.clas.abap",
-        "z2ui5_cl_tcl_app_01.clas.testclasses.abap",
-        "z2ui5_cl_tcl_app_01.clas.xml",
-        "z2ui5_cl_tcl_context.clas.abap",
-        "z2ui5_cl_tcl_context.clas.xml",
-        "z2ui5_cx_tcl_error.clas.abap",
-        "z2ui5_cx_tcl_error.clas.xml",
-      ],
-    },
+    { into: "zz_table_content_loader", from: ROOT, entries: ["."] },
   ],
   // tests the transpiled runtime cannot run, each with the reason - they run
   // in a system only

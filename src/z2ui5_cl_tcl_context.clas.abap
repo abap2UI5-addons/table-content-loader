@@ -343,6 +343,165 @@ CLASS z2ui5_cl_tcl_context DEFINITION
       RETURNING
         VALUE(result) TYPE string.
 
+    TYPES:
+      BEGIN OF ty_s_data_element_text,
+        header TYPE string,
+        short  TYPE string,
+        medium TYPE string,
+        long   TYPE string,
+      END OF ty_s_data_element_text.
+
+    TYPES:
+      BEGIN OF ty_s_zip_file,
+        name    TYPE string,
+        content TYPE xstring,
+      END OF ty_s_zip_file.
+
+    TYPES ty_t_zip_file TYPE STANDARD TABLE OF ty_s_zip_file WITH EMPTY KEY.
+
+    TYPES:
+      BEGIN OF ty_s_xml_attribute,
+        name  TYPE string,
+        value TYPE string,
+      END OF ty_s_xml_attribute.
+
+    TYPES ty_t_xml_attribute TYPE STANDARD TABLE OF ty_s_xml_attribute WITH EMPTY KEY.
+
+    CONSTANTS:
+      "! the kinds of node xml_reader_next( ) hands out - `end` (initial) when
+      "! the document is read to its end
+      BEGIN OF cs_xml_node,
+        open  TYPE string VALUE `O` ##NO_TEXT,
+        close TYPE string VALUE `C` ##NO_TEXT,
+        value TYPE string VALUE `V` ##NO_TEXT,
+        end   TYPE string VALUE `` ##NO_TEXT,
+      END OF cs_xml_node.
+
+    " the elementary kinds a caller has to tell apart to write a value into
+    " a file and to read it back (the XLSX reader and writer): text, a
+    " NUMC with its leading zeros, bytes
+    CLASS-DATA cv_typedescr_typekind_char    TYPE c LENGTH 1 READ-ONLY.
+
+    CLASS-DATA cv_typedescr_typekind_num     TYPE c LENGTH 1 READ-ONLY.
+
+    CLASS-DATA cv_typedescr_typekind_string  TYPE c LENGTH 1 READ-ONLY.
+
+    CLASS-DATA cv_typedescr_typekind_hex     TYPE c LENGTH 1 READ-ONLY.
+
+    CLASS-DATA cv_typedescr_typekind_xstring TYPE c LENGTH 1 READ-ONLY.
+
+    CLASS-METHODS rtti_get_type_name
+      IMPORTING
+        val           TYPE any
+      RETURNING
+        VALUE(result) TYPE string.
+
+    "! A standard table whose line is built from components - the
+    "! structdescr, the tabledescr and the CREATE DATA in one call.
+    "! cx_sy_struct_creation and cx_sy_table_creation reach the caller.
+    "! @parameter val    | the components, e.g. from rtti_get_t_attri_by_table_name
+    "! @parameter result | a reference to the new, empty table
+    CLASS-METHODS rtti_create_tab_by_comps
+      IMPORTING
+        val           TYPE abap_component_tab
+      RETURNING
+        VALUE(result) TYPE REF TO data.
+
+    "! A standard table whose line has one string component per name - the
+    "! table for a file whose columns are only known when it is read (CSV,
+    "! XLSX). The names have to be valid and unique component names.
+    "! @parameter val    | the component names, in the order of the columns
+    "! @parameter result | a reference to the new, empty table
+    CLASS-METHODS rtti_create_tab_by_names
+      IMPORTING
+        val           TYPE string_table
+      RETURNING
+        VALUE(result) TYPE REF TO data.
+
+    CLASS-METHODS boolean_check_by_name
+      IMPORTING
+        val           TYPE string
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
+    CLASS-METHODS c_ends_with
+      IMPORTING
+        val           TYPE clike
+        suffix        TYPE clike
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
+    CLASS-METHODS conv_string_to_number
+      IMPORTING
+        val           TYPE clike
+      RETURNING
+        VALUE(result) TYPE decfloat34.
+
+    CLASS-METHODS rtti_get_data_element_texts
+      IMPORTING
+        val           TYPE clike
+      RETURNING
+        VALUE(result) TYPE ty_s_data_element_text.
+
+    CLASS-METHODS zip_pack
+      IMPORTING
+        !files        TYPE ty_t_zip_file
+      RETURNING
+        VALUE(result) TYPE xstring.
+
+    CLASS-METHODS zip_unpack
+      IMPORTING
+        !val          TYPE xstring
+      RETURNING
+        VALUE(result) TYPE ty_t_zip_file.
+
+    "! A reader over an XML document, node by node and without building a
+    "! tree - what a large document (the sheet of a workbook) needs. The
+    "! handle goes to xml_reader_next( ); it is the sXML reader, which is
+    "! there on every release down to 7.02 and released on ABAP Cloud, and
+    "! this class is the only one that names it. A text of blanks only
+    "! arrives where it is all an element holds; the indentation between
+    "! two elements is not reported
+    CLASS-METHODS xml_reader_create
+      IMPORTING
+        val           TYPE xstring
+      RETURNING
+        VALUE(result) TYPE REF TO object.
+
+    "! The next node of the document: an element opening (name, and its
+    "! attributes when t_attribute is asked for), its text (value) or its
+    "! end (name). Names come without their namespace prefix. kind is
+    "! initial (cs_xml_node-end) behind the last node
+    CLASS-METHODS xml_reader_next
+      IMPORTING
+        reader      TYPE REF TO object
+      EXPORTING
+        kind        TYPE string
+        name        TYPE string
+        value       TYPE string
+        t_attribute TYPE ty_t_xml_attribute.
+
+    "! Escape a text for an XML attribute value: `&`, `<`, `>`, `"` as
+    "! entities, LF, CR and TAB as character references (attribute-value
+    "! normalization would turn them into blanks), and the control
+    "! characters XML 1.0 forbids outright dropped. Degrades when the
+    "! codepage API is missing - see the method.
+    CLASS-METHODS c_escape_xml
+      IMPORTING
+        val           TYPE clike
+      RETURNING
+        VALUE(result) TYPE string.
+
+    "! whether a type kind is a number: i, int1, int2, int8, p, f,
+    "! decfloat16, decfloat34 - the one list the number checks share. int8
+    "! by its value `8`, a constant lower releases do not have. Public for
+    "! a caller that holds the type kind of a component, not its value
+    CLASS-METHODS rtti_check_typekind_number
+      IMPORTING
+        val           TYPE clike
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
   PROTECTED SECTION.
 
     CLASS-METHODS msg_get_internal
@@ -460,6 +619,27 @@ CLASS z2ui5_cl_tcl_context DEFINITION
 
   PRIVATE SECTION.
 
+    " the character set c_escape_xml guards against, concatenated once per
+    " roll area instead of once per attribute value. Lazily filled on first
+    " use - a public class_constructor is the alternative and a known trap
+    CLASS-DATA gv_xml_escape_specials TYPE string.
+
+    CLASS-DATA gv_xml_escape_controls TYPE string.
+
+    CLASS-METHODS rtti_get_dtel_texts_by_ddic
+      IMPORTING
+        name        TYPE string
+      EXPORTING
+        texts       TYPE ty_s_data_element_text
+        do_fallback TYPE abap_bool.
+
+    CLASS-METHODS rtti_get_dtel_texts_by_xco
+      IMPORTING
+        name        TYPE string
+      EXPORTING
+        texts       TYPE ty_s_data_element_text
+        do_fallback TYPE abap_bool.
+
     TYPES:
       BEGIN OF ty_s_attri_cache,
         absolute_name TYPE string,
@@ -541,15 +721,6 @@ CLASS z2ui5_cl_tcl_context DEFINITION
       RETURNING
         VALUE(result) TYPE string.
 
-    " whether a type kind is a number: i, int1, int2, int8, p, f,
-    " decfloat16, decfloat34 - the one list the number checks share. int8
-    " by its value `8`, a constant lower releases do not have
-    CLASS-METHODS rtti_check_typekind_number
-      IMPORTING
-        val           TYPE clike
-      RETURNING
-        VALUE(result) TYPE abap_bool.
-
     CLASS-METHODS check_msg_container
       IMPORTING
         val           TYPE any
@@ -574,7 +745,6 @@ CLASS z2ui5_cl_tcl_context DEFINITION
 
 ENDCLASS.
 
-
 CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
 
   METHOD class_constructor.
@@ -598,6 +768,11 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
     cv_typedescr_kind_ref            = cl_abap_typedescr=>kind_ref.
     cv_objectdescr_public            = cl_abap_objectdescr=>public.
 
+    cv_typedescr_typekind_char       = cl_abap_typedescr=>typekind_char.
+    cv_typedescr_typekind_num        = cl_abap_typedescr=>typekind_num.
+    cv_typedescr_typekind_string     = cl_abap_typedescr=>typekind_string.
+    cv_typedescr_typekind_hex        = cl_abap_typedescr=>typekind_hex.
+    cv_typedescr_typekind_xstring    = cl_abap_typedescr=>typekind_xstring.
   ENDMETHOD.
 
   METHOD conv_copy_ref_data.
@@ -2572,6 +2747,567 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
   METHOD rtti_get_type_kind.
 
     result = cl_abap_datadescr=>get_data_type_kind( val ).
+
+  ENDMETHOD.
+
+  METHOD rtti_get_type_name.
+    TRY.
+
+        DATA(lo_descr) = cl_abap_elemdescr=>describe_by_data( val ).
+        DATA(lo_ele) = CAST cl_abap_elemdescr( lo_descr ).
+        result = lo_ele->get_relative_name( ).
+
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD rtti_create_tab_by_comps.
+
+    DATA lo_struct TYPE REF TO cl_abap_structdescr.
+    DATA lo_table  TYPE REF TO cl_abap_tabledescr.
+
+    lo_struct = cl_abap_structdescr=>create( val ).
+    lo_table = cl_abap_tabledescr=>create( p_line_type  = lo_struct
+                                           p_table_kind = cl_abap_tabledescr=>tablekind_std ).
+    CREATE DATA result TYPE HANDLE lo_table.
+
+  ENDMETHOD.
+
+  METHOD rtti_create_tab_by_names.
+
+    DATA lt_comp TYPE abap_component_tab.
+
+    LOOP AT val INTO DATA(lv_name).
+      " a string per column - a fixed length would cut every longer value
+      INSERT VALUE #( name = lv_name
+                      type = cl_abap_elemdescr=>get_string( ) ) INTO TABLE lt_comp.
+    ENDLOOP.
+    result = rtti_create_tab_by_comps( lt_comp ).
+
+  ENDMETHOD.
+
+  METHOD boolean_check_by_name.
+
+    CASE val.
+      WHEN `ABAP_BOOL`
+          OR `XSDBOOLEAN`
+          OR `FLAG`
+          OR `XFLAG`
+          OR `XFELD`
+          OR `ABAP_BOOLEAN`
+          OR `WDY_BOOLEAN`
+          OR `BOOLE_D`
+          OR `OS_BOOLEAN`.
+        result = abap_true.
+    ENDCASE.
+
+  ENDMETHOD.
+
+  METHOD c_ends_with.
+
+    DATA(lv_val) = CONV string( val ).
+    DATA(lv_suffix) = CONV string( suffix ).
+    DATA(lv_len_suffix) = strlen( lv_suffix ).
+    DATA(lv_len_val) = strlen( lv_val ).
+
+    IF lv_len_val < lv_len_suffix.
+      result = abap_false.
+      RETURN.
+    ENDIF.
+
+    DATA(lv_off) = lv_len_val - lv_len_suffix.
+    result = xsdbool( lv_val+lv_off(lv_len_suffix) = lv_suffix ).
+
+  ENDMETHOD.
+
+  METHOD conv_string_to_number.
+
+    DATA(lv_val) = c_trim( CONV string( val ) ).
+
+    " Which separator is the decimal one:
+    " - both a dot and a comma occur: the one that occurs LAST
+    "   (`1.234,56` and `1,234.56` are both 1234.56)
+    " - only one kind, more than once: thousands separators, no decimals
+    "   (`1.234.567`, `1,000,000`)
+    " - only one kind, once: the decimal separator (`3,14`, `3.14`). So
+    "   `1,000` is 1 (European convention) - a single separator cannot be
+    "   told apart from a thousands separator, the decimal reading wins
+    " Every other separator is a thousands separator and is skipped.
+    DATA lv_dot_count   TYPE i.
+    DATA lv_comma_count TYPE i.
+    DATA lv_decimal     TYPE string.
+    DATA(lv_i) = 0.
+    DATA(lv_len) = strlen( lv_val ).
+    DATA(lv_last) = lv_len - 1.
+    WHILE lv_i < lv_len.
+      CASE lv_val+lv_i(1).
+        WHEN `.`.
+          lv_dot_count = lv_dot_count + 1.
+          lv_decimal = `.`.
+        WHEN `,`.
+          lv_comma_count = lv_comma_count + 1.
+          lv_decimal = `,`.
+      ENDCASE.
+      lv_i = lv_i + 1.
+    ENDWHILE.
+    " lv_decimal holds the last separator - right when both kinds occur
+    IF ( lv_dot_count = 0 OR lv_comma_count = 0 ) AND ( lv_dot_count > 1 OR lv_comma_count > 1 ).
+      CLEAR lv_decimal.
+    ENDIF.
+
+    " Normalize: keep only digits, minus, and the decimal separator as `.`
+    DATA(lv_clean) = ``.
+    lv_i = 0.
+    WHILE lv_i < lv_len.
+      DATA(lv_c) = lv_val+lv_i(1).
+      IF lv_c >= `0` AND lv_c <= `9`.
+        lv_clean = lv_clean && lv_c.
+      ELSEIF lv_c = `-` AND lv_i = 0.
+        lv_clean = lv_clean && lv_c.
+      ELSEIF lv_c = `-` AND lv_i = lv_last AND lv_val(1) <> `-`.
+        " the sign behind the number, as a MOVE and WRITE put it
+        lv_clean = `-` && lv_clean.
+      ELSEIF lv_c = lv_decimal.
+        lv_clean = lv_clean && `.`.
+      ENDIF.
+      " any other separator is a thousands separator - skipped
+      lv_i = lv_i + 1.
+    ENDWHILE.
+
+    " Validate the normalized value explicitly: it needs at least one
+    " digit and at most one decimal point (`1,234.5.6` keeps two). Return 0
+    " for invalid input - the JS transpiler converts such strings leniently
+    " instead of raising
+    DATA(lv_point_count) = count( val = lv_clean
+                                  sub = `.` ).
+    IF lv_point_count > 1 OR lv_clean NA `0123456789`.
+      result = 0.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        result = lv_clean.
+      CATCH cx_root.
+        result = 0.
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD rtti_get_data_element_texts.
+
+    DATA data_element_name TYPE string.
+    DATA lv_do_fallback    TYPE abap_bool.
+
+    data_element_name = val.
+
+    TRY.
+        rtti_get_dtel_texts_by_ddic( EXPORTING name        = data_element_name
+                                     IMPORTING texts       = result
+                                               do_fallback = lv_do_fallback ).
+      CATCH cx_root.
+        rtti_get_dtel_texts_by_xco( EXPORTING name        = data_element_name
+                                    IMPORTING texts       = result
+                                              do_fallback = lv_do_fallback ).
+    ENDTRY.
+
+    IF lv_do_fallback = abap_true AND result IS INITIAL.
+      result-header = val.
+      result-long = val.
+      result-medium = val.
+      result-short = val.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD zip_pack.
+
+    DATA lo_zip TYPE REF TO object.
+
+    TRY.
+
+        CREATE OBJECT lo_zip TYPE ('CL_ABAP_ZIP').
+        LOOP AT files INTO DATA(ls_file).
+          CALL METHOD lo_zip->('ADD')
+            EXPORTING
+              name    = ls_file-name
+              content = ls_file-content.
+        ENDLOOP.
+        CALL METHOD lo_zip->('SAVE')
+          RECEIVING
+            zip = result.
+
+      CATCH cx_root INTO DATA(x).
+        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error EXPORTING val = x.
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD zip_unpack.
+
+    CONSTANTS lc_signature TYPE x LENGTH 2 VALUE '504B'.
+    DATA lo_zip    TYPE REF TO object.
+    DATA lv_name   TYPE string.
+    DATA lv_error  TYPE string.
+    DATA ls_result LIKE LINE OF result.
+
+    FIELD-SYMBOLS <files> TYPE ANY TABLE.
+    FIELD-SYMBOLS <file>  TYPE any.
+    FIELD-SYMBOLS <name>  TYPE any.
+
+    " every ZIP archive starts with PK. Checked here, for the same answer
+    " on every runtime: what the ZIP class does with other bytes differs,
+    " and the transpiled one takes them without a word
+    IF xstrlen( val ) < 4 OR val(2) <> lc_signature.
+      RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+        EXPORTING
+          val = `ZIP_PARSE_ERROR - the data is no ZIP archive`.
+    ENDIF.
+
+    TRY.
+
+        CREATE OBJECT lo_zip TYPE ('CL_ABAP_ZIP').
+        " LOAD and GET report a broken archive with a classic exception -
+        " not taken here, it ends the program with a dump, and a file a
+        " user uploads is broken often enough (cut off, or damaged)
+        CALL METHOD lo_zip->('LOAD')
+          EXPORTING
+            zip             = val
+          EXCEPTIONS
+            zip_parse_error = 1
+            OTHERS          = 2.
+        IF sy-subrc <> 0.
+          lv_error = `ZIP_PARSE_ERROR - the data is no ZIP archive`.
+        ELSE.
+          ASSIGN lo_zip->('FILES') TO <files>.
+          LOOP AT <files> ASSIGNING <file>.
+            ASSIGN COMPONENT `NAME` OF STRUCTURE <file> TO <name>.
+            lv_name = <name>.
+
+            ls_result = VALUE #( name = lv_name ).
+            CALL METHOD lo_zip->('GET')
+              EXPORTING
+                name                    = lv_name
+              IMPORTING
+                content                 = ls_result-content
+              EXCEPTIONS
+                zip_index_error         = 1
+                zip_decompression_error = 2
+                OTHERS                  = 3.
+            IF sy-subrc <> 0.
+              lv_error = |ZIP_PARSE_ERROR - the file { lv_name } of the archive cannot be unpacked|.
+              EXIT.
+            ENDIF.
+            INSERT ls_result INTO TABLE result.
+          ENDLOOP.
+        ENDIF.
+
+      CATCH cx_root INTO DATA(x).
+        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+          EXPORTING
+            val      = `ZIP_PARSE_ERROR - the ZIP archive cannot be read`
+            previous = x.
+    ENDTRY.
+
+    " raised behind the TRY: in it, the handler above would wrap it again
+    IF lv_error IS NOT INITIAL.
+      CLEAR result.
+      RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+        EXPORTING
+          val = lv_error.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD xml_reader_create.
+
+    TRY.
+        " no option set: as it comes, the reader reports a text of blanks
+        " only where it is the whole content of an element and leaves out
+        " the indentation between two elements - what a caller wants
+        result = cl_sxml_string_reader=>create( val ).
+      CATCH cx_root INTO DATA(x).
+        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+          EXPORTING
+            val      = `XML_READER_ERROR - the document cannot be read`
+            previous = x.
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD xml_reader_next.
+
+    DATA lo_reader TYPE REF TO if_sxml_reader.
+
+    CLEAR kind.
+    CLEAR name.
+    CLEAR value.
+    CLEAR t_attribute.
+
+    TRY.
+        lo_reader ?= reader.
+        lo_reader->next_node( ).
+
+        CASE lo_reader->node_type.
+          WHEN if_sxml_node=>co_nt_element_open.
+            kind = cs_xml_node-open.
+            name = lo_reader->name.
+            IF t_attribute IS SUPPLIED.
+              " next_attribute( ) walks the attributes of the element the
+              " reader stands on and leaves the attribute kind behind the
+              " last one - the way that is there since 7.02
+              DO.
+                lo_reader->next_attribute( ).
+                IF lo_reader->node_type <> if_sxml_node=>co_nt_attribute.
+                  EXIT.
+                ENDIF.
+                INSERT VALUE #( name  = lo_reader->name
+                                value = lo_reader->value ) INTO TABLE t_attribute.
+              ENDDO.
+            ENDIF.
+          WHEN if_sxml_node=>co_nt_element_close.
+            kind = cs_xml_node-close.
+            name = lo_reader->name.
+          WHEN if_sxml_node=>co_nt_value.
+            kind = cs_xml_node-value.
+            value = lo_reader->value.
+          WHEN OTHERS.
+            " co_nt_final, and whatever a later release may add
+            kind = cs_xml_node-end.
+        ENDCASE.
+
+      CATCH cx_root INTO DATA(x).
+        RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
+          EXPORTING
+            val      = `XML_READER_ERROR - the document is not well-formed XML`
+            previous = x.
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD c_escape_xml.
+
+    " one CA scan up front: replace( occ = 0 ) copies the whole string on
+    " every call even when nothing matches, and a value without any special
+    " character is the COMMON case - that made every attribute value pay for
+    " seven full copies. A value that does carry one still runs all seven
+    " replaces below, unchanged
+    IF gv_xml_escape_specials IS INITIAL.
+      " the XML-illegal control characters as one string, so the CA scan
+      " stays a single statement; built from their UTF-8 bytes. Behind them
+      " the two non-characters U+FFFE and U+FFFF (EF BF BE, EF BF BF): a
+      " legacy long text through a broken codepage conversion carries them,
+      " and the XMLView parser refuses the whole document for one of them
+      TRY.
+          gv_xml_escape_controls = conv_get_string_by_xstring(
+              CONV xstring( `000102030405060708` && `0B0C` && `0E0F101112131415161718191A1B1C1D1E1F`
+                            && `EFBFBE` && `EFBFBF` ) ).
+        CATCH z2ui5_cx_tcl_error.
+          " No codepage API here (UNSUPPORTED_CODEPAGE_API). Degrade instead of
+          " failing: the set stays empty, the CA scan below then matches no
+          " control character and the drop loop never runs, while `&`, `<`, `>`,
+          " `"`, newline, CR and tab are escaped exactly as before. Dropping
+          " those 30 exotic bytes is a repair for legacy long texts, not a
+          " correctness requirement of the view - so losing it must not cost
+          " the render. Before this, a missing class raised out of the utility
+          " and took down every view on the first escape of the process.
+          CLEAR gv_xml_escape_controls.
+      ENDTRY.
+      gv_xml_escape_specials = `&<>"`
+          && cv_char_util_newline
+          && cv_char_util_cr_lf(1)
+          && cv_char_util_horizontal_tab
+          && gv_xml_escape_controls.
+    ENDIF.
+    result = val.
+    IF result NA gv_xml_escape_specials.
+      RETURN.
+    ENDIF.
+
+    result = replace( val  = result
+                      sub  = `&`
+                      with = `&amp;`
+                      occ  = 0 ).
+    result = replace( val  = result
+                      sub  = `<`
+                      with = `&lt;`
+                      occ  = 0 ).
+    result = replace( val  = result
+                      sub  = `>`
+                      with = `&gt;`
+                      occ  = 0 ).
+    result = replace( val  = result
+                      sub  = `"`
+                      with = `&quot;`
+                      occ  = 0 ).
+    " whitespace as character references - a literal LF/CR/TAB in an attribute
+    " value is turned into a plain space by XML attribute-value normalization,
+    " so line breaks (e.g. a two-line noDataText) would silently disappear
+    result = replace( val  = result
+                      sub  = cv_char_util_newline
+                      with = `&#xA;`
+                      occ  = 0 ).
+    result = replace( val  = result
+                      sub  = cv_char_util_cr_lf(1)
+                      with = `&#xD;`
+                      occ  = 0 ).
+    result = replace( val  = result
+                      sub  = cv_char_util_horizontal_tab
+                      with = `&#x9;`
+                      occ  = 0 ).
+
+    " what is left of the control range is illegal in XML 1.0 outright -
+    " U+0000-U+0008, U+000B, U+000C, U+000E-U+001F cannot even be written
+    " as character references, and UI5's XMLView parser rejects the whole
+    " document over one such byte (a form feed or record separator out of a
+    " legacy long text blanks the view). They carry no meaning in an
+    " attribute value, so they are dropped. Only reached for a value that
+    " passed the CA scan above - see gv_xml_escape_specials
+    IF result CA gv_xml_escape_controls.
+      " one replace per character, no regex: [[:cntrl:]] is not a class every
+      " runtime this code runs on knows (the transpiled one left every byte
+      " in place), and this branch is the rare one
+      DATA(lv_off) = 0.
+      DATA(lv_len) = strlen( gv_xml_escape_controls ).
+      WHILE lv_off < lv_len.
+        result = replace( val  = result
+                          sub  = gv_xml_escape_controls+lv_off(1)
+                          with = ``
+                          occ  = 0 ).
+        lv_off = lv_off + 1.
+      ENDWHILE.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD rtti_get_dtel_texts_by_ddic.
+
+    DATA ddic_ref TYPE REF TO data.
+    DATA: BEGIN OF ddic,
+            reptext   TYPE string,
+            scrtext_s TYPE string,
+            scrtext_m TYPE string,
+            scrtext_l TYPE string,
+          END OF ddic.
+    DATA struct_descr TYPE REF TO cl_abap_structdescr.
+    FIELD-SYMBOLS <ddic> TYPE data.
+    DATA lo_typedescr TYPE REF TO cl_abap_typedescr.
+
+    CLEAR texts.
+    do_fallback = abap_false.
+
+    cl_abap_typedescr=>describe_by_name( `T100` ).
+
+    struct_descr ?= cl_abap_structdescr=>describe_by_name( `DFIES` ).
+
+    CREATE DATA ddic_ref TYPE HANDLE struct_descr.
+
+    " IS ASSIGNED, not sy-subrc, and a RETURN rather than an ASSERT: the
+    " symbol is the unassign_data shape (#1937), and an ASSERTION_FAILED
+    " here is a short dump the caller's own TRY cannot take - so the XCO
+    " fallback it exists for would never run. The two branches below answer
+    " a failure the same way
+    ASSIGN ddic_ref->* TO <ddic>.
+    IF <ddic> IS NOT ASSIGNED.
+      RETURN.
+    ENDIF.
+
+    cl_abap_elemdescr=>describe_by_name( EXPORTING  p_name     = name
+                                         RECEIVING p_descr_ref = lo_typedescr
+                                         EXCEPTIONS OTHERS     = 1 ).
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    CALL METHOD lo_typedescr->(`GET_DDIC_FIELD`)
+      RECEIVING
+        p_flddescr   = <ddic>
+      EXCEPTIONS
+        not_found    = 1
+        no_ddic_type = 2
+        OTHERS       = 3.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    MOVE-CORRESPONDING <ddic> TO ddic.
+    texts-header = ddic-reptext.
+    texts-short  = ddic-scrtext_s.
+    texts-medium = ddic-scrtext_m.
+    texts-long   = ddic-scrtext_l.
+    do_fallback  = abap_true.
+
+  ENDMETHOD.
+
+  METHOD rtti_get_dtel_texts_by_xco.
+
+    DATA data_element TYPE REF TO object.
+    DATA content      TYPE REF TO object.
+    DATA exists       TYPE abap_bool.
+    DATA lv_xco_cp_abap_dictionary TYPE string.
+    " A dynamic call checks its actual parameters against the formal ones at
+    " runtime and converts nothing, so both sides are typed exactly as XCO
+    " declares them. The name is sxco_ad_object_name (CHAR30), passed by
+    " reference - a string there raised CX_SY_DYN_CALL_ILLEGAL_TYPE. Each
+    " label is if_xco_dtel_content=>ts_field_label, a text (CHAR60) and its
+    " length (NUMC2) - received into a string, every one raised the same.
+    " Both ended in the CATCH below, so on ABAP Cloud every data element came
+    " back with empty texts (or its own name, as the caller's fallback). The
+    " shapes are written out because the XCO types exist on cloud only
+    DATA lv_name TYPE c LENGTH 30.
+    DATA: BEGIN OF ls_label,
+            text   TYPE c LENGTH 60,
+            length TYPE n LENGTH 2,
+          END OF ls_label.
+
+    CLEAR texts.
+    do_fallback = abap_false.
+
+    TRY.
+        lv_name = name.
+        lv_xco_cp_abap_dictionary = `XCO_CP_ABAP_DICTIONARY`.
+        CALL METHOD (lv_xco_cp_abap_dictionary)=>(`DATA_ELEMENT`)
+          EXPORTING
+            iv_name         = lv_name
+          RECEIVING
+            ro_data_element = data_element.
+
+        CALL METHOD data_element->(`IF_XCO_AD_DATA_ELEMENT~EXISTS`)
+          RECEIVING
+            rv_exists = exists.
+
+        IF exists = abap_false.
+          RETURN.
+        ENDIF.
+
+        CALL METHOD data_element->(`IF_XCO_AD_DATA_ELEMENT~CONTENT`)
+          RECEIVING
+            ro_content = content.
+
+        CALL METHOD content->(`IF_XCO_DTEL_CONTENT~GET_HEADING_FIELD_LABEL`)
+          RECEIVING
+            rs_heading_field_label = ls_label.
+        texts-header = ls_label-text.
+
+        CALL METHOD content->(`IF_XCO_DTEL_CONTENT~GET_SHORT_FIELD_LABEL`)
+          RECEIVING
+            rs_short_field_label = ls_label.
+        texts-short = ls_label-text.
+
+        CALL METHOD content->(`IF_XCO_DTEL_CONTENT~GET_MEDIUM_FIELD_LABEL`)
+          RECEIVING
+            rs_medium_field_label = ls_label.
+        texts-medium = ls_label-text.
+
+        CALL METHOD content->(`IF_XCO_DTEL_CONTENT~GET_LONG_FIELD_LABEL`)
+          RECEIVING
+            rs_long_field_label = ls_label.
+        texts-long = ls_label-text.
+
+        do_fallback = abap_true.
+
+      CATCH cx_root.
+        do_fallback = abap_true.
+    ENDTRY.
 
   ENDMETHOD.
 

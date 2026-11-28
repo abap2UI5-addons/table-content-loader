@@ -1,9 +1,11 @@
 {
   "master": "abap-util/abap-util",
-  "commit": "274a05a92b7171463e6228dabacf4cc445862305",
+  "commit": "119d6a9368ef7d069d5f39a615f7a831abda4e2c",
+  "note": "the commit is on abap-util's branch claude/stoic-dirac-tv925w, which adds the XLSX class and the context methods it needs - move it to the commit on main once that branch is merged",
   "rename": [
     ["z2ui5_cl_tcl_context", "zabaputil_cl_util_context"],
-    ["z2ui5_cx_tcl_error", "zabaputil_cx_util_error"]
+    ["z2ui5_cx_tcl_error", "zabaputil_cx_util_error"],
+    ["z2ui5_cl_tcl_xlsx", "zabaputil_cl_util_xlsx"]
   ],
   "copies": [
     {
@@ -12,11 +14,16 @@
       "trimmed": true,
       "settled": {
         "json_parse": "this addon has no ajson of its own and calls the one of the abap2UI5 core (z2ui5_cl_ajson)",
-        "json_stringify": "same - the ajson of the abap2UI5 core"
+        "json_stringify": "same - the ajson of the abap2UI5 core",
+        "class_constructor": "trimmed to the constants the kept methods read - the master sets every constant of the catalog"
       },
       "own": {
         "db_get_table_name": "checks a bound table name before it reaches a dynamic FROM (a plain DDIC structure name, nothing else); not in the master yet - to be synced back"
       }
+    },
+    {
+      "copy": "src/01/z2ui5_cl_tcl_xlsx.clas.abap",
+      "master": "src/zabaputil_cl_util_xlsx.clas.abap"
     },
     {
       "copy": "src/z2ui5_cx_tcl_error.clas.abap",

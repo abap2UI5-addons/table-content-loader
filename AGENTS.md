@@ -16,8 +16,8 @@ documentation must be in English.
 | Package | Content |
 |---|---|
 | `src/` | App classes `z2ui5_cl_tcl_app_00` … `_06` |
-| `src/01/z2ui5_cl_tcl_xlsx_api` | XLSX helper |
-| `src/z2ui5_cl_tcl_context`, `src/z2ui5_cx_tcl_error` | Vendored utility copies — **see below** |
+| `src/01/z2ui5_cl_tcl_xlsx_api` | the XLSX format of apps 05 and 06: the settings and the field catalog app 06 edits, mapped onto `z2ui5_cl_tcl_xlsx` |
+| `src/01/z2ui5_cl_tcl_xlsx`, `src/z2ui5_cl_tcl_context`, `src/z2ui5_cx_tcl_error` | Vendored utility copies — **see below** |
 
 ## The Utility Copy Principle
 
@@ -26,8 +26,15 @@ from the [abap-util](https://github.com/abap-util/abap-util) **master catalog**,
 **trimmed to the methods this addon uses** (conv/itab/json/xml/rtti helpers)
 plus the private helpers, types and constants those need.
 `z2ui5_cx_tcl_error` is the master's `zabaputil_cx_util_error`, renamed and
-copied as-is. This keeps the install dependency-free (abapGit has no
-dependency management).
+copied as-is, and so is `z2ui5_cl_tcl_xlsx` (`zabaputil_cl_util_xlsx`, with
+its test include): it writes and reads the XLSX files in plain ABAP and names
+no SAP class - ZIP, the XML reader and the type kinds it needs are methods of
+the context copy. This keeps the install dependency-free (abapGit has no
+dependency management); until 2026-11 the XLSX apps built on abap2xlsx, which
+ABAP Cloud does not take. Change the class in abap-util, not here: its
+writer is long by design (the `cyclomatic_complexity` rule leaves the two
+copies out), and what this repository's lint asks of it is already in the
+master.
 
 1. **Nothing of abap2UI5-ext.** `z2ui5_cl_util*` and `z2ui5_cx_util_error`
    left the core with its `src/99/01` for abap2UI5-ext; the app
@@ -57,14 +64,13 @@ Installed alongside via abapGit; declared in the abaplint configs:
 
 * [abap2UI5](https://github.com/abap2UI5/abap2UI5)
 * [popups](https://github.com/abap2UI5-addons/popups)
-* [abap2xlsx](https://github.com/abap2xlsx/abap2xlsx)
 
 popups (and layout-management, which popups builds on, for the unit run) are
 pinned by commit in `.github/deps.json`: CI and `npm run unit` resolve them
 there, the monthly `bump-deps` moves the pins, and the weekly `ci` run checks
-their `main` tips. abap2UI5 and abap2xlsx are still resolved from their
-default branch. The 702 config gives popups' `702` branch a folder of its own
-(`/popups-702`), beside the one the CI template fills with the pinned commit.
+their `main` tips. abap2UI5 is still resolved from its default branch. The
+702 config gives popups' `702` branch a folder of its own (`/popups-702`),
+beside the one the CI template fills with the pinned commit.
 
 ## Security
 
@@ -109,9 +115,8 @@ pinned by commit in the `uses:` lines and moved by `bump-deps`):
   (`abaplint.jsonc`) and ABAP Cloud (`.github/abaplint/abap_cloud.jsonc`),
   `abap2ui5lint` (the app classes and their views, `abap2ui5lint.jsonc`),
   `rename` (`npm run rename`, `.github/scripts/rename.mjs`) and `unit`:
-  `npm run unit` (`.github/scripts/unit.mjs`) copies the classes the tests
-  reach (`z2ui5_cl_tcl_app_01`, `_context`, `z2ui5_cx_tcl_error` - the rest
-  builds on abap2xlsx) into a checkout of abap2UI5's `main` with
+  `npm run unit` (`.github/scripts/unit.mjs`) copies `src/` into a checkout
+  of abap2UI5's `main` with
   abap2UI5-ext, layout-management and popups, downports, transpiles and runs
   the tests on the Node runtime. `file_windows_1252` is skipped there (the
   runtime has no Windows-1252 converter) and runs in a system only - and
@@ -123,8 +128,7 @@ pinned by commit in the `uses:` lines and moved by `bump-deps`):
   `rename_<name>` for a parallel install
 * `ci-702` — writes the downported `702` branch on every push to `main`
   (`npm run auto_downport` against `.github/abaplint/abap_702.jsonc`) and
-  lints it. abap2xlsx needs no `702` branch: its `main` is written for 7.02.
-  Never commit to `702` by hand.
+  lints it. Never commit to `702` by hand.
 
 All `.abap`/`.xml`/config files are LF-only (`.gitattributes` enforces it).
 
