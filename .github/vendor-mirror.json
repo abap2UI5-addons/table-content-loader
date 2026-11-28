@@ -1,0 +1,27 @@
+{
+  "segment": "tcl",
+  "maxLength": 25,
+  "tests": false,
+  "mirrors": [
+    {
+      "repo": "abap-util/mirror-ajson",
+      "target": "src/00",
+      "names": {
+        "zabaputil_cl_ajson": "z2ui5_cl_tcl_ajs",
+        "zabaputil_if_ajson": "z2ui5_if_tcl_ajs",
+        "zabaputil_if_ajson_types": "z2ui5_if_tcl_ajs_types",
+        "zabaputil_if_ajson_filter": "z2ui5_if_tcl_ajs_filter",
+        "zabaputil_if_ajson_mapping": "z2ui5_if_tcl_ajs_map",
+        "zabaputil_if_ajson_refinit": "z2ui5_if_tcl_ajs_rinit",
+        "zabaputil_cx_ajson_error": "z2ui5_cx_tcl_ajs_error"
+      },
+      "dropped": [
+        "zabaputil_cl_ajson_refinitlib",
+        "zabaputil_cl_ajson_mapping",
+        "zabaputil_cl_ajson_filter_lib",
+        "zabaputil_cl_ajson_utilities",
+        "zabaputil_if_ajson_iterator"
+      ]
+    }
+  ]
+}

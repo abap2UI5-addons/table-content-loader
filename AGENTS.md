@@ -32,8 +32,11 @@ dependency management).
 1. **Nothing of abap2UI5-ext.** `z2ui5_cl_util*` and `z2ui5_cx_util_error`
    left the core with its `src/99/01` for abap2UI5-ext; the app
    calls `z2ui5_cl_tcl_context=>…`, every utility exception is
-   `z2ui5_cx_tcl_error`. The JSON methods use the core's `z2ui5_cl_ajson`,
-   which every abap2UI5 installation ships.
+   `z2ui5_cx_tcl_error`. The JSON methods use this addon's own ajson in
+   `src/00` (`z2ui5_cl_tcl_ajs`, ...): `.github/scripts/vendor-mirror.mjs`
+   copies it from [abap-util/mirror-ajson](https://github.com/abap-util/mirror-ajson)
+   and renames it (`.github/vendor-mirror.json`), the same script abap2UI5 uses
+   for its own copy - never edit `src/00` by hand.
 2. **Method-level trimming** applies to the context class only, and keeps
    every helper a kept method needs.
 3. **New methods are added locally.** If the method already exists in
