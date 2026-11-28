@@ -32,7 +32,7 @@ dependency management).
 1. **Nothing of abap2UI5-ext.** `z2ui5_cl_util*` and `z2ui5_cx_util_error`
    left the core with its `src/99/01` for abap2UI5-ext; the app
    calls `z2ui5_cl_tcl_context=>…`, every utility exception is
-   `z2ui5_cx_tcl_error`. The JSON methods use the core's `z2ui5_cl_ajson`,
+   `z2ui5_cx_tcl_error`. The JSON methods use the core's `z2ui5_cl_ui5_ajson`,
    which every abap2UI5 installation ships.
 2. **Method-level trimming** applies to the context class only, and keeps
    every helper a kept method needs.
