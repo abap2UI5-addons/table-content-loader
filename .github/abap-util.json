@@ -1,9 +1,10 @@
 {
   "master": "abap-util/abap-util",
-  "commit": "274a05a92b7171463e6228dabacf4cc445862305",
+  "commit": "8ee8455c3d17429ca23c2e7bec0fcdba45c71ba0",
   "rename": [
     ["z2ui5_cl_tcl_context", "zabaputil_cl_util_context"],
-    ["z2ui5_cx_tcl_error", "zabaputil_cx_util_error"]
+    ["z2ui5_cx_tcl_error", "zabaputil_cx_util_error"],
+    ["z2ui5_cl_tcl_xlsx", "zabaputil_cl_util_xlsx"]
   ],
   "copies": [
     {
@@ -12,11 +13,16 @@
       "trimmed": true,
       "settled": {
         "json_parse": "calls this addon's own ajson copy (z2ui5_cl_tcl_ajs, vendored from abap-util/mirror-ajson like the master's zabaputil_cl_ajson) - a rename, not drift",
-        "json_stringify": "same - this addon's own ajson copy"
+        "json_stringify": "same - this addon's own ajson copy",
+        "class_constructor": "trimmed to the constants the kept methods read - the master sets every constant of the catalog"
       },
       "own": {
         "db_get_table_name": "checks a bound table name before it reaches a dynamic FROM (a plain DDIC structure name, nothing else); not in the master yet - to be synced back"
       }
+    },
+    {
+      "copy": "src/01/z2ui5_cl_tcl_xlsx.clas.abap",
+      "master": "src/zabaputil_cl_util_xlsx.clas.abap"
     },
     {
       "copy": "src/z2ui5_cx_tcl_error.clas.abap",
