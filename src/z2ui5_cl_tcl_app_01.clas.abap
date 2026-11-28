@@ -83,6 +83,10 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
     DATA lo_prev         TYPE REF TO z2ui5_if_app.
     DATA lo_popup_file   TYPE REF TO z2ui5_cl_popup_file_ul.
     DATA lo_popup_commit TYPE REF TO z2ui5_cl_popup_to_confirm.
+        DATA temp5 TYPE i.
+        DATA lv_refusal TYPE string.
+            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+            DATA lx_save TYPE REF TO cx_root.
     lo_prev = client->get_app( client->get( )-s_draft-id_prev_app ).
     TRY.
         lo_popup_file ?= lo_prev.
@@ -99,23 +103,26 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
       IF lo_popup_file->result( )-check_confirmed = abap_true.
         ms_app-file = lo_popup_file->result( )-value.
         client->message_toast_display( `File uploaded successfully` ).
-        ms_app-file_size = CONV i( ( strlen( ms_app-file ) ) / 1000 ).
+
+        temp5 = ( strlen( ms_app-file ) ) / 1000.
+        ms_app-file_size = temp5.
       ENDIF.
       RETURN.
     ELSEIF lo_popup_commit IS BOUND.
       result = abap_true.
       IF lo_popup_commit->result( ) = abap_true.
         " the boundary once more right before the write - whatever led here
-        DATA(lv_refusal) = get_write_refusal( mv_tab_db_table ).
+
+        lv_refusal = get_write_refusal( mv_tab_db_table ).
         IF lv_refusal IS NOT INITIAL.
           client->message_box_display( text = lv_refusal
                                        type = `error` ).
           RETURN.
         ENDIF.
         TRY.
-            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+
             ASSIGN mt_tab->* TO <tab2>.
-            MODIFY (mv_tab_db_table) FROM TABLE @<tab2>.
+            MODIFY (mv_tab_db_table) FROM TABLE <tab2>.
             IF sy-subrc <> 0.
               ROLLBACK WORK.
               client->message_box_display( text = |Not every row could be written to { mv_tab_db_table } - nothing was saved|
@@ -124,7 +131,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             ENDIF.
             COMMIT WORK AND WAIT.
             client->message_box_display( `DB updated` ).
-          CATCH cx_root INTO DATA(lx_save).
+
+          CATCH cx_root INTO lx_save.
             ROLLBACK WORK.
             client->message_box_display( text = lx_save->get_text( )
                                          type = `error` ).
@@ -136,6 +144,13 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
 
   METHOD z2ui5_on_event.
+            DATA lv_check_table TYPE string.
+            DATA lv_check_refusal TYPE string.
+            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+            DATA lv_table TYPE string.
+            DATA x TYPE REF TO cx_root.
+        DATA lr_tab TYPE REF TO data.
+        DATA lv_save_refusal TYPE string.
 
     CASE client->get( )-event.
 
@@ -144,7 +159,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
         TRY.
             ms_app-db_table = to_upper( ms_app-db_table ).
             " the name is bound - only a plain DDIC table name reaches the FROM
-            DATA(lv_check_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+
+            lv_check_table = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
             IF lv_check_table IS INITIAL.
               client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
               RETURN.
@@ -152,9 +168,10 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
             SELECT SINGLE COUNT( * )
             FROM (lv_check_table)
-            INTO @ms_app-db_table_entries.
+            INTO ms_app-db_table_entries.
 
-            DATA(lv_check_refusal) = get_write_refusal( lv_check_table ).
+
+            lv_check_refusal = get_write_refusal( lv_check_table ).
             IF lv_check_refusal IS NOT INITIAL.
               client->message_box_display( lv_check_refusal ).
             ENDIF.
@@ -165,11 +182,12 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
       WHEN `PROCESS`.
         TRY.
-            FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+
 
             ms_app-db_table = to_upper( ms_app-db_table ).
             CLEAR mv_tab_db_table.
-            DATA(lv_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+
+            lv_table = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
             IF lv_table IS INITIAL.
               client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
               RETURN.
@@ -188,7 +206,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
             mv_tab_db_table = lv_table.
             ms_app-file_entries = lines( <tab2> ).
 
-          CATCH cx_root INTO DATA(x).
+
+          CATCH cx_root INTO x.
             client->message_box_display( x->get_text( ) ).
         ENDTRY.
 
@@ -200,7 +219,7 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
           RETURN.
         ENDIF.
 
-        DATA lr_tab TYPE REF TO data.
+
 
         lr_tab = z2ui5_cl_tcl_context=>conv_copy_ref_data( mt_tab ).
 
@@ -221,7 +240,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                                        type = `error` ).
           RETURN.
         ENDIF.
-        DATA(lv_save_refusal) = get_write_refusal( mv_tab_db_table ).
+
+        lv_save_refusal = get_write_refusal( mv_tab_db_table ).
         IF lv_save_refusal IS NOT INITIAL.
           client->message_box_display( text = lv_save_refusal
                                        type = `error` ).
@@ -242,7 +262,13 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
   METHOD get_write_refusal.
 
-    DATA(lv_name) = to_upper( val ).
+    DATA lv_name TYPE string.
+    DATA lo_app TYPE REF TO z2ui5_if_app.
+    DATA temp6 TYPE REF TO cl_abap_refdescr.
+    DATA lo_app_ref LIKE temp6.
+    DATA lv_core_intf TYPE string.
+    DATA lv_prefix TYPE string.
+    lv_name = to_upper( val ).
     IF NOT ( lv_name CP `Z*` OR lv_name CP `Y*` ).
       result = `Only tables in the Z or Y namespace are allowed`.
       RETURN.
@@ -253,10 +279,15 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
     " histories. Taken from the core's app interface by type rather than
     " written down, so a namespace rename (rename.mjs) carries it along:
     " Z2UI5_IF_APP gives Z2UI5_
-    DATA lo_app TYPE REF TO z2ui5_if_app.
-    DATA(lo_app_ref) = CAST cl_abap_refdescr( cl_abap_typedescr=>describe_by_data( lo_app ) ).
-    DATA(lv_core_intf) = lo_app_ref->get_referenced_type( )->get_relative_name( ).
-    DATA(lv_prefix) = substring( val = lv_core_intf
+
+
+    temp6 ?= cl_abap_typedescr=>describe_by_data( lo_app ).
+
+    lo_app_ref = temp6.
+
+    lv_core_intf = lo_app_ref->get_referenced_type( )->get_relative_name( ).
+
+    lv_prefix = substring( val = lv_core_intf
                                  len = strlen( lv_core_intf ) - strlen( `IF_APP` ) ).
     IF lv_prefix IS NOT INITIAL AND strlen( lv_name ) >= strlen( lv_prefix )
         AND substring( val = lv_name len = strlen( lv_prefix ) ) = lv_prefix.
@@ -275,7 +306,11 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
 
   METHOD z2ui5_view_display.
 
-    DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA temp1 TYPE xsdboolean.
+    DATA content TYPE REF TO z2ui5_cl_ui5_view_builder.
+    view = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
@@ -283,12 +318,15 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
 
-    DATA(page) = view->ele( `Shell`
+
+
+    temp1 = boolc( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ).
+    page = view->ele( `Shell`
                      )->a( n = `appWidthLimited` v = client->_bind( ms_app-check_appwidthlimited )
                      )->ele( `Page`
                      )->a( n = `title` v = 'abap2UI5 - JSON File Upload'
                      )->a( n = `navButtonPress` v = client->_event( `BACK` )
-                     )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
+                     )->a( n = `showNavButton` b = temp1
                      )->ele( `headerContent`
                      )->ele( `OverflowToolbar`
                      )->tag( `ToolbarSpacer`
@@ -303,7 +341,8 @@ CLASS Z2UI5_CL_TCL_APP_01 IMPLEMENTATION.
                      )->end(
                      )->end( ).
 
-    DATA(content) = page->ele( n = `SimpleForm` ns = `form`
+
+    content = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `editable` v = `true` ).
 
     content->tag( `Label`

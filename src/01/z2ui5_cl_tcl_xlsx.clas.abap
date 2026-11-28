@@ -67,7 +67,7 @@ CLASS z2ui5_cl_tcl_xlsx DEFINITION
         "! the sheet the row
         total   TYPE string,
       END OF ty_s_column.
-    TYPES ty_t_column TYPE STANDARD TABLE OF ty_s_column WITH EMPTY KEY.
+    TYPES ty_t_column TYPE STANDARD TABLE OF ty_s_column WITH DEFAULT KEY.
 
     TYPES:
       "! how a sheet is written - initial: every elementary component in its
@@ -113,7 +113,7 @@ CLASS z2ui5_cl_tcl_xlsx DEFINITION
         kind  TYPE string,
         value TYPE string,
       END OF ty_s_cell.
-    TYPES ty_t_cell TYPE STANDARD TABLE OF ty_s_cell WITH EMPTY KEY.
+    TYPES ty_t_cell TYPE STANDARD TABLE OF ty_s_cell WITH DEFAULT KEY.
 
     CONSTANTS:
       BEGIN OF cs_kind,
@@ -292,7 +292,7 @@ CLASS z2ui5_cl_tcl_xlsx DEFINITION
         cat      TYPE string,
         rollname TYPE string,
       END OF ty_s_field.
-    TYPES ty_t_field TYPE STANDARD TABLE OF ty_s_field WITH EMPTY KEY.
+    TYPES ty_t_field TYPE STANDARD TABLE OF ty_s_field WITH DEFAULT KEY.
 
     " a column while its sheet is written
     TYPES:
@@ -317,7 +317,7 @@ CLASS z2ui5_cl_tcl_xlsx DEFINITION
         cells       TYPE i,
         numbers     TYPE i,
       END OF ty_s_out_col.
-    TYPES ty_t_out_col TYPE STANDARD TABLE OF ty_s_out_col WITH EMPTY KEY.
+    TYPES ty_t_out_col TYPE STANDARD TABLE OF ty_s_out_col WITH DEFAULT KEY.
 
     " a sheet that is written: its part, and the part of its table
     TYPES:
@@ -347,11 +347,13 @@ CLASS z2ui5_cl_tcl_xlsx DEFINITION
         type   TYPE string,
         target TYPE string,
       END OF ty_s_rel.
-    TYPES ty_t_rel TYPE STANDARD TABLE OF ty_s_rel WITH EMPTY KEY.
+    TYPES ty_t_rel TYPE STANDARD TABLE OF ty_s_rel WITH DEFAULT KEY.
 
     " writing
-    DATA mt_out_sheet TYPE STANDARD TABLE OF ty_s_out_sheet WITH EMPTY KEY.
-    DATA mt_xf        TYPE STANDARD TABLE OF ty_s_xf WITH EMPTY KEY.
+    TYPES temp1_6e09ec3c1d TYPE STANDARD TABLE OF ty_s_out_sheet WITH DEFAULT KEY.
+DATA mt_out_sheet TYPE temp1_6e09ec3c1d.
+    TYPES temp2_6e09ec3c1d TYPE STANDARD TABLE OF ty_s_xf WITH DEFAULT KEY.
+DATA mt_xf        TYPE temp2_6e09ec3c1d.
     DATA mt_numfmt    TYPE string_table.
     DATA mv_tables    TYPE i.
     DATA mt_table_name TYPE string_table.
@@ -360,7 +362,8 @@ CLASS z2ui5_cl_tcl_xlsx DEFINITION
     " reading
     DATA mv_loaded     TYPE abap_bool.
     DATA mt_part       TYPE z2ui5_cl_tcl_context=>ty_t_zip_file.
-    DATA mt_sheet      TYPE STANDARD TABLE OF ty_s_sheet WITH EMPTY KEY.
+    TYPES temp3_6e09ec3c1d TYPE STANDARD TABLE OF ty_s_sheet WITH DEFAULT KEY.
+DATA mt_sheet      TYPE temp3_6e09ec3c1d.
     DATA mt_shared     TYPE string_table.
     DATA mt_style_kind TYPE string_table.
     DATA mv_date1904   TYPE abap_bool.
@@ -656,13 +659,13 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
   METHOD factory.
 
-    result = NEW #( ).
+    CREATE OBJECT result.
 
   ENDMETHOD.
 
   METHOD factory_by_xlsx.
 
-    result = NEW #( ).
+    CREATE OBJECT result.
     result->load( val ).
 
   ENDMETHOD.
@@ -676,7 +679,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
   METHOD itab_by_xlsx.
 
-    factory_by_xlsx( val )->get_table( IMPORTING result = result ).
+    DATA temp1 TYPE REF TO z2ui5_cl_tcl_xlsx.
+    temp1 = factory_by_xlsx( val ).
+    temp1->get_table( IMPORTING result = result ).
 
   ENDMETHOD.
 
@@ -706,6 +711,32 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     FIELD-SYMBOLS <row>  TYPE any.
     FIELD-SYMBOLS <cell> TYPE any.
     FIELD-SYMBOLS <col>  TYPE ty_s_out_col.
+      DATA lv_start_row TYPE string.
+    DATA lt_col TYPE z2ui5_cl_tcl_xlsx=>ty_t_out_col.
+    DATA lv_table TYPE abap_bool.
+    DATA temp1 TYPE xsdboolean.
+        DATA temp2 TYPE xsdboolean.
+    DATA lv_head_style TYPE string.
+      DATA temp109 LIKE LINE OF lt_xml.
+    DATA lv_first_data TYPE i.
+        DATA temp110 LIKE LINE OF lt_xml.
+    DATA lv_last_data LIKE lv_row.
+          DATA lv_total_style LIKE <col>-style.
+      DATA temp111 LIKE LINE OF lt_xml.
+    DATA lv_range TYPE string.
+    DATA lv_filter TYPE string.
+      DATA lv_left TYPE string.
+      DATA lv_right TYPE string.
+      DATA lv_filter_end TYPE i.
+    DATA lv_tab_selected TYPE string.
+    DATA lv_pane TYPE string.
+    DATA temp112 LIKE LINE OF lt_head.
+    DATA temp113 LIKE LINE OF lt_head.
+    DATA temp114 LIKE LINE OF lt_head.
+        DATA lv_index TYPE i.
+        DATA lv_width LIKE <col>-width.
+        DATA temp115 LIKE LINE OF lt_head.
+      DATA temp116 LIKE LINE OF lt_xml.
 
     IF mv_loaded = abap_true.
       RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
@@ -715,7 +746,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     " where the header row starts: A1, or the cell the layout names
     IF layout-start_cell IS NOT INITIAL.
-      DATA(lv_start_row) = digits_only( layout-start_cell ).
+
+      lv_start_row = digits_only( layout-start_cell ).
       lv_col0 = column_to_number( layout-start_cell ) - 1.
       IF lv_col0 < 0 OR lv_start_row IS INITIAL OR strlen( lv_start_row ) > 7.
         RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
@@ -742,23 +774,29 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     fields_get( EXPORTING row        = <line>
                 IMPORTING elementary = lv_elementary
                           result     = lt_field ).
-    DATA(lt_col) = columns_get( t_field = lt_field
+
+    lt_col = columns_get( t_field = lt_field
                                 layout  = layout
                                 offset  = lv_col0 ).
-    DATA(lv_table) = xsdbool( layout-table_style IS NOT INITIAL AND layout-no_header = abap_false
-                              AND val IS NOT INITIAL AND lt_col IS NOT INITIAL ).
+
+
+    temp1 = boolc( layout-table_style IS NOT INITIAL AND layout-no_header = abap_false AND val IS NOT INITIAL AND lt_col IS NOT INITIAL ).
+    lv_table = temp1.
     IF lv_table = abap_true.
       lv_table_name = table_name_get( layout-table_name ).
     ENDIF.
     LOOP AT lt_col ASSIGNING <col>.
       IF <col>-total_fn IS NOT INITIAL OR <col>-total_label IS NOT INITIAL.
         " a totals row under no rows adds up nothing
-        lv_totals = xsdbool( val IS NOT INITIAL ).
+
+        temp2 = boolc( val IS NOT INITIAL ).
+        lv_totals = temp2.
       ENDIF.
     ENDLOOP.
 
     " an Excel table formats its header and its totals row itself
-    DATA(lv_head_style) = ``.
+
+    lv_head_style = ``.
     IF lv_table = abap_false.
       lv_head_style = | s="{ style_get( bold = abap_true ) }"|.
     ENDIF.
@@ -773,9 +811,12 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         " the filter button takes its room in the header cell
         <col>-len = strlen( <col>-header ) + 3.
       ENDLOOP.
-      INSERT |<row r="{ lv_row }">{ lv_cells }</row>| INTO TABLE lt_xml.
+
+      temp109 = |<row r="{ lv_row }">{ lv_cells }</row>|.
+      INSERT temp109 INTO TABLE lt_xml.
     ENDIF.
-    DATA(lv_first_data) = lv_row + 1.
+
+    lv_first_data = lv_row + 1.
 
     LOOP AT val ASSIGNING <row>.
       lv_row = lv_row + 1.
@@ -906,10 +947,13 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         ENDIF.
       ENDLOOP.
       IF lv_cells IS NOT INITIAL.
-        INSERT |<row r="{ lv_row }">{ lv_cells }</row>| INTO TABLE lt_xml.
+
+        temp110 = |<row r="{ lv_row }">{ lv_cells }</row>|.
+        INSERT temp110 INTO TABLE lt_xml.
       ENDIF.
     ENDLOOP.
-    DATA(lv_last_data) = lv_row.
+
+    lv_last_data = lv_row.
 
     IF lv_totals = abap_true.
       " a formula over the rows: SUBTOTAL( ) leaves out what a filter
@@ -945,7 +989,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
           ENDIF.
           lv_value = z2ui5_cl_tcl_context=>c_escape_xml( lv_value ).
           " a count is a number whatever the column holds
-          DATA(lv_total_style) = <col>-style.
+
+          lv_total_style = <col>-style.
           IF <col>-total_fn = `count` OR <col>-total_fn = `countNums`.
             CLEAR lv_total_style.
           ENDIF.
@@ -961,41 +1006,58 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
                                             style   = lv_head_style ).
         ENDIF.
       ENDLOOP.
-      INSERT |<row r="{ lv_row }">{ lv_cells }</row>| INTO TABLE lt_xml.
+
+      temp111 = |<row r="{ lv_row }">{ lv_cells }</row>|.
+      INSERT temp111 INTO TABLE lt_xml.
     ENDIF.
 
     " what stands in front of the rows is known only now: the range of the
     " sheet and the widths of its columns
-    DATA(lv_range) = `A1`.
-    DATA(lv_filter) = ``.
+
+    lv_range = `A1`.
+
+    lv_filter = ``.
     IF lt_col IS NOT INITIAL AND lv_row > lv_row0.
-      DATA(lv_left) = column_to_letters( lv_col0 + 1 ).
-      DATA(lv_right) = column_to_letters( lv_col0 + lines( lt_col ) ).
+
+      lv_left = column_to_letters( lv_col0 + 1 ).
+
+      lv_right = column_to_letters( lv_col0 + lines( lt_col ) ).
       lv_range = |{ lv_left }{ lv_row0 + 1 }:{ lv_right }{ lv_row }|.
       " the filter ends above the totals row
-      DATA(lv_filter_end) = nmax( val1 = lv_last_data
+
+      lv_filter_end = nmax( val1 = lv_last_data
                                   val2 = lv_row0 + 1 ).
       lv_filter = |{ lv_left }{ lv_row0 + 1 }:{ lv_right }{ lv_filter_end }|.
     ENDIF.
-    DATA(lv_tab_selected) = ``.
+
+    lv_tab_selected = ``.
     IF mt_out_sheet IS INITIAL.
       lv_tab_selected = ` tabSelected="1"`.
     ENDIF.
-    DATA(lv_pane) = ``.
+
+    lv_pane = ``.
     IF layout-freeze_header = abap_true AND layout-no_header = abap_false.
       lv_pane = |<pane ySplit="{ lv_row0 + 1 }" topLeftCell="A{ lv_row0 + 2 }" activePane="bottomLeft" state="frozen"/>|.
     ENDIF.
 
-    INSERT |{ cv_xml_head }<worksheet xmlns="{ cs_ns-main }" xmlns:r="{ cs_ns-rel }">| INTO TABLE lt_head.
-    INSERT |<dimension ref="{ lv_range }"/>| INTO TABLE lt_head.
-    INSERT |<sheetViews><sheetView workbookViewId="0"{ lv_tab_selected }>{ lv_pane }</sheetView></sheetViews>|
+
+    temp112 = |{ cv_xml_head }<worksheet xmlns="{ cs_ns-main }" xmlns:r="{ cs_ns-rel }">|.
+    INSERT temp112 INTO TABLE lt_head.
+
+    temp113 = |<dimension ref="{ lv_range }"/>|.
+    INSERT temp113 INTO TABLE lt_head.
+
+    temp114 = |<sheetViews><sheetView workbookViewId="0"{ lv_tab_selected }>{ lv_pane }</sheetView></sheetViews>|.
+    INSERT temp114
            INTO TABLE lt_head.
     INSERT `<sheetFormatPr defaultRowHeight="15"/>` INTO TABLE lt_head.
     IF lt_col IS NOT INITIAL.
       INSERT `<cols>` INTO TABLE lt_head.
       LOOP AT lt_col ASSIGNING <col>.
-        DATA(lv_index) = lv_col0 + sy-tabix.
-        DATA(lv_width) = <col>-width.
+
+        lv_index = lv_col0 + sy-tabix.
+
+        lv_width = <col>-width.
         IF lv_width <= 0.
           " by the longest content, in bounds: a long text does not push
           " every other column off the screen
@@ -1003,7 +1065,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
                                         val2 = 6 )
                            val2 = 60 ).
         ENDIF.
-        INSERT |<col min="{ lv_index }" max="{ lv_index }" width="{ lv_width }" customWidth="1"/>|
+
+        temp115 = |<col min="{ lv_index }" max="{ lv_index }" width="{ lv_width }" customWidth="1"/>|.
+        INSERT temp115
                INTO TABLE lt_head.
       ENDLOOP.
       INSERT `</cols>` INTO TABLE lt_head.
@@ -1026,7 +1090,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
                                           t_col  = lt_col ) ).
       INSERT `<tableParts count="1"><tablePart r:id="rId1"/></tableParts>` INTO TABLE lt_xml.
     ELSEIF layout-auto_filter = abap_true AND layout-no_header = abap_false AND lt_col IS NOT INITIAL.
-      INSERT |<autoFilter ref="{ lv_filter }"/>| INTO TABLE lt_xml.
+
+      temp116 = |<autoFilter ref="{ lv_filter }"/>|.
+      INSERT temp116 INTO TABLE lt_xml.
     ENDIF.
     INSERT `</worksheet>` INTO TABLE lt_xml.
 
@@ -1042,11 +1108,17 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   METHOD fields_get.
 
     DATA ls_field TYPE ty_s_field.
+    DATA lv_kind TYPE string.
+    DATA lt_comp TYPE abap_component_tab.
+    DATA temp117 LIKE LINE OF lt_comp.
+    DATA lr_comp LIKE REF TO temp117.
+      DATA lv_name TYPE string.
 
     CLEAR elementary.
     CLEAR result.
 
-    DATA(lv_kind) = z2ui5_cl_tcl_context=>rtti_get_type_kind( row ).
+
+    lv_kind = z2ui5_cl_tcl_context=>rtti_get_type_kind( row ).
     IF lv_kind <> z2ui5_cl_tcl_context=>cv_typedescr_typekind_struct1
         AND lv_kind <> z2ui5_cl_tcl_context=>cv_typedescr_typekind_struct2.
       elementary = abap_true.
@@ -1060,14 +1132,18 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
 
     " the included view: an include gives its fields, not one column
-    DATA(lt_comp) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( row ).
-    LOOP AT lt_comp REFERENCE INTO DATA(lr_comp).
+
+    lt_comp = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( row ).
+
+
+    LOOP AT lt_comp REFERENCE INTO lr_comp.
       IF lr_comp->type->kind <> z2ui5_cl_tcl_context=>cv_typedescr_kind_elem.
         CONTINUE.
       ENDIF.
       CLEAR ls_field.
       ls_field-name = lr_comp->name.
-      DATA(lv_name) = lr_comp->type->get_relative_name( ).
+
+      lv_name = lr_comp->type->get_relative_name( ).
       ls_field-cat = category_get( type_kind = lr_comp->type->type_kind
                                    name      = lv_name ).
       IF ls_field-cat IS INITIAL.
@@ -1083,7 +1159,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
   METHOD category_get.
 
-    DATA(lv_name) = to_upper( name ).
+    DATA lv_name TYPE string.
+    lv_name = to_upper( name ).
 
     IF type_kind = z2ui5_cl_tcl_context=>cv_typedescr_typekind_date.
       result = cs_cat-date.
@@ -1128,10 +1205,25 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA ls_field TYPE ty_s_field.
 
     " the columns the layout names, in its order - or every field
-    DATA(lt_column) = layout-t_column.
+    DATA lt_column LIKE layout-t_column.
+        DATA temp118 TYPE z2ui5_cl_tcl_xlsx=>ty_s_column.
+    DATA temp119 LIKE LINE OF lt_column.
+    DATA lr_column LIKE REF TO temp119.
+      DATA lv_position TYPE i.
+      DATA lv_name TYPE string.
+            DATA ls_text TYPE z2ui5_cl_tcl_context=>ty_s_data_element_text.
+        DATA lv_header LIKE ls_col-header.
+        DATA lv_suffix TYPE i.
+          DATA lv_upper TYPE string.
+          DATA temp120 LIKE sy-subrc.
+      DATA lv_style TYPE i.
+    lt_column = layout-t_column.
     IF lt_column IS INITIAL.
       LOOP AT t_field INTO ls_field.
-        INSERT VALUE #( name = ls_field-name ) INTO TABLE lt_column.
+
+        CLEAR temp118.
+        temp118-name = ls_field-name.
+        INSERT temp118 INTO TABLE lt_column.
       ENDLOOP.
     ENDIF.
     IF lines( lt_column ) + offset > cv_max_col.
@@ -1140,9 +1232,13 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
           val = |XLSX_TOO_MANY_COLUMNS - a sheet holds { cv_max_col } columns|.
     ENDIF.
 
-    LOOP AT lt_column REFERENCE INTO DATA(lr_column).
-      DATA(lv_position) = lines( result ) + 1.
-      DATA(lv_name) = z2ui5_cl_tcl_context=>c_trim_upper( lr_column->name ).
+
+
+    LOOP AT lt_column REFERENCE INTO lr_column.
+
+      lv_position = lines( result ) + 1.
+
+      lv_name = z2ui5_cl_tcl_context=>c_trim_upper( lr_column->name ).
 
       CLEAR ls_col.
       CLEAR ls_field.
@@ -1174,7 +1270,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       ls_col-header = lr_column->header.
       IF ls_col-header IS INITIAL AND layout-ddic_header = abap_true AND ls_field-rollname IS NOT INITIAL.
         TRY.
-            DATA(ls_text) = z2ui5_cl_tcl_context=>rtti_get_data_element_texts( ls_field-rollname ).
+
+            ls_text = z2ui5_cl_tcl_context=>rtti_get_data_element_texts( ls_field-rollname ).
             ls_col-header = ls_text-medium.
             IF ls_col-header IS INITIAL.
               ls_col-header = ls_text-long.
@@ -1193,13 +1290,19 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       " an Excel table takes every column name once, and so does a reader
       " that goes by the header
       IF layout-table_style IS NOT INITIAL.
-        DATA(lv_header) = ls_col-header.
-        DATA(lv_suffix) = 1.
+
+        lv_header = ls_col-header.
+
+        lv_suffix = 1.
         DO.
           " in a variable: a function in the key of a table expression is
           " read as a method call on 7.02
-          DATA(lv_upper) = to_upper( lv_header ).
-          IF NOT line_exists( lt_taken[ table_line = lv_upper ] ).
+
+          lv_upper = to_upper( lv_header ).
+
+          READ TABLE lt_taken WITH KEY table_line = lv_upper TRANSPORTING NO FIELDS.
+          temp120 = sy-subrc.
+          IF NOT temp120 = 0.
             EXIT.
           ENDIF.
           lv_suffix = lv_suffix + 1.
@@ -1218,7 +1321,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         ENDIF.
       ENDIF.
 
-      DATA(lv_style) = 0.
+
+      lv_style = 0.
       CASE ls_col-cat.
         WHEN cs_cat-number.
           IF lr_column->format IS NOT INITIAL.
@@ -1255,6 +1359,7 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD total_function.
+    DATA lv_name TYPE string.
 
     CLEAR name.
     CLEAR code.
@@ -1262,7 +1367,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     " the names a table part knows, and the numbers SUBTOTAL( ) takes for
     " them - the ones from 101 on, which leave out a hidden row
     " in a variable: 7.02 takes no function as the operand of a CASE
-    DATA(lv_name) = to_lower( condense( val ) ).
+
+    lv_name = to_lower( condense( val ) ).
     CASE lv_name.
       WHEN `sum`.
         name = `sum`.
@@ -1333,9 +1439,18 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     " letters, digits, underscores and periods, a letter or an underscore
     " in front
-    DATA(lv_len) = strlen( val ).
+    DATA lv_len TYPE i.
+      DATA lv_char TYPE string.
+      DATA lv_letters TYPE string.
+      DATA lv_rest TYPE string.
+    DATA lv_base LIKE result.
+    DATA lv_suffix TYPE i.
+      DATA lv_upper TYPE string.
+      DATA temp121 LIKE sy-subrc.
+    lv_len = strlen( val ).
     WHILE lv_pos < lv_len.
-      DATA(lv_char) = substring( val = val
+
+      lv_char = substring( val = val
                                  off = lv_pos
                                  len = 1 ).
       IF lv_char CA `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.`.
@@ -1359,8 +1474,10 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       lv_pos = lv_pos + 1.
     ENDWHILE.
     IF lv_pos >= 1 AND lv_pos <= 3 AND lv_pos < lv_len.
-      DATA(lv_letters) = result(lv_pos).
-      DATA(lv_rest) = result+lv_pos.
+
+      lv_letters = result(lv_pos).
+
+      lv_rest = result+lv_pos.
       IF lv_rest CO cv_digits AND lv_letters CO `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`.
         result = `_` && result.
       ENDIF.
@@ -1370,11 +1487,17 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
 
     " once in the workbook, whatever its case
-    DATA(lv_base) = result.
-    DATA(lv_suffix) = 1.
+
+    lv_base = result.
+
+    lv_suffix = 1.
     DO.
-      DATA(lv_upper) = to_upper( result ).
-      IF NOT line_exists( mt_table_name[ table_line = lv_upper ] ).
+
+      lv_upper = to_upper( result ).
+
+      READ TABLE mt_table_name WITH KEY table_line = lv_upper TRANSPORTING NO FIELDS.
+      temp121 = sy-subrc.
+      IF NOT temp121 = 0.
         EXIT.
       ENDIF.
       lv_suffix = lv_suffix + 1.
@@ -1387,6 +1510,10 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   METHOD style_get.
 
     DATA ls_xf TYPE ty_s_xf.
+      DATA lv_index TYPE i.
+      DATA lv_code LIKE LINE OF mt_numfmt.
+    DATA temp122 LIKE LINE OF mt_xf.
+    DATA lr_xf LIKE REF TO temp122.
 
     " index 0, the format of every cell that names none
     IF mt_xf IS INITIAL.
@@ -1399,8 +1526,10 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       " a format of the caller: a custom one, named from 164 on. Looked
       " up in a loop: line_index( ) of a row that is not there comes out
       " of the 7.02 downport as the index of an earlier read
-      DATA(lv_index) = 0.
-      LOOP AT mt_numfmt INTO DATA(lv_code).
+
+      lv_index = 0.
+
+      LOOP AT mt_numfmt INTO lv_code.
         IF lv_code = code.
           lv_index = sy-tabix.
           EXIT.
@@ -1413,7 +1542,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       ls_xf-numfmt = cs_numfmt-custom + lv_index - 1.
     ENDIF.
 
-    LOOP AT mt_xf REFERENCE INTO DATA(lr_xf).
+
+
+    LOOP AT mt_xf REFERENCE INTO lr_xf.
       IF lr_xf->numfmt = ls_xf-numfmt AND lr_xf->bold = ls_xf-bold.
         result = sy-tabix.
         EXIT.
@@ -1431,15 +1562,27 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     DATA lv_pos TYPE i.
 
-    DATA(lv_name) = z2ui5_cl_tcl_context=>c_trim( val ).
+    DATA lv_name TYPE string.
+    DATA lv_len TYPE i.
+      DATA lv_char TYPE string.
+    DATA lv_base LIKE result.
+    DATA lv_suffix TYPE i.
+      DATA lv_taken LIKE abap_false.
+      DATA temp123 LIKE LINE OF mt_out_sheet.
+      DATA lr_sheet LIKE REF TO temp123.
+      DATA lv_tail TYPE string.
+      DATA lv_keep TYPE i.
+    lv_name = z2ui5_cl_tcl_context=>c_trim( val ).
     IF lv_name IS INITIAL.
       lv_name = |Sheet{ lines( mt_out_sheet ) + 1 }|.
     ENDIF.
 
     " what Excel does not take in a sheet name
-    DATA(lv_len) = strlen( lv_name ).
+
+    lv_len = strlen( lv_name ).
     WHILE lv_pos < lv_len.
-      DATA(lv_char) = substring( val = lv_name
+
+      lv_char = substring( val = lv_name
                                  off = lv_pos
                                  len = 1 ).
       IF lv_char CA `\\/?*[]:`.
@@ -1454,11 +1597,16 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
 
     " a name the workbook has, whatever its case
-    DATA(lv_base) = result.
-    DATA(lv_suffix) = 1.
+
+    lv_base = result.
+
+    lv_suffix = 1.
     DO.
-      DATA(lv_taken) = abap_false.
-      LOOP AT mt_out_sheet REFERENCE INTO DATA(lr_sheet).
+
+      lv_taken = abap_false.
+
+
+      LOOP AT mt_out_sheet REFERENCE INTO lr_sheet.
         IF to_upper( lr_sheet->name ) = to_upper( result ).
           lv_taken = abap_true.
           EXIT.
@@ -1468,8 +1616,10 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         EXIT.
       ENDIF.
       lv_suffix = lv_suffix + 1.
-      DATA(lv_tail) = | ({ lv_suffix })|.
-      DATA(lv_keep) = nmin( val1 = strlen( lv_base )
+
+      lv_tail = | ({ lv_suffix })|.
+
+      lv_keep = nmin( val1 = strlen( lv_base )
                             val2 = 31 - strlen( lv_tail ) ).
       result = substring( val = lv_base
                           len = lv_keep ) && lv_tail.
@@ -1478,6 +1628,7 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD cell_text.
+    DATA lv_text TYPE string.
 
     IF val IS INITIAL.
       RETURN.
@@ -1487,7 +1638,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     " "repairs" a workbook with one). `_x` in front of four hex digits is
     " how a file names a character by its number, so a text that reads like
     " that has its underscore named that way
-    DATA(lv_text) = z2ui5_cl_tcl_context=>c_escape_xml( val ).
+
+    lv_text = z2ui5_cl_tcl_context=>c_escape_xml( val ).
     IF lv_text CS `_x`.
       lv_text = replace( val  = lv_text
                          sub  = `_x`
@@ -1519,49 +1671,86 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     DATA lt_xml TYPE string_table.
 
-    DATA(lv_totals) = ` totalsRowShown="0"`.
+    DATA lv_totals TYPE string.
+    DATA temp124 LIKE LINE OF lt_xml.
+    DATA temp125 LIKE LINE OF lt_xml.
+      DATA temp126 LIKE LINE OF lt_xml.
+    DATA temp127 LIKE LINE OF lt_xml.
+    DATA temp128 LIKE LINE OF t_col.
+    DATA lr_col LIKE REF TO temp128.
+      DATA lv_total TYPE string.
+      DATA lv_column TYPE string.
+      DATA temp129 LIKE LINE OF lt_xml.
+    DATA lv_rows TYPE string.
+    DATA lv_columns TYPE string.
+    DATA lv_style TYPE string.
+    DATA temp130 LIKE LINE OF lt_xml.
+    DATA temp131 LIKE LINE OF lt_xml.
+    lv_totals = ` totalsRowShown="0"`.
     IF totals = abap_true.
       lv_totals = ` totalsRowCount="1"`.
     ENDIF.
     " one piece per INSERT, here and wherever a part is put together: the
     " 7.02 downport writes the operands of a `&&` in an INSERT on one line,
     " and a line of more than 255 characters is cut on import
-    INSERT |{ cv_xml_head }<table xmlns="{ cs_ns-main }" id="{ id }" name="{ name }" displayName="{ name }"|
+
+    temp124 = |{ cv_xml_head }<table xmlns="{ cs_ns-main }" id="{ id }" name="{ name }" displayName="{ name }"|.
+    INSERT temp124
            INTO TABLE lt_xml.
-    INSERT | ref="{ range }"{ lv_totals }>| INTO TABLE lt_xml.
+
+    temp125 = | ref="{ range }"{ lv_totals }>|.
+    INSERT temp125 INTO TABLE lt_xml.
     IF filter IS NOT INITIAL.
-      INSERT |<autoFilter ref="{ filter }"/>| INTO TABLE lt_xml.
+
+      temp126 = |<autoFilter ref="{ filter }"/>|.
+      INSERT temp126 INTO TABLE lt_xml.
     ENDIF.
-    INSERT |<tableColumns count="{ lines( t_col ) }">| INTO TABLE lt_xml.
-    LOOP AT t_col REFERENCE INTO DATA(lr_col).
-      DATA(lv_total) = ``.
+
+    temp127 = |<tableColumns count="{ lines( t_col ) }">|.
+    INSERT temp127 INTO TABLE lt_xml.
+
+
+    LOOP AT t_col REFERENCE INTO lr_col.
+
+      lv_total = ``.
       IF lr_col->total_fn IS NOT INITIAL.
         lv_total = | totalsRowFunction="{ lr_col->total_fn }"|.
       ELSEIF lr_col->total_label IS NOT INITIAL.
         lv_total = | totalsRowLabel="{ z2ui5_cl_tcl_context=>c_escape_xml( lr_col->total_label ) }"|.
       ENDIF.
-      DATA(lv_column) = z2ui5_cl_tcl_context=>c_escape_xml( lr_col->header ).
-      INSERT |<tableColumn id="{ sy-tabix }" name="{ lv_column }"{ lv_total }/>| INTO TABLE lt_xml.
+
+      lv_column = z2ui5_cl_tcl_context=>c_escape_xml( lr_col->header ).
+
+      temp129 = |<tableColumn id="{ sy-tabix }" name="{ lv_column }"{ lv_total }/>|.
+      INSERT temp129 INTO TABLE lt_xml.
     ENDLOOP.
-    DATA(lv_rows) = `1`.
+
+    lv_rows = `1`.
     IF layout-no_row_stripes = abap_true.
       lv_rows = `0`.
     ENDIF.
-    DATA(lv_columns) = `0`.
+
+    lv_columns = `0`.
     IF layout-column_stripes = abap_true.
       lv_columns = `1`.
     ENDIF.
-    DATA(lv_style) = z2ui5_cl_tcl_context=>c_escape_xml( layout-table_style ).
-    INSERT |</tableColumns><tableStyleInfo name="{ lv_style }" showFirstColumn="0" showLastColumn="0"|
+
+    lv_style = z2ui5_cl_tcl_context=>c_escape_xml( layout-table_style ).
+
+    temp130 = |</tableColumns><tableStyleInfo name="{ lv_style }" showFirstColumn="0" showLastColumn="0"|.
+    INSERT temp130
            INTO TABLE lt_xml.
-    INSERT | showRowStripes="{ lv_rows }" showColumnStripes="{ lv_columns }"/></table>| INTO TABLE lt_xml.
+
+    temp131 = | showRowStripes="{ lv_rows }" showColumnStripes="{ lv_columns }"/></table>|.
+    INSERT temp131 INTO TABLE lt_xml.
     result = concat_lines_of( lt_xml ).
 
   ENDMETHOD.
 
   METHOD rels_xml.
 
-    DATA(lv_xml) = |{ cv_xml_head }<Relationships xmlns="{ cs_ns-pkg_rel }">|.
+    DATA lv_xml TYPE string.
+    lv_xml = |{ cv_xml_head }<Relationships xmlns="{ cs_ns-pkg_rel }">|.
     lv_xml = |{ lv_xml }<Relationship Id="rId1" Type="{ cs_ns-rel }/{ kind }" Target="{ target }"/></Relationships>|.
     result = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( lv_xml ).
 
@@ -1570,17 +1759,39 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   METHOD styles_xml.
 
     DATA lt_xml TYPE string_table.
+      DATA temp132 TYPE z2ui5_cl_tcl_xlsx=>ty_s_xf.
+    DATA temp133 LIKE LINE OF lt_xml.
+      DATA temp134 LIKE LINE OF lt_xml.
+      DATA lv_code LIKE LINE OF mt_numfmt.
+        DATA lv_id TYPE i.
+        DATA temp135 LIKE LINE OF lt_xml.
+    DATA temp136 LIKE LINE OF lt_xml.
+    DATA temp137 LIKE LINE OF mt_xf.
+    DATA lr_xf LIKE REF TO temp137.
+      DATA lv_font TYPE i.
+      DATA lv_apply TYPE string.
+      DATA temp138 LIKE LINE OF lt_xml.
 
     IF mt_xf IS INITIAL.
-      INSERT VALUE #( ) INTO TABLE mt_xf.
+
+      CLEAR temp132.
+      INSERT temp132 INTO TABLE mt_xf.
     ENDIF.
 
-    INSERT |{ cv_xml_head }<styleSheet xmlns="{ cs_ns-main }">| INTO TABLE lt_xml.
+
+    temp133 = |{ cv_xml_head }<styleSheet xmlns="{ cs_ns-main }">|.
+    INSERT temp133 INTO TABLE lt_xml.
     IF mt_numfmt IS NOT INITIAL.
-      INSERT |<numFmts count="{ lines( mt_numfmt ) }">| INTO TABLE lt_xml.
-      LOOP AT mt_numfmt INTO DATA(lv_code).
-        DATA(lv_id) = cs_numfmt-custom + sy-tabix - 1.
-        INSERT |<numFmt numFmtId="{ lv_id }" formatCode="{ z2ui5_cl_tcl_context=>c_escape_xml( lv_code ) }"/>|
+
+      temp134 = |<numFmts count="{ lines( mt_numfmt ) }">|.
+      INSERT temp134 INTO TABLE lt_xml.
+
+      LOOP AT mt_numfmt INTO lv_code.
+
+        lv_id = cs_numfmt-custom + sy-tabix - 1.
+
+        temp135 = |<numFmt numFmtId="{ lv_id }" formatCode="{ z2ui5_cl_tcl_context=>c_escape_xml( lv_code ) }"/>|.
+        INSERT temp135
                INTO TABLE lt_xml.
       ENDLOOP.
       INSERT `</numFmts>` INTO TABLE lt_xml.
@@ -1599,10 +1810,16 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
            INTO TABLE lt_xml.
     INSERT `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>`
            INTO TABLE lt_xml.
-    INSERT |<cellXfs count="{ lines( mt_xf ) }">| INTO TABLE lt_xml.
-    LOOP AT mt_xf REFERENCE INTO DATA(lr_xf).
-      DATA(lv_font) = 0.
-      DATA(lv_apply) = ``.
+
+    temp136 = |<cellXfs count="{ lines( mt_xf ) }">|.
+    INSERT temp136 INTO TABLE lt_xml.
+
+
+    LOOP AT mt_xf REFERENCE INTO lr_xf.
+
+      lv_font = 0.
+
+      lv_apply = ``.
       IF lr_xf->bold = abap_true.
         lv_font = 1.
         lv_apply = ` applyFont="1"`.
@@ -1610,7 +1827,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       IF lr_xf->numfmt <> cs_numfmt-general.
         lv_apply = lv_apply && ` applyNumberFormat="1"`.
       ENDIF.
-      INSERT |<xf numFmtId="{ lr_xf->numfmt }" fontId="{ lv_font }" fillId="0" borderId="0" xfId="0"{ lv_apply }/>|
+
+      temp138 = |<xf numFmtId="{ lr_xf->numfmt }" fontId="{ lv_font }" fillId="0" borderId="0" xfId="0"{ lv_apply }/>|.
+      INSERT temp138
              INTO TABLE lt_xml.
     ENDLOOP.
     INSERT `</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>`
@@ -1627,6 +1846,30 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lt_book  TYPE string_table.
     DATA lt_rels  TYPE string_table.
     DATA lv_table TYPE i.
+      DATA temp139 TYPE z2ui5_cl_tcl_xlsx=>ty_s_out_sheet.
+    DATA temp140 LIKE LINE OF lt_types.
+    DATA temp141 LIKE LINE OF lt_types.
+    DATA temp142 LIKE LINE OF lt_types.
+    DATA temp143 LIKE LINE OF lt_book.
+    DATA temp144 LIKE LINE OF lt_rels.
+    DATA temp145 LIKE LINE OF mt_out_sheet.
+    DATA lr_sheet LIKE REF TO temp145.
+      DATA lv_index LIKE sy-tabix.
+      DATA temp146 LIKE LINE OF lt_types.
+      DATA lv_name TYPE string.
+      DATA temp147 LIKE LINE OF lt_book.
+      DATA temp148 LIKE LINE OF lt_rels.
+      DATA temp149 LIKE LINE OF lt_rels.
+      DATA temp150 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
+        DATA temp151 LIKE LINE OF lt_types.
+        DATA temp152 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
+        DATA temp153 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
+    DATA temp154 LIKE LINE OF lt_rels.
+    DATA temp155 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
+    DATA temp156 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
+    DATA temp157 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
+    DATA temp158 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
+    DATA temp159 TYPE z2ui5_cl_tcl_context=>ty_s_zip_file.
 
     IF mv_loaded = abap_true.
       RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
@@ -1635,44 +1878,78 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
     " a workbook without a sheet is none Excel opens
     IF mt_out_sheet IS INITIAL.
-      INSERT VALUE #( name = `Sheet1`
-                      xml  = z2ui5_cl_tcl_context=>conv_get_xstring_by_string(
-                                 |{ cv_xml_head }<worksheet xmlns="{ cs_ns-main }"><sheetData/></worksheet>| ) )
+
+      CLEAR temp139.
+      temp139-name = `Sheet1`.
+      temp139-xml = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( |{ cv_xml_head }<worksheet xmlns="{ cs_ns-main }"><sheetData/></worksheet>| ).
+      INSERT temp139
              INTO TABLE mt_out_sheet.
     ENDIF.
 
-    INSERT |{ cv_xml_head }<Types xmlns="{ cs_ns-types }">| INTO TABLE lt_types.
+
+    temp140 = |{ cv_xml_head }<Types xmlns="{ cs_ns-types }">|.
+    INSERT temp140 INTO TABLE lt_types.
     INSERT `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>`
            INTO TABLE lt_types.
     INSERT `<Default Extension="xml" ContentType="application/xml"/>` INTO TABLE lt_types.
-    INSERT |<Override PartName="/xl/workbook.xml" ContentType="{ cs_ns-ct }.sheet.main+xml"/>|
-           INTO TABLE lt_types.
-    INSERT |<Override PartName="/xl/styles.xml" ContentType="{ cs_ns-ct }.styles+xml"/>|
-           INTO TABLE lt_types.
-    INSERT |{ cv_xml_head }<workbook xmlns="{ cs_ns-main }" xmlns:r="{ cs_ns-rel }">| INTO TABLE lt_book.
-    INSERT `<bookViews><workbookView/></bookViews><sheets>` INTO TABLE lt_book.
-    INSERT |{ cv_xml_head }<Relationships xmlns="{ cs_ns-pkg_rel }">| INTO TABLE lt_rels.
 
-    LOOP AT mt_out_sheet REFERENCE INTO DATA(lr_sheet).
-      DATA(lv_index) = sy-tabix.
-      INSERT |<Override PartName="/xl/worksheets/sheet{ lv_index }.xml" ContentType="{ cs_ns-ct }.worksheet+xml"/>|
+    temp141 = |<Override PartName="/xl/workbook.xml" ContentType="{ cs_ns-ct }.sheet.main+xml"/>|.
+    INSERT temp141
+           INTO TABLE lt_types.
+
+    temp142 = |<Override PartName="/xl/styles.xml" ContentType="{ cs_ns-ct }.styles+xml"/>|.
+    INSERT temp142
+           INTO TABLE lt_types.
+
+    temp143 = |{ cv_xml_head }<workbook xmlns="{ cs_ns-main }" xmlns:r="{ cs_ns-rel }">|.
+    INSERT temp143 INTO TABLE lt_book.
+    INSERT `<bookViews><workbookView/></bookViews><sheets>` INTO TABLE lt_book.
+
+    temp144 = |{ cv_xml_head }<Relationships xmlns="{ cs_ns-pkg_rel }">|.
+    INSERT temp144 INTO TABLE lt_rels.
+
+
+
+    LOOP AT mt_out_sheet REFERENCE INTO lr_sheet.
+
+      lv_index = sy-tabix.
+
+      temp146 = |<Override PartName="/xl/worksheets/sheet{ lv_index }.xml" ContentType="{ cs_ns-ct }.worksheet+xml"/>|.
+      INSERT temp146
              INTO TABLE lt_types.
-      DATA(lv_name) = z2ui5_cl_tcl_context=>c_escape_xml( lr_sheet->name ).
-      INSERT |<sheet name="{ lv_name }" sheetId="{ lv_index }" r:id="rId{ lv_index }"/>| INTO TABLE lt_book.
-      INSERT |<Relationship Id="rId{ lv_index }" Type="{ cs_ns-rel }/worksheet"| INTO TABLE lt_rels.
-      INSERT | Target="worksheets/sheet{ lv_index }.xml"/>| INTO TABLE lt_rels.
-      INSERT VALUE #( name    = |xl/worksheets/sheet{ lv_index }.xml|
-                      content = lr_sheet->xml ) INTO TABLE lt_file.
+
+      lv_name = z2ui5_cl_tcl_context=>c_escape_xml( lr_sheet->name ).
+
+      temp147 = |<sheet name="{ lv_name }" sheetId="{ lv_index }" r:id="rId{ lv_index }"/>|.
+      INSERT temp147 INTO TABLE lt_book.
+
+      temp148 = |<Relationship Id="rId{ lv_index }" Type="{ cs_ns-rel }/worksheet"|.
+      INSERT temp148 INTO TABLE lt_rels.
+
+      temp149 = | Target="worksheets/sheet{ lv_index }.xml"/>|.
+      INSERT temp149 INTO TABLE lt_rels.
+
+      CLEAR temp150.
+      temp150-name = |xl/worksheets/sheet{ lv_index }.xml|.
+      temp150-content = lr_sheet->xml.
+      INSERT temp150 INTO TABLE lt_file.
 
       IF lr_sheet->table_xml IS NOT INITIAL.
         lv_table = lv_table + 1.
-        INSERT |<Override PartName="/xl/tables/table{ lv_table }.xml" ContentType="{ cs_ns-ct }.table+xml"/>|
+
+        temp151 = |<Override PartName="/xl/tables/table{ lv_table }.xml" ContentType="{ cs_ns-ct }.table+xml"/>|.
+        INSERT temp151
                INTO TABLE lt_types.
-        INSERT VALUE #( name    = |xl/tables/table{ lv_table }.xml|
-                        content = lr_sheet->table_xml ) INTO TABLE lt_file.
-        INSERT VALUE #( name    = |xl/worksheets/_rels/sheet{ lv_index }.xml.rels|
-                        content = rels_xml( kind   = `table`
-                                            target = |../tables/table{ lv_table }.xml| ) ) INTO TABLE lt_file.
+
+        CLEAR temp152.
+        temp152-name = |xl/tables/table{ lv_table }.xml|.
+        temp152-content = lr_sheet->table_xml.
+        INSERT temp152 INTO TABLE lt_file.
+
+        CLEAR temp153.
+        temp153-name = |xl/worksheets/_rels/sheet{ lv_index }.xml.rels|.
+        temp153-content = rels_xml( kind = `table` target = |../tables/table{ lv_table }.xml| ).
+        INSERT temp153 INTO TABLE lt_file.
       ENDIF.
     ENDLOOP.
 
@@ -1684,25 +1961,41 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       INSERT `<calcPr fullCalcOnLoad="1"/>` INTO TABLE lt_book.
     ENDIF.
     INSERT `</workbook>` INTO TABLE lt_book.
-    INSERT |<Relationship Id="rId{ lines( mt_out_sheet ) + 1 }" Type="{ cs_ns-rel }/styles" Target="styles.xml"/>|
+
+    temp154 = |<Relationship Id="rId{ lines( mt_out_sheet ) + 1 }" Type="{ cs_ns-rel }/styles" Target="styles.xml"/>|.
+    INSERT temp154
            INTO TABLE lt_rels.
     INSERT `</Relationships>` INTO TABLE lt_rels.
 
-    INSERT VALUE #( name    = `[Content_Types].xml`
-                    content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( concat_lines_of( lt_types ) ) )
+
+    CLEAR temp155.
+    temp155-name = `[Content_Types].xml`.
+    temp155-content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( concat_lines_of( lt_types ) ).
+    INSERT temp155
            INTO lt_file INDEX 1.
-    INSERT VALUE #( name    = `_rels/.rels`
-                    content = rels_xml( kind   = `officeDocument`
-                                        target = `xl/workbook.xml` ) )
+
+    CLEAR temp156.
+    temp156-name = `_rels/.rels`.
+    temp156-content = rels_xml( kind = `officeDocument` target = `xl/workbook.xml` ).
+    INSERT temp156
            INTO lt_file INDEX 2.
-    INSERT VALUE #( name    = `xl/workbook.xml`
-                    content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( concat_lines_of( lt_book ) ) )
+
+    CLEAR temp157.
+    temp157-name = `xl/workbook.xml`.
+    temp157-content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( concat_lines_of( lt_book ) ).
+    INSERT temp157
            INTO lt_file INDEX 3.
-    INSERT VALUE #( name    = `xl/_rels/workbook.xml.rels`
-                    content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( concat_lines_of( lt_rels ) ) )
+
+    CLEAR temp158.
+    temp158-name = `xl/_rels/workbook.xml.rels`.
+    temp158-content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( concat_lines_of( lt_rels ) ).
+    INSERT temp158
            INTO lt_file INDEX 4.
-    INSERT VALUE #( name    = `xl/styles.xml`
-                    content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( styles_xml( ) ) )
+
+    CLEAR temp159.
+    temp159-name = `xl/styles.xml`.
+    temp159-content = z2ui5_cl_tcl_context=>conv_get_xstring_by_string( styles_xml( ) ).
+    INSERT temp159
            INTO lt_file INDEX 5.
 
     result = z2ui5_cl_tcl_context=>zip_pack( lt_file ).
@@ -1711,9 +2004,12 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
   METHOD column_to_letters.
 
-    DATA(lv_rest) = val.
+    DATA lv_rest LIKE val.
+      DATA lv_digit TYPE i.
+    lv_rest = val.
     WHILE lv_rest > 0.
-      DATA(lv_digit) = ( lv_rest - 1 ) MOD 26.
+
+      lv_digit = ( lv_rest - 1 ) MOD 26.
       result = substring( val = cv_letters
                           off = lv_digit
                           len = 1 ) && result.
@@ -1726,10 +2022,15 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     DATA lv_pos TYPE i.
 
-    DATA(lv_text) = to_upper( val ).
-    DATA(lv_len) = strlen( lv_text ).
+    DATA lv_text TYPE string.
+    DATA lv_len TYPE i.
+      DATA lv_found TYPE i.
+    lv_text = to_upper( val ).
+
+    lv_len = strlen( lv_text ).
     WHILE lv_pos < lv_len.
-      DATA(lv_found) = find( val = cv_letters
+
+      lv_found = find( val = cv_letters
                              sub = substring( val = lv_text
                                               off = lv_pos
                                               len = 1 ) ).
@@ -1756,6 +2057,20 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     " what the ZIP class does with other bytes differs by release
     CONSTANTS lc_zip TYPE x LENGTH 2 VALUE '504B'.
     CONSTANTS lc_ole TYPE x LENGTH 4 VALUE 'D0CF11E0'.
+        DATA x TYPE REF TO cx_root.
+    DATA lv_book TYPE string.
+    DATA temp160 TYPE z2ui5_cl_tcl_xlsx=>ty_t_rel.
+    DATA temp38 LIKE LINE OF temp160.
+    DATA lr_rel LIKE REF TO temp38.
+    DATA lv_content TYPE xstring.
+    DATA lv_folder TYPE string.
+    DATA lt_rel TYPE z2ui5_cl_tcl_xlsx=>ty_t_rel.
+    DATA lo_reader TYPE REF TO object.
+          DATA lv_1904 TYPE string.
+          DATA temp3 TYPE xsdboolean.
+          DATA lv_id TYPE string.
+              DATA temp161 TYPE z2ui5_cl_tcl_xlsx=>ty_s_sheet.
+      DATA lv_path TYPE string.
 
     mv_loaded = abap_true.
 
@@ -1771,7 +2086,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
     TRY.
         mt_part = z2ui5_cl_tcl_context=>zip_unpack( val ).
-      CATCH cx_root INTO DATA(x).
+
+      CATCH cx_root INTO x.
         RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
           EXPORTING
             val      = `XLSX_NO_WORKBOOK - the file is no .xlsx workbook`
@@ -1779,26 +2095,35 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDTRY.
 
     " the workbook part is the one the package names as its document
-    DATA(lv_book) = `xl/workbook.xml`.
-    LOOP AT rels_read( `_rels/.rels` ) REFERENCE INTO DATA(lr_rel).
+
+    lv_book = `xl/workbook.xml`.
+
+    temp160 = rels_read( `_rels/.rels` ).
+
+
+    LOOP AT temp160 REFERENCE INTO lr_rel.
       IF z2ui5_cl_tcl_context=>c_ends_with( val    = lr_rel->type
                                                  suffix = `/officeDocument` ) = abap_true.
         lv_book = path_resolve( base   = ``
                                 target = lr_rel->target ).
       ENDIF.
     ENDLOOP.
-    DATA(lv_content) = part_get( lv_book ).
+
+    lv_content = part_get( lv_book ).
     IF lv_content IS INITIAL.
       RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
         EXPORTING
           val = `XLSX_NO_WORKBOOK - the file is no .xlsx workbook`.
     ENDIF.
 
-    DATA(lv_folder) = path_folder( lv_book ).
-    DATA(lt_rel) = rels_read( |{ lv_folder }_rels/{ substring( val = lv_book
+
+    lv_folder = path_folder( lv_book ).
+
+    lt_rel = rels_read( |{ lv_folder }_rels/{ substring( val = lv_book
                                                               off = strlen( lv_folder ) ) }.rels| ).
 
-    DATA(lo_reader) = z2ui5_cl_tcl_context=>xml_reader_create( lv_content ).
+
+    lo_reader = z2ui5_cl_tcl_context=>xml_reader_create( lv_content ).
     DO.
       z2ui5_cl_tcl_context=>xml_reader_next( EXPORTING reader      = lo_reader
                                                   IMPORTING kind        = lv_kind
@@ -1813,18 +2138,23 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       CASE lv_name.
         WHEN `workbookPr`.
           " the date system of Excel for Mac up to 2008: day 0 is 1904-01-01
-          DATA(lv_1904) = attr( t_attribute = lt_attr
+
+          lv_1904 = attr( t_attribute = lt_attr
                                 name        = `date1904` ).
-          mv_date1904 = xsdbool( lv_1904 = `1` OR lv_1904 = `true` ).
+
+          temp3 = boolc( lv_1904 = `1` OR lv_1904 = `true` ).
+          mv_date1904 = temp3.
         WHEN `sheet`.
-          DATA(lv_id) = attr( t_attribute = lt_attr
+
+          lv_id = attr( t_attribute = lt_attr
                               name        = `id` ).
           LOOP AT lt_rel REFERENCE INTO lr_rel.
             IF lr_rel->id = lv_id.
-              INSERT VALUE #( name = attr( t_attribute = lt_attr
-                                           name        = `name` )
-                              path = path_resolve( base   = lv_book
-                                                   target = lr_rel->target ) ) INTO TABLE mt_sheet.
+
+              CLEAR temp161.
+              temp161-name = attr( t_attribute = lt_attr name = `name` ).
+              temp161-path = path_resolve( base = lv_book target = lr_rel->target ).
+              INSERT temp161 INTO TABLE mt_sheet.
               EXIT.
             ENDIF.
           ENDLOOP.
@@ -1832,7 +2162,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDDO.
 
     LOOP AT lt_rel REFERENCE INTO lr_rel.
-      DATA(lv_path) = path_resolve( base   = lv_book
+
+      lv_path = path_resolve( base   = lv_book
                                     target = lr_rel->target ).
       IF z2ui5_cl_tcl_context=>c_ends_with( val    = lr_rel->type
                                                  suffix = `/sharedStrings` ) = abap_true.
@@ -1850,14 +2181,18 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
   METHOD part_get.
 
-    LOOP AT mt_part REFERENCE INTO DATA(lr_part).
+    DATA temp162 LIKE LINE OF mt_part.
+    DATA lr_part LIKE REF TO temp162.
+    DATA lv_name TYPE string.
+    LOOP AT mt_part REFERENCE INTO lr_part.
       IF lr_part->name = val.
         result = lr_part->content.
         RETURN.
       ENDIF.
     ENDLOOP.
     " a package names its parts without regard to case
-    DATA(lv_name) = to_upper( val ).
+
+    lv_name = to_upper( val ).
     LOOP AT mt_part REFERENCE INTO lr_part.
       IF to_upper( lr_part->name ) = lv_name.
         result = lr_part->content.
@@ -1873,12 +2208,16 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_name TYPE string.
     DATA lt_attr TYPE z2ui5_cl_tcl_context=>ty_t_xml_attribute.
 
-    DATA(lv_content) = part_get( val ).
+    DATA lv_content TYPE xstring.
+    DATA lo_reader TYPE REF TO object.
+        DATA temp163 TYPE z2ui5_cl_tcl_xlsx=>ty_s_rel.
+    lv_content = part_get( val ).
     IF lv_content IS INITIAL.
       RETURN.
     ENDIF.
 
-    DATA(lo_reader) = z2ui5_cl_tcl_context=>xml_reader_create( lv_content ).
+
+    lo_reader = z2ui5_cl_tcl_context=>xml_reader_create( lv_content ).
     DO.
       z2ui5_cl_tcl_context=>xml_reader_next( EXPORTING reader      = lo_reader
                                                   IMPORTING kind        = lv_kind
@@ -1888,12 +2227,12 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         EXIT.
       ENDIF.
       IF lv_kind = z2ui5_cl_tcl_context=>cs_xml_node-open AND lv_name = `Relationship`.
-        INSERT VALUE #( id     = attr( t_attribute = lt_attr
-                                       name        = `Id` )
-                        type   = attr( t_attribute = lt_attr
-                                       name        = `Type` )
-                        target = attr( t_attribute = lt_attr
-                                       name        = `Target` ) ) INTO TABLE result.
+
+        CLEAR temp163.
+        temp163-id = attr( t_attribute = lt_attr name = `Id` ).
+        temp163-type = attr( t_attribute = lt_attr name = `Type` ).
+        temp163-target = attr( t_attribute = lt_attr name = `Target` ).
+        INSERT temp163 INTO TABLE result.
       ENDIF.
     ENDDO.
 
@@ -1907,12 +2246,15 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_text  TYPE string.
     DATA lv_take  TYPE abap_bool.
     DATA lv_ruby  TYPE abap_bool.
+    DATA lo_reader TYPE REF TO object.
+              DATA temp4 TYPE xsdboolean.
 
     IF val IS INITIAL.
       RETURN.
     ENDIF.
 
-    DATA(lo_reader) = z2ui5_cl_tcl_context=>xml_reader_create( val ).
+
+    lo_reader = z2ui5_cl_tcl_context=>xml_reader_create( val ).
     DO.
       z2ui5_cl_tcl_context=>xml_reader_next( EXPORTING reader = lo_reader
                                                   IMPORTING kind   = lv_kind
@@ -1928,7 +2270,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
               lv_ruby = abap_true.
             WHEN `t`.
               " one t, or one per run of a text formatted in parts
-              lv_take = xsdbool( lv_ruby = abap_false ).
+
+              temp4 = boolc( lv_ruby = abap_false ).
+              lv_take = temp4.
           ENDCASE.
         WHEN z2ui5_cl_tcl_context=>cs_xml_node-value.
           IF lv_take = abap_true.
@@ -1957,18 +2301,25 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         id   TYPE i,
         code TYPE string,
       END OF ty_s_fmt.
-    DATA lt_fmt  TYPE STANDARD TABLE OF ty_s_fmt WITH EMPTY KEY.
+    TYPES temp4 TYPE STANDARD TABLE OF ty_s_fmt WITH DEFAULT KEY.
+DATA lt_fmt  TYPE temp4.
     DATA lv_kind TYPE string.
     DATA lv_name TYPE string.
     DATA lt_attr TYPE z2ui5_cl_tcl_context=>ty_t_xml_attribute.
     DATA lv_cell TYPE abap_bool.
     DATA lv_id   TYPE i.
+    DATA lo_reader TYPE REF TO object.
+              DATA temp164 TYPE ty_s_fmt.
+              DATA lv_code TYPE string.
+              DATA temp165 LIKE LINE OF lt_fmt.
+              DATA lr_fmt LIKE REF TO temp165.
 
     IF val IS INITIAL.
       RETURN.
     ENDIF.
 
-    DATA(lo_reader) = z2ui5_cl_tcl_context=>xml_reader_create( val ).
+
+    lo_reader = z2ui5_cl_tcl_context=>xml_reader_create( val ).
     DO.
       z2ui5_cl_tcl_context=>xml_reader_next( EXPORTING reader      = lo_reader
                                                   IMPORTING kind        = lv_kind
@@ -1980,9 +2331,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
             WHEN `numFmt`.
               lv_id = hex_to_int( attr( t_attribute = lt_attr
                                         name        = `numFmtId` ) ).
-              INSERT VALUE #( id   = lv_id
-                              code = attr( t_attribute = lt_attr
-                                           name        = `formatCode` ) ) INTO TABLE lt_fmt.
+
+              CLEAR temp164.
+              temp164-id = lv_id.
+              temp164-code = attr( t_attribute = lt_attr name = `formatCode` ).
+              INSERT temp164 INTO TABLE lt_fmt.
             WHEN `cellXfs`.
               " the formats a cell names - cellStyleXfs holds xf elements too
               lv_cell = abap_true.
@@ -1992,8 +2345,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
               ENDIF.
               lv_id = hex_to_int( attr( t_attribute = lt_attr
                                         name        = `numFmtId` ) ).
-              DATA(lv_code) = ``.
-              LOOP AT lt_fmt REFERENCE INTO DATA(lr_fmt).
+
+              lv_code = ``.
+
+
+              LOOP AT lt_fmt REFERENCE INTO lr_fmt.
                 IF lr_fmt->id = lv_id.
                   lv_code = lr_fmt->code.
                   EXIT.
@@ -2018,6 +2374,15 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_pos     TYPE i.
     DATA lv_bare    TYPE string.
     DATA lv_elapsed TYPE abap_bool.
+    DATA lv_code TYPE string.
+    DATA lv_len TYPE i.
+      DATA lv_char TYPE string.
+          DATA lv_end TYPE i.
+          DATA lv_section TYPE string.
+    DATA lv_date TYPE abap_bool.
+    DATA temp5 TYPE xsdboolean.
+    DATA lv_time TYPE abap_bool.
+    DATA temp6 TYPE xsdboolean.
 
     IF code IS INITIAL.
       " a built-in format: the ids of the dates and times of every locale
@@ -2037,16 +2402,20 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     " character behind a backslash, an underscore or an asterisk, and
     " the sections in brackets (a colour, a locale, a condition) - but a
     " section of h, m or s only is a time that runs on past 24 hours
-    DATA(lv_code) = to_lower( code ).
-    DATA(lv_len) = strlen( lv_code ).
+
+    lv_code = to_lower( code ).
+
+    lv_len = strlen( lv_code ).
     WHILE lv_pos < lv_len.
-      DATA(lv_char) = substring( val = lv_code
+
+      lv_char = substring( val = lv_code
                                  off = lv_pos
                                  len = 1 ).
       lv_pos = lv_pos + 1.
       CASE lv_char.
         WHEN `"`.
-          DATA(lv_end) = find( val = lv_code
+
+          lv_end = find( val = lv_code
                                sub = `"`
                                off = lv_pos ).
           IF lv_end < 0.
@@ -2062,7 +2431,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
           IF lv_end < 0.
             EXIT.
           ENDIF.
-          DATA(lv_section) = substring( val = lv_code
+
+          lv_section = substring( val = lv_code
                                         off = lv_pos
                                         len = lv_end - lv_pos ).
           IF lv_section IS NOT INITIAL AND ( lv_section CO `h` OR lv_section CO `m` OR lv_section CO `s` ).
@@ -2074,8 +2444,14 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       ENDCASE.
     ENDWHILE.
 
-    DATA(lv_date) = xsdbool( lv_bare CA `dy` ).
-    DATA(lv_time) = xsdbool( lv_elapsed = abap_true OR lv_bare CA `hs` ).
+
+
+    temp5 = boolc( lv_bare CA `dy` ).
+    lv_date = temp5.
+
+
+    temp6 = boolc( lv_elapsed = abap_true OR lv_bare CA `hs` ).
+    lv_time = temp6.
     IF lv_date = abap_false AND lv_time = abap_false AND lv_bare CA `m`.
       " months only (`mmmm`) - no number format has an m of its own
       lv_date = abap_true.
@@ -2094,13 +2470,21 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_sheet_names.
+      DATA temp166 LIKE LINE OF mt_sheet.
+      DATA lr_sheet LIKE REF TO temp166.
+      DATA temp167 LIKE LINE OF mt_out_sheet.
+      DATA lr_out LIKE REF TO temp167.
 
     IF mv_loaded = abap_true.
-      LOOP AT mt_sheet REFERENCE INTO DATA(lr_sheet).
+
+
+      LOOP AT mt_sheet REFERENCE INTO lr_sheet.
         INSERT lr_sheet->name INTO TABLE result.
       ENDLOOP.
     ELSE.
-      LOOP AT mt_out_sheet REFERENCE INTO DATA(lr_out).
+
+
+      LOOP AT mt_out_sheet REFERENCE INTO lr_out.
         INSERT lr_out->name INTO TABLE result.
       ENDLOOP.
     ENDIF.
@@ -2110,6 +2494,12 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   METHOD sheet_part.
 
     DATA lv_path TYPE string.
+      DATA lv_name TYPE string.
+      DATA temp168 LIKE LINE OF mt_sheet.
+      DATA lr_sheet LIKE REF TO temp168.
+      DATA lv_sheets TYPE i.
+      FIELD-SYMBOLS <temp169> LIKE LINE OF mt_sheet.
+      DATA temp170 LIKE sy-tabix.
 
     IF mv_loaded = abap_false.
       RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
@@ -2118,8 +2508,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
 
     IF sheet IS NOT INITIAL.
-      DATA(lv_name) = to_upper( sheet ).
-      LOOP AT mt_sheet REFERENCE INTO DATA(lr_sheet).
+
+      lv_name = to_upper( sheet ).
+
+
+      LOOP AT mt_sheet REFERENCE INTO lr_sheet.
         IF to_upper( lr_sheet->name ) = lv_name.
           lv_path = lr_sheet->path.
           EXIT.
@@ -2131,13 +2524,22 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
             val = |XLSX_SHEET_UNKNOWN - the workbook has no sheet { sheet }|.
       ENDIF.
     ELSE.
-      DATA(lv_sheets) = lines( mt_sheet ).
+
+      lv_sheets = lines( mt_sheet ).
       IF index < 1 OR index > lv_sheets.
         RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
           EXPORTING
             val = |XLSX_SHEET_UNKNOWN - the workbook has { lv_sheets } sheets, none at { index }|.
       ENDIF.
-      lv_path = mt_sheet[ index ]-path.
+
+
+      temp170 = sy-tabix.
+      READ TABLE mt_sheet INDEX index ASSIGNING <temp169>.
+      sy-tabix = temp170.
+      IF sy-subrc <> 0.
+        ASSERT 1 = 0.
+      ENDIF.
+      lv_path = <temp169>-path.
     ENDIF.
 
     result = part_get( lv_path ).
@@ -2163,6 +2565,7 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_style  TYPE string.
     DATA lv_ref    TYPE string.
     DATA ls_cell   TYPE ty_s_cell.
+              DATA temp7 TYPE xsdboolean.
 
     CLEAR t_cell.
     CLEAR eof.
@@ -2204,7 +2607,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
               lv_take = abap_true.
             WHEN `t`.
               " the text of an inline string, in one piece or in runs
-              lv_take = xsdbool( lv_ruby = abap_false ).
+
+              temp7 = boolc( lv_ruby = abap_false ).
+              lv_take = temp7.
             WHEN `rPh`.
               lv_ruby = abap_true.
           ENDCASE.
@@ -2252,6 +2657,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD cell_read.
+          DATA temp171 TYPE i.
+          DATA lv_index TYPE i.
+          DATA lv_texts TYPE i.
+            FIELD-SYMBOLS <temp172> LIKE LINE OF mt_shared.
+            DATA temp173 LIKE sy-tabix.
 
     CLEAR kind.
     CLEAR value.
@@ -2261,10 +2671,22 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         " the index of the text in the shared strings, from 0
         kind = cs_kind-text.
         IF text IS NOT INITIAL AND text CO cv_digits.
-          DATA(lv_index) = CONV i( text ) + 1.
-          DATA(lv_texts) = lines( mt_shared ).
+
+          temp171 = text.
+
+          lv_index = temp171 + 1.
+
+          lv_texts = lines( mt_shared ).
           IF lv_index <= lv_texts.
-            value = mt_shared[ lv_index ].
+
+
+            temp173 = sy-tabix.
+            READ TABLE mt_shared INDEX lv_index ASSIGNING <temp172>.
+            sy-tabix = temp173.
+            IF sy-subrc <> 0.
+              ASSERT 1 = 0.
+            ENDIF.
+            value = <temp172>.
           ENDIF.
         ENDIF.
       WHEN `inlineStr` OR `str`.
@@ -2306,11 +2728,23 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_fraction TYPE decfloat34.
     DATA lv_seconds  TYPE i.
     DATA lv_days     TYPE i.
+    DATA lv_number TYPE string.
+    DATA lv_format TYPE string.
+      DATA temp174 TYPE i.
+      DATA lv_index TYPE i.
+      DATA lv_styles TYPE i.
+        FIELD-SYMBOLS <temp175> LIKE LINE OF mt_style_kind.
+        DATA temp176 LIKE sy-tabix.
+    DATA lv_whole LIKE lv_number.
+    DATA lv_part TYPE string.
+    DATA lv_time TYPE string.
+    DATA lv_date TYPE d.
 
     CLEAR kind.
     CLEAR value.
 
-    DATA(lv_number) = number_plain( val ).
+
+    lv_number = number_plain( val ).
     IF lv_number IS INITIAL.
       " no number after all - handed on as it stands
       kind = cs_kind-text.
@@ -2321,12 +2755,25 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     value = lv_number.
 
     " the format the cell is shown in says whether the number is a date
-    DATA(lv_format) = ``.
+
+    lv_format = ``.
     IF style IS NOT INITIAL AND style CO cv_digits.
-      DATA(lv_index) = CONV i( style ) + 1.
-      DATA(lv_styles) = lines( mt_style_kind ).
+
+      temp174 = style.
+
+      lv_index = temp174 + 1.
+
+      lv_styles = lines( mt_style_kind ).
       IF lv_index <= lv_styles.
-        lv_format = mt_style_kind[ lv_index ].
+
+
+        temp176 = sy-tabix.
+        READ TABLE mt_style_kind INDEX lv_index ASSIGNING <temp175>.
+        sy-tabix = temp176.
+        IF sy-subrc <> 0.
+          ASSERT 1 = 0.
+        ENDIF.
+        lv_format = <temp175>.
       ENDIF.
     ENDIF.
     IF lv_format IS INITIAL OR lv_number(1) = `-`.
@@ -2334,8 +2781,10 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
 
     " whole days and the fraction of a day, to the second
-    DATA(lv_whole) = lv_number.
-    DATA(lv_part) = `0`.
+
+    lv_whole = lv_number.
+
+    lv_part = `0`.
     IF lv_number CS `.`.
       lv_whole = substring_before( val = lv_number
                                    sub = `.` ).
@@ -2353,7 +2802,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       lv_seconds = lv_seconds - 86400.
       lv_days = lv_days + 1.
     ENDIF.
-    DATA(lv_time) = |{ two_digits( lv_seconds DIV 3600 ) }:{ two_digits( lv_seconds MOD 3600 DIV 60 ) }|
+
+    lv_time = |{ two_digits( lv_seconds DIV 3600 ) }:{ two_digits( lv_seconds MOD 3600 DIV 60 ) }|
                  && |:{ two_digits( lv_seconds MOD 60 ) }|.
 
     IF lv_format = `L`.
@@ -2373,7 +2823,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA(lv_date) = serial_to_date( val      = lv_days
+
+    lv_date = serial_to_date( val      = lv_days
                                     date1904 = mv_date1904 ).
     IF lv_date IS INITIAL.
       " day 0 or beyond the year 9999 - no date, the number stays
@@ -2412,8 +2863,19 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_point TYPE i.
     DATA lv_round TYPE p LENGTH 16 DECIMALS 0.
 
-    DATA(lv_text) = to_upper( condense( val ) ).
-    DATA(lv_sign) = ``.
+    DATA lv_text TYPE string.
+    DATA lv_sign TYPE string.
+      DATA lv_exp_text TYPE string.
+      DATA lv_exp_sign TYPE i.
+    DATA lv_whole LIKE lv_text.
+    DATA lv_part TYPE string.
+    DATA lv_digits TYPE string.
+    DATA lv_zeros TYPE i.
+    DATA lv_len TYPE i.
+      DATA lv_next TYPE string.
+    lv_text = to_upper( condense( val ) ).
+
+    lv_sign = ``.
     IF lv_text IS INITIAL.
       RETURN.
     ENDIF.
@@ -2429,11 +2891,13 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     " mantissa and exponent
     IF lv_text CS `E`.
-      DATA(lv_exp_text) = substring_after( val = lv_text
+
+      lv_exp_text = substring_after( val = lv_text
                                            sub = `E` ).
       lv_text = substring_before( val = lv_text
                                   sub = `E` ).
-      DATA(lv_exp_sign) = 1.
+
+      lv_exp_sign = 1.
       IF lv_exp_text IS NOT INITIAL AND lv_exp_text(1) = `-`.
         lv_exp_sign = -1.
         lv_exp_text = substring( val = lv_exp_text
@@ -2450,23 +2914,28 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
 
     " the digits, and where the point stands in them
-    DATA(lv_whole) = lv_text.
-    DATA(lv_part) = ``.
+
+    lv_whole = lv_text.
+
+    lv_part = ``.
     IF lv_text CS `.`.
       lv_whole = substring_before( val = lv_text
                                    sub = `.` ).
       lv_part = substring_after( val = lv_text
                                  sub = `.` ).
     ENDIF.
-    DATA(lv_digits) = lv_whole && lv_part.
+
+    lv_digits = lv_whole && lv_part.
     IF lv_digits IS INITIAL OR lv_digits CN cv_digits.
       RETURN.
     ENDIF.
     lv_point = strlen( lv_whole ) + lv_exp.
 
     " without the zeros in front
-    DATA(lv_zeros) = 0.
-    DATA(lv_len) = strlen( lv_digits ).
+
+    lv_zeros = 0.
+
+    lv_len = strlen( lv_digits ).
     WHILE lv_zeros < lv_len AND lv_digits+lv_zeros(1) = `0`.
       lv_zeros = lv_zeros + 1.
     ENDWHILE.
@@ -2481,7 +2950,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     " 15 digits are what a cell shows - the 16th and 17th are the noise
     " of the binary number behind it (0.30000000000000004)
     IF strlen( lv_digits ) > digits.
-      DATA(lv_next) = lv_digits+digits(1).
+
+      lv_next = lv_digits+digits(1).
       lv_digits = lv_digits(digits).
       IF lv_next >= `5`.
         lv_round = lv_digits.
@@ -2522,7 +2992,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_eof TYPE abap_bool.
     DATA lv_row TYPE i.
 
-    DATA(lo_reader) = z2ui5_cl_tcl_context=>xml_reader_create( sheet_part( sheet = sheet
+    DATA lo_reader TYPE REF TO object.
+    lo_reader = z2ui5_cl_tcl_context=>xml_reader_create( sheet_part( sheet = sheet
                                                                                 index = index ) ).
     DO.
       sheet_read_row( EXPORTING reader = lo_reader
@@ -2544,7 +3015,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         name TYPE string,
         cat  TYPE string,
       END OF ty_s_map.
-    DATA lt_map     TYPE STANDARD TABLE OF ty_s_map WITH EMPTY KEY.
+    TYPES temp5 TYPE STANDARD TABLE OF ty_s_map WITH DEFAULT KEY.
+DATA lt_map     TYPE temp5.
     DATA lr_line    TYPE REF TO data.
     DATA lt_field   TYPE ty_t_field.
     DATA lt_row     TYPE ty_t_cell.
@@ -2557,6 +3029,17 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     FIELD-SYMBOLS <field> TYPE any.
     FIELD-SYMBOLS <cell>  TYPE ty_s_cell.
     FIELD-SYMBOLS <map>   TYPE ty_s_map.
+      DATA temp177 LIKE LINE OF lt_field.
+      DATA lr_field LIKE REF TO temp177.
+        DATA temp178 TYPE ty_s_map.
+    DATA lo_reader TYPE REF TO object.
+          DATA lv_header TYPE string.
+          DATA lv_name LIKE lv_header.
+          DATA temp179 LIKE LINE OF t_column.
+          DATA lr_column LIKE REF TO temp179.
+          DATA ls_field TYPE z2ui5_cl_tcl_xlsx=>ty_s_field.
+            DATA temp180 TYPE ty_s_map.
+      DATA lv_columns TYPE i.
 
     CLEAR result.
     CREATE DATA lr_line LIKE LINE OF result.
@@ -2567,14 +3050,20 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     IF header_row <= 0.
       " no header: the n-th column is the n-th component
-      LOOP AT lt_field REFERENCE INTO DATA(lr_field).
-        INSERT VALUE #( name = lr_field->name
-                        cat  = lr_field->cat ) INTO TABLE lt_map.
+
+
+      LOOP AT lt_field REFERENCE INTO lr_field.
+
+        CLEAR temp178.
+        temp178-name = lr_field->name.
+        temp178-cat = lr_field->cat.
+        INSERT temp178 INTO TABLE lt_map.
       ENDLOOP.
       lv_mapped = abap_true.
     ENDIF.
 
-    DATA(lo_reader) = z2ui5_cl_tcl_context=>xml_reader_create( sheet_part( sheet = sheet
+
+    lo_reader = z2ui5_cl_tcl_context=>xml_reader_create( sheet_part( sheet = sheet
                                                                                 index = index ) ).
     DO.
       sheet_read_row( EXPORTING reader = lo_reader
@@ -2595,17 +3084,22 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
           EXIT.
         ENDIF.
         LOOP AT lt_row ASSIGNING <cell>.
-          DATA(lv_header) = z2ui5_cl_tcl_context=>c_trim_upper( <cell>-value ).
-          DATA(lv_name) = lv_header.
+
+          lv_header = z2ui5_cl_tcl_context=>c_trim_upper( <cell>-value ).
+
+          lv_name = lv_header.
           " the header the caller gives for a component goes first
-          LOOP AT t_column REFERENCE INTO DATA(lr_column).
+
+
+          LOOP AT t_column REFERENCE INTO lr_column.
             IF lr_column->header IS NOT INITIAL
                 AND z2ui5_cl_tcl_context=>c_trim_upper( lr_column->header ) = lv_header.
               lv_name = z2ui5_cl_tcl_context=>c_trim_upper( lr_column->name ).
               EXIT.
             ENDIF.
           ENDLOOP.
-          DATA(ls_field) = field_find( t_field = lt_field
+
+          ls_field = field_find( t_field = lt_field
                                        name    = lv_name ).
           IF ls_field IS INITIAL.
             " `Order Id` for ORDER_ID
@@ -2616,9 +3110,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
             CONTINUE.
           ENDIF.
           WHILE lines( lt_map ) < <cell>-col.
-            INSERT VALUE #( ) INTO TABLE lt_map.
+
+            CLEAR temp180.
+            INSERT temp180 INTO TABLE lt_map.
           ENDWHILE.
-          ASSIGN lt_map[ <cell>-col ] TO <map>.
+          READ TABLE lt_map INDEX <cell>-col ASSIGNING <map>.
           <map>-name = ls_field-name.
           <map>-cat = ls_field-cat.
         ENDLOOP.
@@ -2627,12 +3123,13 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
       CLEAR <line>.
       lv_any = abap_false.
-      DATA(lv_columns) = lines( lt_map ).
+
+      lv_columns = lines( lt_map ).
       LOOP AT lt_row ASSIGNING <cell>.
         IF <cell>-col > lv_columns.
           CONTINUE.
         ENDIF.
-        ASSIGN lt_map[ <cell>-col ] TO <map>.
+        READ TABLE lt_map INDEX <cell>-col ASSIGNING <map>.
         IF <map>-name IS INITIAL.
           CONTINUE.
         ENDIF.
@@ -2665,8 +3162,15 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_seconds TYPE i.
     DATA lv_fraction TYPE decfloat34.
 
-    DATA(lv_value) = cell-value.
-    DATA(lv_address) = |{ column_to_letters( cell-col ) }{ cell-row }|.
+    DATA lv_value LIKE cell-value.
+    DATA lv_address TYPE string.
+        DATA lv_flag TYPE string.
+        DATA temp8 TYPE xsdboolean.
+                  DATA lv_parsed TYPE decfloat34.
+            DATA x TYPE REF TO cx_root.
+    lv_value = cell-value.
+
+    lv_address = |{ column_to_letters( cell-col ) }{ cell-row }|.
 
     IF cell-kind = cs_kind-error.
       RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
@@ -2693,8 +3197,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         ENDTRY.
 
       WHEN cs_cat-boolean.
-        DATA(lv_flag) = to_upper( condense( lv_value ) ).
-        field = xsdbool( lv_flag = `X` OR lv_flag = `TRUE` OR lv_flag = `1` ).
+
+        lv_flag = to_upper( condense( lv_value ) ).
+
+        temp8 = boolc( lv_flag = `X` OR lv_flag = `TRUE` OR lv_flag = `1` ).
+        field = temp8.
 
       WHEN cs_cat-date.
         CASE cell-kind.
@@ -2786,7 +3293,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
               " (1.234,56) is one; anything else is not, and the parser
               " would hand back a 0 for it
               TRY.
-                  DATA(lv_parsed) = z2ui5_cl_tcl_context=>conv_string_to_number( lv_value ).
+
+                  lv_parsed = z2ui5_cl_tcl_context=>conv_string_to_number( lv_value ).
                   lv_number = number_plain( |{ lv_parsed }| ).
                 CATCH cx_root.
                   CLEAR lv_number.
@@ -2800,7 +3308,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
         ENDIF.
         TRY.
             field = lv_number.
-          CATCH cx_root INTO DATA(x).
+
+          CATCH cx_root INTO x.
             RAISE EXCEPTION TYPE z2ui5_cx_tcl_error
               EXPORTING
                 val      = |XLSX_CELL_TYPE - cell { lv_address }: { lv_value } does not fit the component|
@@ -2823,7 +3332,14 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     FIELD-SYMBOLS <cell>  TYPE ty_s_cell.
     FIELD-SYMBOLS <name>  TYPE string.
 
-    DATA(lt_cell) = get_cells( sheet = sheet
+    DATA lt_cell TYPE z2ui5_cl_tcl_xlsx=>ty_t_cell.
+      DATA lv_tabix LIKE sy-tabix.
+      DATA lv_base LIKE <name>.
+      DATA lv_suffix TYPE i.
+        DATA lv_first TYPE i.
+        DATA lv_other LIKE LINE OF lt_name.
+        DATA lv_tail TYPE string.
+    lt_cell = get_cells( sheet = sheet
                                index = index ).
     DELETE lt_cell WHERE row < header_row.
     LOOP AT lt_cell ASSIGNING <cell>.
@@ -2842,21 +3358,26 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDDO.
     IF header_row > 0.
       LOOP AT lt_cell ASSIGNING <cell> WHERE row = header_row. "#EC CI_SORTSEQ
-        ASSIGN lt_name[ <cell>-col ] TO <name>.
+        READ TABLE lt_name INDEX <cell>-col ASSIGNING <name>.
         <name> = name_by_header( <cell>-value ).
       ENDLOOP.
     ENDIF.
     LOOP AT lt_name ASSIGNING <name>.
-      DATA(lv_tabix) = sy-tabix.
+
+      lv_tabix = sy-tabix.
       IF <name> IS INITIAL.
         <name> = column_to_letters( lv_tabix ).
       ENDIF.
-      DATA(lv_base) = <name>.
-      DATA(lv_suffix) = 1.
+
+      lv_base = <name>.
+
+      lv_suffix = 1.
       DO.
         " the first column of that name - this one, when no earlier has it
-        DATA(lv_first) = 0.
-        LOOP AT lt_name INTO DATA(lv_other).
+
+        lv_first = 0.
+
+        LOOP AT lt_name INTO lv_other.
           IF lv_other = <name>.
             lv_first = sy-tabix.
             EXIT.
@@ -2866,7 +3387,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
           EXIT.
         ENDIF.
         lv_suffix = lv_suffix + 1.
-        DATA(lv_tail) = |_{ lv_suffix }|.
+
+        lv_tail = |_{ lv_suffix }|.
         <name> = substring( val = lv_base
                             len = nmin( val1 = strlen( lv_base )
                                         val2 = 30 - strlen( lv_tail ) ) ) && lv_tail.
@@ -2901,10 +3423,15 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     DATA lv_pos TYPE i.
 
-    DATA(lv_name) = z2ui5_cl_tcl_context=>c_trim_upper( val ).
-    DATA(lv_len) = strlen( lv_name ).
+    DATA lv_name TYPE string.
+    DATA lv_len TYPE i.
+      DATA lv_char TYPE string.
+    lv_name = z2ui5_cl_tcl_context=>c_trim_upper( val ).
+
+    lv_len = strlen( lv_name ).
     WHILE lv_pos < lv_len.
-      DATA(lv_char) = substring( val = lv_name
+
+      lv_char = substring( val = lv_name
                                  off = lv_pos
                                  len = 1 ).
       IF lv_char CA `ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_`.
@@ -2931,9 +3458,12 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     DATA lv_pos TYPE i.
 
-    DATA(lv_len) = strlen( val ).
+    DATA lv_len TYPE i.
+      DATA lv_char TYPE string.
+    lv_len = strlen( val ).
     WHILE lv_pos < lv_len.
-      DATA(lv_char) = substring( val = val
+
+      lv_char = substring( val = val
                                  off = lv_pos
                                  len = 1 ).
       IF lv_char CA cv_digits.
@@ -2955,7 +3485,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
   METHOD attr.
 
-    LOOP AT t_attribute REFERENCE INTO DATA(lr_attr).
+    DATA temp181 LIKE LINE OF t_attribute.
+    DATA lr_attr LIKE REF TO temp181.
+    LOOP AT t_attribute REFERENCE INTO lr_attr.
       IF lr_attr->name = name.
         result = lr_attr->value.
         RETURN.
@@ -2966,7 +3498,8 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
   METHOD path_folder.
 
-    DATA(lv_pos) = find( val = val
+    DATA lv_pos TYPE i.
+    lv_pos = find( val = val
                          sub = `/`
                          occ = -1 ).
     IF lv_pos >= 0.
@@ -2982,7 +3515,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
 
     " from the root of the package when it starts with a slash, from the
     " folder of the part that names it else
-    DATA(lv_path) = target.
+    DATA lv_path LIKE target.
+    TYPES temp6 TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
+DATA lt_step TYPE temp6.
+    DATA lv_step LIKE LINE OF lt_step.
+    lv_path = target.
     IF lv_path IS NOT INITIAL AND lv_path(1) = `/`.
       lv_path = substring( val = lv_path
                            off = 1 ).
@@ -2990,8 +3527,11 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
       lv_path = path_folder( base ) && lv_path.
     ENDIF.
 
-    SPLIT lv_path AT `/` INTO TABLE DATA(lt_step).
-    LOOP AT lt_step INTO DATA(lv_step).
+
+
+    SPLIT lv_path AT `/` INTO TABLE lt_step.
+
+    LOOP AT lt_step INTO lv_step.
       IF lv_step = `..`.
         IF lt_done IS NOT INITIAL.
           DELETE lt_done INDEX lines( lt_done ).
@@ -3008,6 +3548,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   METHOD text_decode.
 
     DATA lv_off TYPE i.
+    DATA lv_len TYPE i.
+      DATA lv_pos TYPE i.
+      DATA lv_code TYPE string.
 
     result = val.
     IF result NS `_x`.
@@ -3015,15 +3558,18 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     ENDIF.
 
     CLEAR result.
-    DATA(lv_len) = strlen( val ).
+
+    lv_len = strlen( val ).
     DO.
-      DATA(lv_pos) = find( val = val
+
+      lv_pos = find( val = val
                            sub = `_x`
                            off = lv_off ).
       IF lv_pos < 0 OR lv_pos + 7 > lv_len.
         EXIT.
       ENDIF.
-      DATA(lv_code) = to_upper( substring( val = val
+
+      lv_code = to_upper( substring( val = val
                                            off = lv_pos + 2
                                            len = 4 ) ).
       IF lv_code CO cv_hex AND substring( val = val
@@ -3050,14 +3596,21 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
     DATA lv_pos TYPE i.
 
     " digits only is a decimal number as well: an id of styles.xml
-    DATA(lv_text) = to_upper( val ).
-    DATA(lv_len) = strlen( lv_text ).
-    DATA(lv_base) = 16.
+    DATA lv_text TYPE string.
+    DATA lv_len TYPE i.
+    DATA lv_base TYPE i.
+      DATA lv_digit TYPE i.
+    lv_text = to_upper( val ).
+
+    lv_len = strlen( lv_text ).
+
+    lv_base = 16.
     IF lv_text CO cv_digits AND lv_len <> 4.
       lv_base = 10.
     ENDIF.
     WHILE lv_pos < lv_len.
-      DATA(lv_digit) = find( val = cv_hex
+
+      lv_digit = find( val = cv_hex
                              sub = substring( val = lv_text
                                               off = lv_pos
                                               len = 1 ) ).
@@ -3084,6 +3637,7 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
   METHOD char_by_code.
 
     DATA lv_hex TYPE string.
+            DATA temp182 TYPE xstring.
 
     CASE val.
       WHEN 9.
@@ -3108,7 +3662,9 @@ CLASS z2ui5_cl_tcl_xlsx IMPLEMENTATION.
                 && byte_to_hex( 128 + val MOD 64 ).
         ENDIF.
         TRY.
-            result = z2ui5_cl_tcl_context=>conv_get_string_by_xstring( CONV xstring( lv_hex ) ).
+
+            temp182 = lv_hex.
+            result = z2ui5_cl_tcl_context=>conv_get_string_by_xstring( temp182 ).
           CATCH cx_root ##NO_HANDLER.
             " no converter - the text without that character
         ENDTRY.

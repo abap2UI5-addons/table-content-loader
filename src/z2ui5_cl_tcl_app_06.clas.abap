@@ -11,7 +11,9 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
         title TYPE string,
       END OF ty_s_config_head.
 
-    DATA:
+    TYPES temp1_1d1f0fb47e TYPE STANDARD TABLE OF z2ui5_cl_tcl_xlsx_api=>ty_s_xlsx_settings WITH DEFAULT KEY.
+TYPES temp2_1d1f0fb47e TYPE STANDARD TABLE OF ty_s_config_head WITH DEFAULT KEY.
+DATA:
       BEGIN OF ms_draft,
         table_name               TYPE string,
         check_load_pressed       TYPE abap_bool,
@@ -22,8 +24,8 @@ CLASS z2ui5_cl_tcl_app_06 DEFINITION PUBLIC.
         t_tab                    TYPE REF TO data,
         max_rows                 TYPE i VALUE 10,
         t_fcat                   TYPE z2ui5_cl_tcl_xlsx_api=>ty_t_xlsx,
-        t_config                 TYPE STANDARD TABLE OF z2ui5_cl_tcl_xlsx_api=>ty_s_xlsx_settings WITH EMPTY KEY,
-        t_config_head            TYPE STANDARD TABLE OF ty_s_config_head WITH EMPTY KEY,
+        t_config                 TYPE temp1_1d1f0fb47e,
+        t_config_head            TYPE temp2_1d1f0fb47e,
         check_file_row_limit     TYPE abap_bool VALUE abap_true,
         file_max_rows            TYPE i VALUE 10,
         file_rows                TYPE i,
@@ -70,6 +72,14 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD create_file.
+        DATA lr_tab TYPE REF TO data.
+        FIELD-SYMBOLS <tab> TYPE table.
+        DATA lv_result TYPE xstring.
+        FIELD-SYMBOLS <temp1> LIKE LINE OF ms_draft-t_config_head.
+        DATA temp2 LIKE sy-tabix.
+        FIELD-SYMBOLS <temp2> LIKE LINE OF ms_draft-t_config.
+        DATA temp3 LIKE sy-tabix.
+        DATA lx TYPE REF TO cx_root.
 
     TRY.
 
@@ -78,8 +88,9 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
           client->message_toast_display( `Create a draft with New first` ).
           RETURN.
         ENDIF.
-        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( mv_table_name ).
-        FIELD-SYMBOLS <tab> TYPE table.
+
+        lr_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( mv_table_name ).
+
         ASSIGN lr_tab->* TO <tab>.
 
         IF ms_draft-check_file_row_limit = abap_true.
@@ -91,26 +102,44 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
           ENDIF.
 
           SELECT * FROM (mv_table_name)
-            INTO CORRESPONDING FIELDS OF TABLE @<tab>
-            UP TO @ms_draft-file_max_rows ROWS.
+            INTO CORRESPONDING FIELDS OF TABLE <tab>
+            UP TO ms_draft-file_max_rows ROWS.
 
         ELSE.
 
           SELECT * FROM (mv_table_name)
-            INTO CORRESPONDING FIELDS OF TABLE @<tab>.
+            INTO CORRESPONDING FIELDS OF TABLE <tab>.
 
         ENDIF.
 
-        DATA(lv_result) = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( val          = <tab>
-                                                                    title        = ms_draft-t_config_head[ 1 ]-title
-                                                                    settings     = ms_draft-t_config[ 1 ]
+
+
+
+        temp2 = sy-tabix.
+        READ TABLE ms_draft-t_config_head INDEX 1 ASSIGNING <temp1>.
+        sy-tabix = temp2.
+        IF sy-subrc <> 0.
+          ASSERT 1 = 0.
+        ENDIF.
+
+
+        temp3 = sy-tabix.
+        READ TABLE ms_draft-t_config INDEX 1 ASSIGNING <temp2>.
+        sy-tabix = temp3.
+        IF sy-subrc <> 0.
+          ASSERT 1 = 0.
+        ENDIF.
+        lv_result = z2ui5_cl_tcl_xlsx_api=>get_xlsx_by_table( val          = <tab>
+                                                                    title        = <temp1>-title
+                                                                    settings     = <temp2>
                                                                     fieldcatalog = ms_draft-t_fcat ).
         mv_file = z2ui5_cl_tcl_context=>conv_encode_x_base64( lv_result ).
 
         ms_draft-file_rows = lines( <tab> ).
         ms_draft-file_size = xstrlen( lv_result ) / 1000.
 
-      CATCH cx_root INTO DATA(lx).
+
+      CATCH cx_root INTO lx.
         client->message_box_display(
             text = lx->get_text( )
             type = 'error' ).
@@ -119,6 +148,8 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD load_table.
+    FIELD-SYMBOLS <tab> TYPE table.
+        DATA lx TYPE REF TO cx_root.
 
     " Load before a draft exists has no table to fill
     IF ms_draft-t_tab IS NOT BOUND OR mv_table_name IS INITIAL.
@@ -126,7 +157,7 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    FIELD-SYMBOLS <tab> TYPE table.
+
     ASSIGN ms_draft-t_tab->* TO <tab>.
 
     " UP TO 0 ROWS reads every row - the preview shows the default then
@@ -138,9 +169,10 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
     " the table type built for it
     TRY.
         SELECT * FROM (mv_table_name)
-          INTO CORRESPONDING FIELDS OF TABLE @<tab>
-          UP TO @ms_draft-max_rows ROWS.
-      CATCH cx_root INTO DATA(lx).
+          INTO CORRESPONDING FIELDS OF TABLE <tab>
+          UP TO ms_draft-max_rows ROWS.
+
+      CATCH cx_root INTO lx.
         client->message_box_display( text = lx->get_text( )
                                      type = 'error' ).
     ENDTRY.
@@ -152,13 +184,21 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
     " a cast, not IS INSTANCE OF (no 7.02 downport); the TRY holds only the cast
     DATA lo_popup TYPE REF TO z2ui5_cl_popup_input_val.
+    DATA ls_input TYPE z2ui5_cl_popup_input_val=>ty_s_result.
+        DATA lv_table_name TYPE string.
+        DATA lr_tab TYPE REF TO data.
+        FIELD-SYMBOLS <tab> TYPE table.
+        DATA lt_fcat TYPE z2ui5_cl_tcl_xlsx_api=>ty_t_xlsx.
+        DATA ls_config_head TYPE ty_s_config_head.
+        DATA lx TYPE REF TO cx_root.
     TRY.
         lo_popup ?= client->get_app( client->get( )-s_draft-id_prev_app ).
       CATCH cx_sy_move_cast_error.
         RETURN.
     ENDTRY.
     " Cancel keeps the draft there is
-    DATA(ls_input) = lo_popup->result( ).
+
+    ls_input = lo_popup->result( ).
     IF ls_input-check_confirmed = abap_false.
       RETURN.
     ENDIF.
@@ -167,16 +207,19 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         " the table and its field catalogue first - a name that does not
         " exist or a catalogue that cannot be built keeps the draft there is
         " only a plain DDIC table name - it ends up in a dynamic FROM
-        DATA(lv_table_name) = z2ui5_cl_tcl_context=>db_get_table_name( ls_input-value ).
+
+        lv_table_name = z2ui5_cl_tcl_context=>db_get_table_name( ls_input-value ).
         IF lv_table_name IS INITIAL.
           client->message_box_display( text = |Table { ls_input-value } not found|
                                        type = 'error' ).
           RETURN.
         ENDIF.
-        DATA(lr_tab) = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( lv_table_name ).
-        FIELD-SYMBOLS <tab> TYPE table.
+
+        lr_tab = z2ui5_cl_tcl_context=>rtti_create_tab_by_name( lv_table_name ).
+
         ASSIGN lr_tab->* TO <tab>.
-        DATA(lt_fcat) = z2ui5_cl_tcl_xlsx_api=>get_fieldcatalog( <tab> ).
+
+        lt_fcat = z2ui5_cl_tcl_xlsx_api=>get_fieldcatalog( <tab> ).
 
         mv_table_name = lv_table_name.
         ms_draft-table_name = lv_table_name.
@@ -191,14 +234,15 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                ms_draft-t_config, ms_draft-t_config_head.
         INSERT z2ui5_cl_tcl_xlsx_api=>get_settings_default( ) INTO TABLE ms_draft-t_config.
 
-        DATA ls_config_head TYPE ty_s_config_head.
+
         ls_config_head-title = `tabtitle`.
         INSERT ls_config_head INTO TABLE ms_draft-t_config_head.
 
         load_table( ).
         set_view( ).
 
-      CATCH cx_root INTO DATA(lx).
+
+      CATCH cx_root INTO lx.
         client->message_box_display( text = lx->get_text( )
                                      type = 'error' ).
     ENDTRY.
@@ -207,6 +251,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD on_event.
+        DATA temp1 TYPE string_table.
+        DATA temp3 LIKE LINE OF temp1.
+        DATA temp4 LIKE LINE OF temp1.
+        DATA ls_config_head TYPE ty_s_config_head.
+          FIELD-SYMBOLS <tab_fcat> TYPE table.
+        DATA lo_app TYPE REF TO z2ui5_cl_popup_input_val.
 
     CASE client->get( )-event.
 
@@ -217,10 +267,17 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         " the browser saves the file - the frontend action the core has for
         " it, as in the CSV app; the hidden html:iframe with a data: URI this
         " used to write downloads nothing any more
+
+        CLEAR temp1.
+
+        temp3 = |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ mv_file }|.
+        INSERT temp3 INTO TABLE temp1.
+
+        temp4 = |{ to_lower( mv_table_name ) }.xlsx|.
+        INSERT temp4 INTO TABLE temp1.
         client->follow_up_action(
             val   = client->cs_event-download_b64_file
-            t_arg = VALUE #( ( |data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{ mv_file }| )
-                             ( |{ to_lower( mv_table_name ) }.xlsx| ) ) ).
+            t_arg = temp1 ).
 
       WHEN 'CREATE_FILE'.
         create_file( ).
@@ -274,21 +331,22 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         CLEAR ms_draft-t_config.
         INSERT z2ui5_cl_tcl_xlsx_api=>get_settings_default( ) INTO TABLE ms_draft-t_config.
         CLEAR ms_draft-t_config_head.
-        DATA ls_config_head TYPE ty_s_config_head.
+
         ls_config_head-title = `tabtitle`.
         INSERT ls_config_head INTO TABLE ms_draft-t_config_head.
         set_view( ).
 
       WHEN `RESET_FCAT`.
         IF ms_draft-t_tab IS BOUND.
-          FIELD-SYMBOLS <tab_fcat> TYPE table.
+
           ASSIGN ms_draft-t_tab->* TO <tab_fcat>.
           ms_draft-t_fcat = z2ui5_cl_tcl_xlsx_api=>get_fieldcatalog( <tab_fcat> ).
         ENDIF.
         set_view( ).
 
       WHEN `NEW`.
-        DATA(lo_app) = z2ui5_cl_popup_input_val=>factory(
+
+        lo_app = z2ui5_cl_popup_input_val=>factory(
             title   = `Create a New XLSX Draft`
             text    = `Database Table:`
             val     = ms_draft-table_name ).
@@ -308,7 +366,16 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view.
 
-    DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA temp1 TYPE xsdboolean.
+    DATA footer TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA temp2 TYPE xsdboolean.
+      DATA temp3 TYPE xsdboolean.
+      DATA temp4 TYPE xsdboolean.
+      DATA temp5 TYPE xsdboolean.
+      DATA temp6 TYPE xsdboolean.
+    view = z2ui5_cl_ui5_view_builder=>factory(
                      )->ele( n = `View` ns = `mvc`
                      )->a( n = `xmlns` v = `sap.m`
                      )->a( n = `xmlns:mvc` v = `sap.ui.core.mvc`
@@ -316,10 +383,13 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                      )->a( n = `displayBlock` v = `true`
                      )->a( n = `height` v = `100%` ).
 
-    DATA(page) = view->ele( `Page`
+
+
+    temp1 = boolc( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ).
+    page = view->ele( `Page`
                      )->a( n = `title` v = 'abap2UI5 - XLSX Download'
                      )->a( n = `navButtonPress` v = client->_event( 'BACK' )
-                     )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
+                     )->a( n = `showNavButton` b = temp1
                      )->ele( `headerContent`
                      )->tag( `Link`
                      )->a( n = `text` v = 'Project on GitHub'
@@ -340,7 +410,8 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         set_view_download( page ).
     ENDCASE.
 
-    DATA(footer) = page->ele( `footer`
+
+    footer = page->ele( `footer`
                        )->ele( `OverflowToolbar` ).
     footer->tag( `Button`
         )->a( n = `icon` v = 'sap-icon://create'
@@ -358,31 +429,41 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         )->tag( `ToolbarSpacer` ).
 
     IF ms_draft-table_name IS NOT INITIAL.
+
+      temp2 = boolc( ms_draft-check_load_pressed = abap_false ).
+
+      temp3 = boolc( ms_draft-check_config_pressed = abap_false ).
+
+      temp4 = boolc( ms_draft-check_config_pos_pressed = abap_false ).
+
+      temp5 = boolc( ms_draft-check_preview_pressed = abap_false ).
+
+      temp6 = boolc( ms_draft-check_download_pressed = abap_false ).
       footer->tag( `Button`
           )->a( n = `text` v = '(1) Data Preview'
           )->a( n = `type` v = `Emphasized`
           )->a( n = `press` v = client->_event( 'VIEW_LOAD' )
-          )->a( n = `enabled` b = xsdbool( ms_draft-check_load_pressed = abap_false )
+          )->a( n = `enabled` b = temp2
           )->tag( `Button`
           )->a( n = `text` v = '(2) Config Head'
           )->a( n = `type` v = `Emphasized`
           )->a( n = `press` v = client->_event( 'VIEW_CONFIG' )
-          )->a( n = `enabled` b = xsdbool( ms_draft-check_config_pressed = abap_false )
+          )->a( n = `enabled` b = temp3
           )->tag( `Button`
           )->a( n = `text` v = '(3) Config Pos'
           )->a( n = `type` v = `Emphasized`
           )->a( n = `press` v = client->_event( 'VIEW_CONFIG_POS' )
-          )->a( n = `enabled` b = xsdbool( ms_draft-check_config_pos_pressed = abap_false )
+          )->a( n = `enabled` b = temp4
           )->tag( `Button`
           )->a( n = `text` v = '(4) XLSX Preview'
           )->a( n = `type` v = `Emphasized`
           )->a( n = `press` v = client->_event( 'VIEW_PREVIEW' )
-          )->a( n = `enabled` b = xsdbool( ms_draft-check_preview_pressed = abap_false )
+          )->a( n = `enabled` b = temp5
           )->tag( `Button`
           )->a( n = `text` v = '(5) Download'
           )->a( n = `type` v = `Emphasized`
           )->a( n = `press` v = client->_event( 'VIEW_DOWNLOAD' )
-          )->a( n = `enabled` b = xsdbool( ms_draft-check_download_pressed = abap_false ) ).
+          )->a( n = `enabled` b = temp6 ).
     ENDIF.
 
     client->view_display( view->stringify( ) ).
@@ -392,13 +473,20 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view_config.
 
-    DATA(cont) = page->ele( `ScrollContainer`
+    DATA cont TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA tab TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA lt_fields TYPE abap_component_tab.
+    DATA lo_columns TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA lv_field LIKE LINE OF lt_fields.
+    DATA lo_cells TYPE REF TO z2ui5_cl_ui5_view_builder.
+    cont = page->ele( `ScrollContainer`
                      )->a( n = `height` v = `30%`
                      )->a( n = `width` v = `100%`
                      )->a( n = `vertical` b = abap_true
                      )->a( n = `horizontal` b = abap_true ).
 
-    DATA(tab) = cont->ele( `Table`
+
+    tab = cont->ele( `Table`
                     )->a( n = `items` v = client->_bind( ms_draft-t_config )
                     )->ele( `headerToolbar`
                     )->ele( `OverflowToolbar`
@@ -413,16 +501,20 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                     )->end(
                     )->end( ).
 
-    DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_config ).
 
-    DATA(lo_columns) = tab->ele( `columns` ).
-    LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
+    lt_fields = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_config ).
+
+
+    lo_columns = tab->ele( `columns` ).
+
+    LOOP AT lt_fields INTO lv_field FROM 1.
       lo_columns->ele( `Column`
           )->tag( `Text`
           )->a( n = `text` t = lv_field-name ).
     ENDLOOP.
 
-    DATA(lo_cells) = tab->ele( `items`
+
+    lo_cells = tab->ele( `items`
                          )->ele( `ColumnListItem`
                          )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
@@ -485,13 +577,20 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view_config_pos.
 
-    DATA(cont) = page->ele( `ScrollContainer`
+    DATA cont TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA tab TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA lt_fields TYPE abap_component_tab.
+    DATA lo_columns TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA lv_field LIKE LINE OF lt_fields.
+    DATA lo_cells TYPE REF TO z2ui5_cl_ui5_view_builder.
+    cont = page->ele( `ScrollContainer`
                      )->a( n = `height` v = `100%`
                      )->a( n = `width` v = `100%`
                      )->a( n = `vertical` b = abap_true
                      )->a( n = `horizontal` b = abap_true ).
 
-    DATA(tab) = cont->ele( `Table`
+
+    tab = cont->ele( `Table`
                     )->a( n = `items` v = client->_bind( ms_draft-t_fcat )
                     )->ele( `headerToolbar`
                     )->ele( `OverflowToolbar`
@@ -506,16 +605,20 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                     )->end(
                     )->end( ).
 
-    DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_fcat ).
 
-    DATA(lo_columns) = tab->ele( `columns` ).
-    LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
+    lt_fields = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( ms_draft-t_fcat ).
+
+
+    lo_columns = tab->ele( `columns` ).
+
+    LOOP AT lt_fields INTO lv_field FROM 1.
       lo_columns->ele( `Column`
           )->tag( `Text`
           )->a( n = `text` t = lv_field-name ).
     ENDLOOP.
 
-    DATA(lo_cells) = tab->ele( `items`
+
+    lo_cells = tab->ele( `items`
                          )->ele( `ColumnListItem`
                          )->ele( `cells` ).
     LOOP AT lt_fields INTO lv_field FROM 1.
@@ -534,11 +637,15 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
   METHOD set_view_download.
 
-    DATA(content) = page->ele( n = `SimpleForm` ns = `form`
+    DATA content TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA temp3 TYPE xsdboolean.
+    content = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `title` v = `Create File .xlsx`
                         )->a( n = `layout` v = `ResponsiveGridLayout`
                         )->a( n = `editable` v = `true` ).
 
+
+    temp3 = boolc( mv_file IS NOT INITIAL ).
     content->tag( `Label`
         )->a( n = `text` v = `Activate Row Limitation`
         )->tag( `CheckBox`
@@ -573,26 +680,35 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
         )->tag( `Button`
         )->a( n = `text` v = `Download`
         )->a( n = `width` v = `7%`
-        )->a( n = `enabled` b = xsdbool( mv_file IS NOT INITIAL )
+        )->a( n = `enabled` b = temp3
         )->a( n = `press` v = client->_event( `DOWNLOAD_FILE` ) ).
 
   ENDMETHOD.
 
 
   METHOD set_view_load.
+      FIELD-SYMBOLS <tab> TYPE table.
+      DATA cont TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA tab TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA lt_fields TYPE abap_component_tab.
+      DATA lo_columns TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA lv_field LIKE LINE OF lt_fields.
+      DATA lo_cells TYPE REF TO z2ui5_cl_ui5_view_builder.
 
     IF ms_draft-t_tab IS BOUND.
 
-      FIELD-SYMBOLS <tab> TYPE table.
+
       ASSIGN  ms_draft-t_tab->* TO <tab>.
 
-      DATA(cont) = page->ele( `ScrollContainer`
+
+      cont = page->ele( `ScrollContainer`
                        )->a( n = `height` v = `100%`
                        )->a( n = `width` v = `100%`
                        )->a( n = `vertical` b = abap_true
                        )->a( n = `horizontal` b = abap_true ).
 
-      DATA(tab) = cont->ele( `Table`
+
+      tab = cont->ele( `Table`
                       )->a( n = `items` v = client->_bind( <tab> )
                       )->ele( `headerToolbar`
                       )->ele( `OverflowToolbar`
@@ -611,16 +727,20 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                       )->end(
                       )->end( ).
 
-      DATA(lt_fields) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
 
-      DATA(lo_columns) = tab->ele( `columns` ).
-      LOOP AT lt_fields INTO DATA(lv_field) FROM 1.
+      lt_fields = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( <tab> ).
+
+
+      lo_columns = tab->ele( `columns` ).
+
+      LOOP AT lt_fields INTO lv_field FROM 1.
         lo_columns->ele( `Column`
             )->tag( `Text`
             )->a( n = `text` t = lv_field-name ).
       ENDLOOP.
 
-      DATA(lo_cells) = tab->ele( `items`
+
+      lo_cells = tab->ele( `items`
                            )->ele( `ColumnListItem`
                            )->ele( `cells` ).
       LOOP AT lt_fields INTO lv_field FROM 1.
@@ -634,6 +754,17 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
 
 
   METHOD set_view_preview.
+    FIELD-SYMBOLS <tab> TYPE table.
+    DATA lv_title TYPE string.
+    DATA temp3 LIKE sy-subrc.
+      FIELD-SYMBOLS <temp4> LIKE LINE OF ms_draft-t_config_head.
+      DATA temp5 LIKE sy-tabix.
+    DATA lt_fcat LIKE ms_draft-t_fcat.
+    DATA tab TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA lo_columns TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA ls_fcat LIKE LINE OF lt_fcat.
+      DATA lv_header LIKE ls_fcat-header.
+    DATA lo_cells TYPE REF TO z2ui5_cl_ui5_view_builder.
 
     " the rows of the data preview as the sheet shows them: the columns of
     " the field catalogue that are displayed, in its order, under its texts
@@ -641,20 +772,34 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    FIELD-SYMBOLS <tab> TYPE table.
+
     ASSIGN ms_draft-t_tab->* TO <tab>.
 
-    DATA(lv_title) = ``.
-    IF line_exists( ms_draft-t_config_head[ 1 ] ).
-      lv_title = ms_draft-t_config_head[ 1 ]-title.
+
+    lv_title = ``.
+
+    READ TABLE ms_draft-t_config_head INDEX 1 TRANSPORTING NO FIELDS.
+    temp3 = sy-subrc.
+    IF temp3 = 0.
+
+
+      temp5 = sy-tabix.
+      READ TABLE ms_draft-t_config_head INDEX 1 ASSIGNING <temp4>.
+      sy-tabix = temp5.
+      IF sy-subrc <> 0.
+        ASSERT 1 = 0.
+      ENDIF.
+      lv_title = <temp4>-title.
     ENDIF.
 
     " a formula column has no field in the rows: Excel works it out
-    DATA(lt_fcat) = ms_draft-t_fcat.
+
+    lt_fcat = ms_draft-t_fcat.
     DELETE lt_fcat WHERE visible = abap_false OR formula IS NOT INITIAL.
     SORT lt_fcat STABLE BY position.
 
-    DATA(tab) = page->ele( `ScrollContainer`
+
+    tab = page->ele( `ScrollContainer`
                     )->a( n = `height` v = `100%`
                     )->a( n = `width` v = `100%`
                     )->a( n = `vertical` b = abap_true
@@ -668,9 +813,12 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
                     )->end(
                     )->end( ).
 
-    DATA(lo_columns) = tab->ele( `columns` ).
-    LOOP AT lt_fcat INTO DATA(ls_fcat).
-      DATA(lv_header) = ls_fcat-header.
+
+    lo_columns = tab->ele( `columns` ).
+
+    LOOP AT lt_fcat INTO ls_fcat.
+
+      lv_header = ls_fcat-header.
       IF lv_header IS INITIAL.
         lv_header = ls_fcat-name.
       ENDIF.
@@ -679,7 +827,8 @@ CLASS Z2UI5_CL_TCL_APP_06 IMPLEMENTATION.
           )->a( n = `text` t = lv_header ).
     ENDLOOP.
 
-    DATA(lo_cells) = tab->ele( `items`
+
+    lo_cells = tab->ele( `items`
                          )->ele( `ColumnListItem`
                          )->ele( `cells` ).
     LOOP AT lt_fcat INTO ls_fcat.

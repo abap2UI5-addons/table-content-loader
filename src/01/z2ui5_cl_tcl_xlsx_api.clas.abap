@@ -32,7 +32,7 @@ CLASS z2ui5_cl_tcl_xlsx_api DEFINITION
         "! countNums, min, max, stdDev, var - or a text as a label
         total    TYPE string,
       END OF ty_s_xlsx.
-    TYPES ty_t_xlsx TYPE STANDARD TABLE OF ty_s_xlsx WITH EMPTY KEY.
+    TYPES ty_t_xlsx TYPE STANDARD TABLE OF ty_s_xlsx WITH DEFAULT KEY.
 
     TYPES:
       "! how the sheet is laid out
@@ -112,8 +112,14 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
     DATA ls_field TYPE ty_s_xlsx.
 
-    DATA(lt_comp) = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( val ).
-    LOOP AT lt_comp REFERENCE INTO DATA(lr_comp).
+    DATA lt_comp TYPE abap_component_tab.
+    DATA temp15 LIKE LINE OF lt_comp.
+    DATA lr_comp LIKE REF TO temp15.
+            DATA ls_text TYPE z2ui5_cl_tcl_context=>ty_s_data_element_text.
+    lt_comp = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( val ).
+
+
+    LOOP AT lt_comp REFERENCE INTO lr_comp.
       " a structure, a table or a reference in a row is no column
       IF lr_comp->type->kind <> z2ui5_cl_tcl_context=>cv_typedescr_kind_elem.
         CONTINUE.
@@ -125,7 +131,8 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
       ls_field-visible = abap_true.
       IF lr_comp->type->is_ddic_type( ) = abap_true.
         TRY.
-            DATA(ls_text) = z2ui5_cl_tcl_context=>rtti_get_data_element_texts(
+
+            ls_text = z2ui5_cl_tcl_context=>rtti_get_data_element_texts(
                                 lr_comp->type->get_relative_name( ) ).
             ls_field-header = ls_text-medium.
             IF ls_field-header IS INITIAL.
@@ -148,11 +155,19 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
 
     DATA ls_layout TYPE z2ui5_cl_tcl_xlsx=>ty_s_layout.
 
-    DATA(lt_fieldcatalog) = fieldcatalog.
+    DATA lt_fieldcatalog LIKE fieldcatalog.
+    DATA ls_settings LIKE settings.
+    DATA temp16 LIKE LINE OF lt_fieldcatalog.
+    DATA lr_field LIKE REF TO temp16.
+      DATA temp17 TYPE z2ui5_cl_tcl_xlsx=>ty_s_column.
+    DATA temp1 TYPE xsdboolean.
+    DATA temp2 TYPE xsdboolean.
+    lt_fieldcatalog = fieldcatalog.
     IF lt_fieldcatalog IS INITIAL.
       lt_fieldcatalog = get_fieldcatalog( val ).
     ENDIF.
-    DATA(ls_settings) = settings.
+
+    ls_settings = settings.
     IF ls_settings IS INITIAL.
       ls_settings = get_settings_default( ).
     ENDIF.
@@ -160,16 +175,21 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
     " the columns in the order of their positions - STABLE: two with the
     " same position stay in the order of the catalog
     SORT lt_fieldcatalog STABLE BY position.
-    LOOP AT lt_fieldcatalog REFERENCE INTO DATA(lr_field).
+
+
+    LOOP AT lt_fieldcatalog REFERENCE INTO lr_field.
       IF lr_field->visible = abap_false.
         CONTINUE.
       ENDIF.
-      INSERT VALUE #( name    = lr_field->name
-                      header  = lr_field->header
-                      width   = lr_field->width
-                      format  = lr_field->format
-                      formula = lr_field->formula
-                      total   = lr_field->total ) INTO TABLE ls_layout-t_column.
+
+      CLEAR temp17.
+      temp17-name = lr_field->name.
+      temp17-header = lr_field->header.
+      temp17-width = lr_field->width.
+      temp17-format = lr_field->format.
+      temp17-formula = lr_field->formula.
+      temp17-total = lr_field->total.
+      INSERT temp17 INTO TABLE ls_layout-t_column.
     ENDLOOP.
     IF ls_layout-t_column IS INITIAL.
       " an empty column list would be every field to the XLSX class
@@ -181,10 +201,14 @@ CLASS z2ui5_cl_tcl_xlsx_api IMPLEMENTATION.
     ls_layout-table_style = ls_settings-table_style.
     ls_layout-table_name = ls_settings-table_name.
     ls_layout-start_cell = ls_settings-start_cell.
-    ls_layout-no_row_stripes = xsdbool( ls_settings-row_stripes = abap_false ).
+
+    temp1 = boolc( ls_settings-row_stripes = abap_false ).
+    ls_layout-no_row_stripes = temp1.
     ls_layout-column_stripes = ls_settings-column_stripes.
     " the filter of the Excel table, or of the plain sheet
-    ls_layout-no_filter = xsdbool( ls_settings-filter = abap_false ).
+
+    temp2 = boolc( ls_settings-filter = abap_false ).
+    ls_layout-no_filter = temp2.
     ls_layout-auto_filter = ls_settings-filter.
     ls_layout-freeze_header = ls_settings-freeze_header.
 

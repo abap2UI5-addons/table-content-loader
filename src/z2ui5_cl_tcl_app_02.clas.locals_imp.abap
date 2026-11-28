@@ -87,7 +87,8 @@ CLASS lcl_db IMPLEMENTATION.
 
     FIELD-SYMBOLS <tab> TYPE STANDARD TABLE.
 
-    DATA(lr_tab) = z2ui5_cl_tcl_context=>itab_get_itab_by_csv( val ).
+    DATA lr_tab TYPE REF TO data.
+    lr_tab = z2ui5_cl_tcl_context=>itab_get_itab_by_csv( val ).
     ASSIGN lr_tab->* TO <tab>.
 
     z2ui5_cl_tcl_context=>itab_corresponding( EXPORTING val = <tab>
@@ -134,8 +135,17 @@ CLASS lcl_db IMPLEMENTATION.
 
   METHOD get_fieldlist_by_table.
 
-    LOOP AT z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( it_table ) REFERENCE INTO DATA(lr_attri).
-      INSERT CONV #( lr_attri->name ) INTO TABLE result.
+    DATA temp1 TYPE abap_component_tab.
+    DATA temp3 LIKE LINE OF temp1.
+    DATA lr_attri LIKE REF TO temp3.
+      DATA temp2 LIKE LINE OF result.
+    temp1 = z2ui5_cl_tcl_context=>rtti_get_t_attri_by_any( it_table ).
+
+
+    LOOP AT temp1 REFERENCE INTO lr_attri.
+
+      temp2 = lr_attri->name.
+      INSERT temp2 INTO TABLE result.
     ENDLOOP.
 
   ENDMETHOD.

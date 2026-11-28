@@ -57,7 +57,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
   METHOD factory_popup_by_itab.
 
-    result = NEW #( ).
+    CREATE OBJECT result.
     result->ms_app-itab = z2ui5_cl_tcl_context=>conv_copy_ref_data( itab ).
     result->ms_app-check_popup = abap_true.
 
@@ -86,6 +86,13 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
 
   METHOD z2ui5_on_event.
+            DATA lv_check_table TYPE string.
+        FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+            DATA lv_table TYPE string.
+            DATA x TYPE REF TO cx_root.
+            DATA lv_preview_table TYPE string.
+            DATA lv_prev_json TYPE string.
+            DATA x_preview TYPE REF TO cx_root.
 
     CASE client->get( )-event.
 
@@ -94,7 +101,8 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
         TRY.
             ms_app-db_table = to_upper( ms_app-db_table ).
             " the name is bound - only a plain DDIC table name reaches the FROM
-            DATA(lv_check_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+
+            lv_check_table = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
             IF lv_check_table IS INITIAL.
               client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
               RETURN.
@@ -102,7 +110,7 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT SINGLE COUNT( * )
             FROM (lv_check_table)
-            INTO @ms_app-db_table_entries.
+            INTO ms_app-db_table_entries.
 
           CATCH cx_root.
             client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
@@ -110,14 +118,15 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
       WHEN `PROCESS`.
 
-        FIELD-SYMBOLS <tab2> TYPE STANDARD TABLE.
+
 
         " a table name that does not exist reaches here too - no table for
         " it, or a SELECT that fails, ends in a message, not in a dump
         TRY.
             CLEAR mv_file.
             " the name is bound - only a plain DDIC table name reaches the FROM
-            DATA(lv_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+
+            lv_table = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
             IF lv_table IS INITIAL.
               client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
               RETURN.
@@ -133,8 +142,8 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT *
             FROM (lv_table)
-            INTO CORRESPONDING FIELDS OF TABLE @<tab2>
-            UP TO @ms_app-max_rows ROWS.
+            INTO CORRESPONDING FIELDS OF TABLE <tab2>
+            UP TO ms_app-max_rows ROWS.
 
             mv_file = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
             IF lines( <tab2> ) >= ms_app-max_rows.
@@ -143,7 +152,8 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
               client->message_toast_display( |JSON created - { lines( <tab2> ) } rows| ).
             ENDIF.
 
-          CATCH cx_root INTO DATA(x).
+
+          CATCH cx_root INTO x.
             client->message_box_display( x->get_text( ) ).
         ENDTRY.
 
@@ -151,7 +161,8 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
         TRY.
             " the name is bound - only a plain DDIC table name reaches the FROM
-            DATA(lv_preview_table) = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
+
+            lv_preview_table = z2ui5_cl_tcl_context=>db_get_table_name( ms_app-db_table ).
             IF lv_preview_table IS INITIAL.
               client->message_box_display( |DB Table not found, check input: { ms_app-db_table }| ).
               RETURN.
@@ -161,13 +172,15 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
             SELECT *
             FROM (lv_preview_table)
-            INTO CORRESPONDING FIELDS OF TABLE @<tab2>
+            INTO CORRESPONDING FIELDS OF TABLE <tab2>
             UP TO 10 ROWS.
 
-            DATA(lv_prev_json) = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
+
+            lv_prev_json = z2ui5_cl_tcl_context=>json_stringify( <tab2> ).
             client->nav_app_call( z2ui5_cl_popup_textedit=>factory( lv_prev_json ) ).
 
-          CATCH cx_root INTO DATA(x_preview).
+
+          CATCH cx_root INTO x_preview.
             client->message_box_display( x_preview->get_text( ) ).
         ENDTRY.
 
@@ -196,14 +209,20 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
 
 
   METHOD z2ui5_view_display.
+      DATA view TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA page TYPE REF TO z2ui5_cl_ui5_view_builder.
+      DATA temp1 TYPE xsdboolean.
+    DATA content TYPE REF TO z2ui5_cl_ui5_view_builder.
 
     IF ms_app-check_popup = abap_true.
-      DATA(view) = z2ui5_cl_ui5_view_builder=>factory(
+
+      view = z2ui5_cl_ui5_view_builder=>factory(
                        )->ele( n = `FragmentDefinition` ns = `core`
                        )->a( n = `xmlns` v = `sap.m`
                        )->a( n = `xmlns:core` v = `sap.ui.core`
                        )->a( n = `xmlns:form` v = `sap.ui.layout.form` ).
-      DATA(page) = view->ele( `Dialog` ).
+
+      page = view->ele( `Dialog` ).
     ELSE.
       view = z2ui5_cl_ui5_view_builder=>factory(
                  )->ele( n = `View` ns = `mvc`
@@ -212,12 +231,14 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
                  )->a( n = `xmlns:form` v = `sap.ui.layout.form`
                  )->a( n = `displayBlock` v = `true`
                  )->a( n = `height` v = `100%` ).
+
+      temp1 = boolc( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL ).
       page = view->ele( `Shell`
                  )->a( n = `appWidthLimited` v = client->_bind( ms_app-check_appwidthlimited )
                  )->ele( `Page`
                  )->a( n = `title` v = 'abap2UI5 - JSON File Download'
                  )->a( n = `navButtonPress` v = client->_event( 'BACK' )
-                 )->a( n = `showNavButton` b = xsdbool( client->get( )-s_draft-id_prev_app_stack IS NOT INITIAL )
+                 )->a( n = `showNavButton` b = temp1
                  )->ele( `headerContent`
                  )->ele( `OverflowToolbar`
                  )->tag( `ToolbarSpacer`
@@ -229,7 +250,8 @@ CLASS z2ui5_cl_tcl_app_03 IMPLEMENTATION.
                  )->end( ).
     ENDIF.
 
-    DATA(content) = page->ele( n = `SimpleForm` ns = `form`
+
+    content = page->ele( n = `SimpleForm` ns = `form`
                         )->a( n = `editable` v = `true` ).
 
     content->tag( `Label`

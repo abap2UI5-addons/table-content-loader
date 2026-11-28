@@ -25,10 +25,11 @@ CLASS z2ui5_cl_tcl_app_05 IMPLEMENTATION.
 
   METHOD get_format.
 
-    result = VALUE #( name     = `XLSX`
-                      title    = `abap2UI5 - XLSX Uploader`
-                      mime     = z2ui5_cl_tcl_xlsx=>mime_type
-                      filename = `table.xlsx` ).
+    CLEAR result.
+    result-name = `XLSX`.
+    result-title = `abap2UI5 - XLSX Uploader`.
+    result-mime = z2ui5_cl_tcl_xlsx=>mime_type.
+    result-filename = `table.xlsx`.
 
   ENDMETHOD.
 
