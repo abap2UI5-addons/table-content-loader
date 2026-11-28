@@ -1,7 +1,6 @@
 {
   "master": "abap-util/abap-util",
-  "commit": "dcc4fc179b8bd891bcef4fb2056b0a5eb405fd72",
-  "note": "the commit is on abap-util's branch claude/stoic-dirac-tv925w, which adds the XLSX class and the context methods it needs - move it to the commit on main once that branch is merged",
+  "commit": "8ee8455c3d17429ca23c2e7bec0fcdba45c71ba0",
   "rename": [
     ["z2ui5_cl_tcl_context", "zabaputil_cl_util_context"],
     ["z2ui5_cx_tcl_error", "zabaputil_cx_util_error"],
