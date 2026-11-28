@@ -1,5 +1,7 @@
 {
   "global": {
+    // vendored by .github/scripts/vendor-mirror.mjs - never edited here
+    "noIssues": ["/../../src/00/"],
     "files": "/../../src/**/*.*"
   },
   "dependencies": [

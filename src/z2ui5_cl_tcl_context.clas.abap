@@ -1051,7 +1051,7 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
   METHOD json_parse.
     TRY.
 
-        z2ui5_cl_ajson=>parse( val )->to_abap( EXPORTING iv_corresponding = abap_true
+        z2ui5_cl_tcl_ajs=>parse( val )->to_abap( EXPORTING iv_corresponding = abap_true
                                                IMPORTING ev_container     = data ).
 
       CATCH cx_root INTO DATA(x).
@@ -1064,7 +1064,7 @@ CLASS z2ui5_cl_tcl_context IMPLEMENTATION.
   METHOD json_stringify.
     TRY.
 
-        DATA(li_ajson) = CAST z2ui5_if_ajson( z2ui5_cl_ajson=>create_empty( ) ).
+        DATA(li_ajson) = CAST z2ui5_if_tcl_ajs( z2ui5_cl_tcl_ajs=>create_empty( ) ).
         result = li_ajson->set( iv_path = `/`
                                 iv_val  = any )->stringify( ).
 

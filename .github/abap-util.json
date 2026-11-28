@@ -1,6 +1,6 @@
 {
   "master": "abap-util/abap-util",
-  "commit": "119d6a9368ef7d069d5f39a615f7a831abda4e2c",
+  "commit": "dcc4fc179b8bd891bcef4fb2056b0a5eb405fd72",
   "note": "the commit is on abap-util's branch claude/stoic-dirac-tv925w, which adds the XLSX class and the context methods it needs - move it to the commit on main once that branch is merged",
   "rename": [
     ["z2ui5_cl_tcl_context", "zabaputil_cl_util_context"],
@@ -13,8 +13,8 @@
       "master": "src/zabaputil_cl_util_context.clas.abap",
       "trimmed": true,
       "settled": {
-        "json_parse": "this addon has no ajson of its own and calls the one of the abap2UI5 core (z2ui5_cl_ajson)",
-        "json_stringify": "same - the ajson of the abap2UI5 core",
+        "json_parse": "calls this addon's own ajson copy (z2ui5_cl_tcl_ajs, vendored from abap-util/mirror-ajson like the master's zabaputil_cl_ajson) - a rename, not drift",
+        "json_stringify": "same - this addon's own ajson copy",
         "class_constructor": "trimmed to the constants the kept methods read - the master sets every constant of the catalog"
       },
       "own": {
