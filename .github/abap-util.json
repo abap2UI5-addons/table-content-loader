@@ -11,8 +11,8 @@
       "master": "src/zabaputil_cl_util_context.clas.abap",
       "trimmed": true,
       "settled": {
-        "json_parse": "this addon has no ajson of its own and calls the one of the abap2UI5 core (z2ui5_cl_ajson)",
-        "json_stringify": "same - the ajson of the abap2UI5 core"
+        "json_parse": "calls this addon's own ajson copy (z2ui5_cl_tcl_ajs, vendored from abap-util/mirror-ajson like the master's zabaputil_cl_ajson) - a rename, not drift",
+        "json_stringify": "same - this addon's own ajson copy"
       },
       "own": {
         "db_get_table_name": "checks a bound table name before it reaches a dynamic FROM (a plain DDIC structure name, nothing else); not in the master yet - to be synced back"

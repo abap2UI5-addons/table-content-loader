@@ -69,6 +69,8 @@ const CONFIG = {
         "z2ui5_cl_tcl_context.clas.xml",
         "z2ui5_cx_tcl_error.clas.abap",
         "z2ui5_cx_tcl_error.clas.xml",
+        // the vendored ajson the context's JSON methods call
+        "00",
       ],
     },
   ],
